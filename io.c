@@ -306,6 +306,7 @@ readdata()
 } /* readdata() */
 
 #ifdef CONQUER
+#ifdef XYZZY
 /************************************************************************/
 /*	OFFMAP()	deal if cursor is off the map			*/
 /************************************************************************/
@@ -324,7 +325,7 @@ offmap()
 			xcurs+=15;
 		}
 	}
-	else if(xcurs >= (COLS-23)/2){
+	else if(xcurs >= SCREEN_X_SIZE-1){
 		if(XREAL<MAPX) {
 			redraw=PART;
 			xoffset+=15;
@@ -340,7 +341,7 @@ offmap()
 		xoffset += xcurs;
 		xcurs=0;
 	}
-	else if(xcurs >= (COLS-23)/2) {
+	else if(xcurs >= SCREEN_X_SIZE-1) {
 		redraw=PART;
 		xoffset+=15;
 		xcurs-=15;
@@ -380,6 +381,7 @@ offmap()
 	}
 	whatcansee();
 }
+#endif /* XYZZY */
 
 /************************************************************************/
 /*	CENTERMAP()	- redraws screen so that cursor is centered	*/

@@ -282,7 +282,10 @@ char	**argv;
 #endif OGOD
 	country=(-1);
 	for(i=0;i<NTOTAL;i++)
-		if(strcmp(name,ntn[i].name)==0) country=i;
+	if(strcmp(name,ntn[i].name)==0) {
+		country=i;
+		break;
+	}
 
 	if(country==(-1)) {
 		fprintf(stderr,"Sorry, name <%s> not found\n",name);
@@ -778,7 +781,6 @@ parse(ch)
 		return(TRUE);
 		break;
 	case 'W':	/*message*/
-		redraw=FULL;
 		curntn->tgold -= MOVECOST;
 		wmessage();
 		break;
@@ -818,8 +820,7 @@ parse(ch)
 		if ((owneruid != (getpwnam(LOGIN))->pw_uid ) &&
 		    ((pwent=getpwnam(ntn[0].leader))==NULL || owneruid != pwent->pw_uid )) break;
 #endif
-		clear();
-		redraw=FULL;
+		clear_bottom(0);
 		if(country != 0) {
 		fprintf(fexe,"L_NGOLD\t%d \t%d \t%ld \t0 \t0 \t%s\n",
 			XNAGOLD ,country,curntn->tgold,"null");
@@ -828,10 +829,11 @@ parse(ch)
 		fprintf(fexe,"L_NJWLS\t%d \t%d \t%ld \t0 \t0 \t%s\n",
 			XNARGOLD ,country,curntn->jewels,"null");
 		} else
-		mvaddstr(0,0,"SUPER-USER: YOUR CHANGES WILL NOT BE SAVED IF YOU DO THIS!!!");
+		mvaddstr(LINES-4,0,"SUPER-USER: YOUR CHANGES WILL NOT BE SAVED IF YOU DO THIS!!!");
 		standout();
-		mvaddstr(2,0,"change login to: ");
+		mvaddstr(LINES-3,0,"Change login to:");
 		standend();
+		addch(' ');
 		refresh();
 
 		ocountry=country;
@@ -841,29 +843,33 @@ parse(ch)
 		if( country==(-1) || country>=NTOTAL
 		|| ( !isactive(ntn[country].active) && country!=0 )) {
 			country=ocountry;
-			errormsg("invalid country");
+			makebottom();
 			break;
 		} 
 		if(country==ocountry){
-			errormsg("same country");
+			errormsg("What?  You are already logged into that nation.");
+			makebottom();
 			break;
 		}
 
 		/*get password*/
-		mvaddstr(2,0,"what is your nations password:");
+		clear_bottom(0);
+		mvaddstr(LINES-4,0,"What is your Nation's Password: ");
 		refresh();
-		getstr(passwd);
+		(void) get_pass(passwd);
 		strcpy(name,crypt(passwd,SALT));
-		if((strncmp(name,curntn->passwd,PASSLTH)!=0)
+
+		if((strncmp(name,ntn[country].passwd,PASSLTH)!=0)
 		&&(strncmp(name,ntn[0].passwd,PASSLTH)!=0)){
-			errormsg("sorry:  password invalid");
+			errormsg("Sorry, Password Invalid.");
 			country=ocountry;
+			makebottom();
 			break;
 		}
 		if(aretheyon()==TRUE) {
-			errormsg("sorry:  country is already logged in.");
-			refresh();
+			errormsg("Sorry, that Nation is already logged in.");
 			country=ocountry;
+			makebottom();
 			break;
 		}
 
@@ -886,6 +892,7 @@ parse(ch)
 		fprintf(stderr,"\n");
 		roads_this_turn=0;
 		terror_adj=0;
+		move(LINES-3,0);
 		readdata();
 		execute(FALSE);
 
@@ -901,7 +908,7 @@ parse(ch)
 		}
 		xoffset = yoffset = 0;
 		centermap();
-		redraw=PART;
+		redraw=FULL;
 		break;
 	case '?':	/*display help screen*/
 		redraw=PART;

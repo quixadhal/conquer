@@ -50,15 +50,15 @@ int	__line__;
 					__file__, __line__, country, i, a->yloc );
 				a->yloc = 0;
 			}
-			if( sct[a->xloc][a->yloc].altitude==PEAK ) {
-				fprintf( stderr, "file %s: line %d: nation[%d] army[%d] loc=%d,%d (peak)\n",
-				__file__,__line__,country,i,a->xloc,a->yloc);
-				a->sold = 0;
-			}
 			if( a->stat != ONBOARD && sct[a->xloc][a->yloc].altitude==WATER ) {
 				fprintf( stderr, "file %s: line %d: nation[%d] army[%d] loc=%d,%d (water) men=%d\n",
 				__file__,__line__,country,i,a->xloc,a->yloc,a->sold);
 				a->sold = 0;
+			}
+			if( a->stat == ONBOARD && a->smove > 0) {
+				/* don't echo since this is still getting */
+				/* set some place someplace I can't find yet */
+				a->smove = 0;
 			}
 		} /* for */
 
@@ -147,8 +147,8 @@ checkout(file,line)
 int	line;
 char	*file;
 {
-	/* fprintf(stderr,"file %s line %d\n",file,line);  */
-	/* verifydata(file,line); */
+	fprintf(stderr,"file %s line %d\n",file,line);
+	verifydata(file,line);
 }
 #endif DEBUG
 
@@ -158,6 +158,7 @@ char	*file;
 #    include <unistd.h>
 #    define do_lock(fd) lockf(fd,F_TLOCK,0)
 #else
+#    include <sys/types.h>
 #    include <sys/file.h>
 #    define do_lock(fd) flock(fd,LOCK_EX|LOCK_NB)
 #endif
@@ -192,8 +193,17 @@ check_lock(filename,keeplock)
 		exit(FAIL);
 	}
 #else
-	if( access( filename, 00 ) == 0 ) {
-		hold=TRUE;
+	struct stat fst;
+
+	if( stat( filename, &fst ) == 0 ) {
+		long now;
+		now = time(0);
+		if (now - fst.st_mtime < TIME_DEAD*3) {
+			hold=TRUE;
+		} else {
+			/* remove useless file */
+			unlink(filename);
+		}
 	}
 	if (hold==FALSE && keeplock==TRUE) {
 		/* create lock file */

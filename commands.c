@@ -13,10 +13,11 @@
 #include "header.h"
 #include "data.h"
 #include <ctype.h>
-
-#ifdef SYSMAIL
+#ifdef CONQUER
 #include <sys/types.h>
-#endif SYSMAIL
+#include <sys/stat.h>
+#endif /*CONQUER*/
+
 extern long conq_mail_size;
 
 extern FILE *fexe;			/*execute file pointer*/
@@ -93,16 +94,6 @@ desg_ok(prtflag, desg, sptr)
 		}
 	}
 
-	/* have this for now... may be too harsh */
-	if (desg==DMILL || desg==DGRANARY) {
-		if((sptr->tradegood != TG_none)
-		&&(*(tg_stype + sptr->tradegood) != DFARM)
-		&&(*(tg_stype + sptr->tradegood) != 'x')) {
-			if(prtflag) errormsg("You can't have one of those here!");
-			return(FALSE);
-		}
-	}
-
 	if (desg==DUNIVERSITY || desg==DLUMBERYD) {
 		if((sptr->tradegood != TG_none)
 		&&(*(tg_stype + sptr->tradegood) != desg)
@@ -149,7 +140,7 @@ redesignate()
 		curntn= &ntn[country];
 
 		clear_bottom(0);
-		mvaddstr(LINES-4,0,"SUPER USER: CHANGE (v)egetation, (e)levation, (d)esig, (o)wner, (t)radegood");
+		mvaddstr(LINES-4,0,"SUPER USER: CHANGE (v)eg, (e)lev, (d)esig, (o)wner, (p)op, (t)radegood");
 		refresh();
 		switch(getch()){
 		case 'd':
@@ -190,8 +181,8 @@ redesignate()
 			}
 			sptr->vegetation=newdes;
 			if( tofood(sptr,0) < DESFOOD )
-				sptr->designation=DNODESIG;
-			else sptr->designation=newdes;
+				sptr->designation=newdes;
+			else sptr->designation=DNODESIG;
 			reset_god();
 			return;
 		case 'o':
@@ -199,6 +190,17 @@ redesignate()
 			refresh();
 			x = get_country();
 			if (x<NTOTAL) sptr->owner=x;
+			reset_god();
+			return;
+		case 'p':
+			if (sptr->altitude == WATER) {
+				errormsg("Trying to build a colony of mermen?");
+				reset_god();
+				return;
+			}
+			mvaddstr(LINES-3,7,"new population for sector: ");
+			refresh();
+			sptr->people = (long) get_number();
 			reset_god();
 			return;
 		case 't':
@@ -635,7 +637,7 @@ construct()
 			return;
 		}
 
-		if( sct[XREAL][YREAL].people < amount * SHIPCREW ){
+		if( sct[XREAL][YREAL].people < amount * (shipsize+1) * SHIPCREW ){
 			errormsg("NOT ENOUGH CIVILIANS IN SECTOR");
 			if(isgod==TRUE) reset_god();
 			return;
@@ -699,13 +701,15 @@ construct()
 	/* construct fortification points*/
 	else if(type=='f'){
 		/* can only go into debt as much as the nation has jewels */
-		if ((curntn->tgold - cost) >= ((-1)*10*curntn->jewels)) {
+		if (sct[XREAL][YREAL].fortress>11) {
+			errormsg("That sector is as impregnable as you can make it");
+		} else if ((curntn->tgold - cost) >= ((-1)*10*curntn->jewels)) {
 			mvprintw(LINES-2,5,"you build +%d%% fort points for %ld gold",armbonus,cost);
 			curntn->tgold-=cost;
 			sct[XREAL][YREAL].fortress++;
 			INCFORT;
 			errormsg("");
-		} else errormsg("you are broke");
+		} else errormsg("you may not spend that much");
 	}
 	else errormsg("invalid input error");
 
@@ -1038,6 +1042,7 @@ rmessage()
 	char mesgfile[FILELTH];
 	char line[LINELTH+1], inpch;
 	char save[LINELTH][LINELTH+1];
+	struct stat fst;
 
 	/*open file; used in mailopen() as well */
 	sprintf(tempfile,"%s%hd.tmp",msgfile,country);
@@ -1062,14 +1067,21 @@ rmessage()
 
 	/* check for people sending mail */
 	sprintf(line,"send.%s%hd",msgfile,country);
-	if (access(line,00)==0) {
-		/* someone is sending mail to the country */
-		(void) unlink (tempfile) ;
-		clear_bottom(0);
-		errormsg("Someone is sending you mail... please wait.");
-		makebottom();
-		redraw=DONE;
-		return;
+	if (stat(line,&fst)==0) {
+		long now;
+		now = time(0);
+		if (now - fst.st_mtime < TIME_DEAD) {
+			/* someone is sending mail to the country */
+			(void) unlink (tempfile) ;
+			clear_bottom(0);
+			errormsg("Someone is sending you mail... please wait.");
+			makebottom();
+			redraw=DONE;
+			return;
+		} else {
+			/* remove useless file */
+			(void) unlink(line);
+		}
 	}
 
 	/*read in file a line at at time*/
@@ -1142,10 +1154,9 @@ wmessage()
 	char line[BIGLTH];
 
 	/*what nation to send to*/
-	clear();
-	mvaddstr(0,0,"To send a message to the administrator, send to 'god';");
-	mvaddstr(1,0,"To post to the news, send to 'news':");
-	mvaddstr(2,0,"Enter the name of the country to send to: ");
+	clear_bottom(0);
+	mvaddstr(LINES-4,0,"The Conquer Administrator is 'god'; To send to the News use 'news';");
+	mvaddstr(LINES-3,0,"Send mail to what nation? ");
 	refresh();
 	temp=get_country();
 
@@ -1153,16 +1164,19 @@ wmessage()
 		strcpy(name,"news");
 	} else {
 		/* quick return on bad input */
-		if(temp==(-1) || temp>=NTOTAL
-		  || (!isntn(ntn[temp].active) && temp!=0))
-  			return;
+		if(temp==(-1) || temp>=NTOTAL 
+		|| (!isntn(ntn[temp].active) && temp!=0)) {
+			makebottom();
+			return;
+		}
 		strcpy(name,ntn[temp].name);	/* find nation name */
 	}
 
 	if(mailopen( temp )==(-1)) {
+		makebottom();
 		return;
 	}
-
+	redraw=FULL;
 
 	if(temp != -2) {
 		if (country==0)

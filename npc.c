@@ -129,6 +129,122 @@ monster()
 		else if( curntn->active==NPC_SAVAGE ) do_savage();
 		else if( curntn->active==NPC_LIZARD ) do_lizard(); /* update.c */
 	}
+#ifdef MORE_MONST
+	{
+	int neededtroops;
+	int actualtroops;
+	int savages,nomads;
+	int i,x,y;
+	int nomad_space=1, savage_space=1;
+
+	for(i=1;i<NTOTAL;i++)
+	    switch(ntn[i].active)
+		{
+	    case NPC_SAVAGE:
+		savages=i;
+		break;
+	    case NPC_NOMAD:
+		nomads=i;
+		break;
+		}
+
+				/* neededarmies is an estimete of
+				 * the desired military strength of savages
+				 * and nomads. The proportions are based on
+				 * npc.c routines. yeuch.
+				 */
+
+	neededtroops= ((NUMSECTS)/MONSTER)*( /* number of armies */
+					    (5.0/12)*450 + /* nomads */
+					    (1.0/4)*250 );	/* savages */
+
+
+	actualtroops=0;
+	for(i=0;i<MAXARM;i++)
+	    {
+	    if (ntn[nomads].arm[i].sold > 0)
+		actualtroops += ntn[nomads].arm[i].sold;
+	    if (ntn[savages].arm[i].sold > 0)
+		actualtroops += ntn[savages].arm[i].sold;
+	    }
+	
+#ifdef DEBUG
+	printf("monsters: need %d have %d\n",neededtroops,actualtroops);
+#endif DEBUG
+
+	neededtroops= neededtroops-actualtroops;
+
+	while(neededtroops>0&& (nomad_space||savage_space))
+	    {
+#ifdef DEBUG
+	    printf("\t need %d monster troops\n",neededtroops);
+#endif 
+	    if ( (rand()%8)<5 && nomad_space)
+		{
+		while(!is_habitable((x=(rand()%(MAPX-8))+4),
+				    (y=(rand()%(MAPY-8))+4)))
+		    ;
+		for(i=0;i<MAXARM;i++)
+		    if ( ntn[nomads].arm[i].sold <=0 )
+			goto found_free_nomad_army;
+
+#ifdef DEBUG
+		printf("\t\t Out of nomad space\n");
+#endif
+		nomad_space=0;
+		continue;
+		
+	    found_free_nomad_army:
+
+		ntn[nomads].arm[i].xloc=x;
+		ntn[nomads].arm[i].yloc=y;
+		ntn[nomads].arm[i].sold=100+100*(rand()%6);
+		ntn[nomads].arm[i].unittyp=A_LT_CAV;
+		ntn[nomads].arm[i].stat=ATTACK;
+		neededtroops -= ntn[nomads].arm[i].sold;
+#ifdef DEBUG
+		printf("\t\tAdding nomad army %d size %d at (%d,%d)\n",i,
+		       ntn[nomads].arm[i].sold,x,y);
+#endif
+		}
+	    else
+		{
+		do {
+		x=(rand()%(MAPX-8))+4;
+		y=(rand()%(MAPY-8))+4;
+		} while ( sct[x][y].altitude == PEAK ||
+			  sct[x][y].altitude == WATER ||
+			 ( sct[x][y].owner !=0 &&
+			   sct[x][y].owner != savages &&
+			   sct[x][y].people >= 50 ) );
+
+		for(i=0;i<MAXARM;i++)
+		    if ( ntn[savages].arm[i].sold <=0 )
+			goto found_free_savage_army;
+
+#ifdef DEBUG
+		printf("\t\t Out of savage space\n");
+#endif
+		savage_space=0;
+		continue;
+		
+	    found_free_savage_army:
+
+		ntn[savages].arm[i].xloc=x;
+		ntn[savages].arm[i].yloc=y;
+		ntn[savages].arm[i].sold=100+100*(rand()%3);
+		ntn[savages].arm[i].unittyp=defaultunit(savages);
+		ntn[savages].arm[i].stat=ATTACK;
+		neededtroops -= ntn[savages].arm[i].sold;
+#ifdef DEBUG
+		printf("\t\tAdding savage army %d size %d at (%d,%d)\n",i,
+		       ntn[savages].arm[i].sold,x,y);
+#endif
+		}
+	    }
+	}
+#endif /* MORE_MONST */
+
 }
 
 void
@@ -177,21 +293,6 @@ do_nomad()
 			break;
 		}
 	}
-#ifdef MORE_MONST
-	/* place a few new Nomad armies */
-	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD<=0){
-		if(rand()%4!=0) continue;
-		x=(rand()%(MAPX-8))+4;
-		y=(rand()%(MAPY-8))+4;
-		if(is_habitable(x,y)) {
-			P_AXLOC=x;
-			P_AYLOC=y;
-			P_ASOLD=100+100*(rand()%6);
-			P_ATYPE=A_LT_CAV;
-			P_ASTAT=ATTACK;
-		}
-	}
-#endif /* MORE_MONST */
 }
 
 void
@@ -227,25 +328,6 @@ do_savage()
 			}
 		}
 	}
-#ifdef MORE_MONST
-	/* place a few new savage armies */
-	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD<=0){
-		x=(rand()%(MAPX-8))+4;
-		y=(rand()%(MAPY-8))+4;
-		if((rand()%4!=0) 
-		||( sct[x][y].altitude == PEAK)
-		||( sct[x][y].altitude == WATER))
-			continue;
-		if(sct[x][y].owner==0 || sct[x][y].owner==country 
-		||(sct[x][y].people< 50)) {
-			P_AXLOC=x;
-			P_AYLOC=y;
-			P_ASOLD=100+100*(rand()%3);
-			P_ATYPE=defaultunit(country);
-			P_ASTAT=ATTACK;
-		}
-	}
-#endif /* MORE_MONST */
 }
 
 void
@@ -389,7 +471,7 @@ redomil()
 {
 	short x,y,armynum,nvynum;
 	int i, free, done;
-	long militia=0l,ideal;
+	long ideal;
 	long diff=0l;
 	int ok;
 
@@ -401,9 +483,13 @@ redomil()
 			if(rand()%2==0) P_NCREW = SHIPCREW;
 	}
 	check();
+	curntn->tmil = 0L;
 	for(armynum=1;armynum<MAXARM;armynum++) if(P_ASOLD>0){
 		/* move army back if too far out */
 		ok = 0;
+		if (P_ASOLD < MINLEADER && P_ASOLD!=A_MILITIA) {
+			curntn->tmil += P_ASOLD;
+		}
 		for(x=(int)P_AXLOC-3;x<=(int)P_AXLOC+3;x++)
 			for(y=(int)P_AYLOC-3;y<=(int)P_AYLOC+3;y++)
 				if((ONMAP(x,y))&&(sct[x][y].owner==country)) ok=1;
@@ -412,7 +498,7 @@ redomil()
 			P_AYLOC=curntn->capy;
 		}
 
-		/* count and verify militia */
+		/* verify militia */
 		if(P_ATYPE==A_MILITIA) {
 			/* eliminate invalid militia */
 			if(((sct[P_AXLOC][P_AYLOC].designation!=DTOWN)
@@ -426,7 +512,7 @@ redomil()
 					sct[P_AXLOC][P_AYLOC].people+=P_ASOLD;
 				else sct[curntn->capx][curntn->capy].people+=P_ASOLD;
 				P_ASOLD=0;
-			} else militia+=P_ASOLD;
+			}
 		}
 
 		/* set default status */
@@ -442,12 +528,17 @@ redomil()
 			break;
 		}
 	}
-	curntn->tmil -= militia;
 
 	/*make sure enough men in army 0 -- garrison duty in capitol*/
 	armynum=0;
-	P_ASTAT=GARRISON;
+	/* find lowest army of non-leader type */
+	while (armynum < MAXARM && (P_ATYPE>=MINLEADER && P_ASOLD>0)) {
+		armynum++;
+	}
+	/* oh well... wipe out army zero; c'est la vie */
+	if (armynum == MAXARM) armynum = 0;
 	P_ATYPE=defaultunit(country);
+	P_ASTAT=GARRISON;
 	P_AXLOC=curntn->capx;
 	P_AYLOC=curntn->capy;
 
@@ -470,12 +561,12 @@ redomil()
 
 	/*too few soldiers on garrison*/
 	/*diff is number to change mil in cap (>0)*/
-	if(curntn->tgold<0L) diff=0;
-	else diff = (long) min(ideal-P_ASOLD,(int) (curntn->metals / *(u_enmetal + (P_ATYPE%UTYPE))));
+	diff = (long) min(ideal-P_ASOLD,(int) (curntn->metals / *(u_enmetal + (P_ATYPE%UTYPE))));
 
 	diff=(long) min((int) diff, sct[curntn->capx][curntn->capy].people/2L);
 
-	if(curntn->tgold<0L || curntn->metals<0L) if(diff > 0L) diff=0;
+	if ((curntn->tgold<0L || curntn->metals<0L) && (diff > 0L)) diff=0L;
+	if (sct[curntn->capx][curntn->capy].owner != country) diff=0L;
 
 #ifdef DEBUG
 	printf("\tadding %d men to garrison (too few men on garrison)\n",diff);
@@ -690,6 +781,7 @@ redomil()
 			for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD==0){
 				P_AXLOC=x;
 				P_AYLOC=y;
+				P_ATYPE=A_MILITIA;
 				free=TRUE;
 				break;
 			}
@@ -711,17 +803,20 @@ redomil()
 			}
 			}
 #ifdef DEBUG
-		printf("\tadding %ld troops to %s army %d (now %ld men - populace %ld)\n",ideal-P_ASOLD,unittype[P_ATYPE],armynum,ideal,sct[x][y].people);
+		printf("\tnow in sector %d,%d\n",x,y);
+		printf("\tadding %ld troops to %s army %d (now %ld men - populace %ld)\n",ideal-P_ASOLD,unittype[P_ATYPE%UTYPE],armynum,ideal,sct[x][y].people);
 #endif DEBUG
 			P_ASOLD=ideal;
-			P_ATYPE=A_MILITIA;
 			P_ASTAT=MILITIA;
 		}
 	}
 	check();
+#ifdef DEBUG
+	printf("\tnow setting all units to default type of %s\n",unittype[defaultunit(country)]);
+#endif /*DEBUG*/
 
-  	/* setup default units */
-  	for(armynum=1;armynum<MAXARM;armynum++) 
+	/* setup default units */
+	for(armynum=1;armynum<MAXARM;armynum++) 
 	if((P_ASOLD>0)&&(P_ATYPE!=A_MILITIA)&&(P_ATYPE<MINLEADER)) 
 		P_ATYPE=defaultunit(country);
 }
@@ -1089,7 +1184,9 @@ nationrun()
 
 		spreadsheet(country);
 
-		hunger = spread.food/((float)(spread.civilians+2*curntn->tmil));
+		if (spread.civilians+2*curntn->tmil > 0) {
+			hunger = spread.food/((float)(spread.civilians+2*curntn->tmil));
+		} else hunger = 0.0;
 		if(hunger < P_EATRATE ) {
 			goldthresh++;
 			metalthresh++;

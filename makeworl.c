@@ -1015,10 +1015,10 @@ populate()
 			nlizards--;
 			sct[x][y].designation = DFORT;
 			sct[x][y].metal = 0;
-			sct[x][y].jewels = 8 + (i=rand()%20);
+			sct[x][y].jewels = 8 + (i=rand()%30);
 			sct[x][y].tradegood = TG_platinum;
 			/* make fortificaton consistant with gold */
-			sct[x][y].fortress = 5+i/4;
+			sct[x][y].fortress = 6+i/5;
 			for(i=x-1;i<=x+1;i++) for(j=y-1;j<=y+1;j++)
 				if((ONMAP(i,j))&&(sct[i][j].altitude!=WATER))
 					sct[i][j].owner = country;

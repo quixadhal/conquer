@@ -236,10 +236,65 @@
 181. altered the god_mgk() display routine a little.
 182. added in a limit of 16% to charity creeping for democracy.
 183. added a check for a line with a period on it to end mail.
+===4.0 patch number six released => 4.6 =================================
+184. fixed bug in checking of sector population in construction of ships.
+185. fixed bug with reversed if statement in god vegetation redesignation.
+186. adjusted get_god routine to display prompt at bottom of screen only.
+187. adjusted lizard fortress creation routine to increase gold and fort value.
+188. fixed some display bugs with the god_magk() routines.
+189. made spoilrate calculation floating point to avoid overflow.
+190. fixed a bug with checking of password for 'z' command.
+191. made the "DESTROY NATION" message in forms.c not clear screen.
+192. made sure that WYZARD was not removable in random events.
+193. fixed bug with randevent.c calculation of sector locations [D. Brooks]
+194. implemented check to assure that MORE_MONST isn't too strong [R. Caley]
+195. made sure god could destroy of monster nations in forms.c.
+196. moved the 'z' command to the bottom portion of the screen.
+197. fixed bug with get_nname(); accidently allowed up to NAMELTH+1 chars.
+198. adjusted bottom of diplomacy screen to be more like other screens.
+199. made the 'W' prompt appear at the bottom of the screen.
+200. combat.c [636,637]: owner[k] -> UOWNER(k).  [Ken Dalka]
+201. added a break to the nation name detection in main.c [Brad Isley]
+202. fixed mistype of '<' to '>' reports.c (647) [Richard Kennaway]
+203. adjusted calculation of attack bonus cost to avoid overflow [R. Kennaway]
+204. fixed bug in printing nation name, update.c (579) [R. Kennaway]
+205. adjusted output in wdisaster().  [R. Kennaway]
+206. implemented check for limit of 12 in fortification. [should be #define]
+207. removed a number of local variable declarations of country in misc.c.
+208. allow changing of status of other nation is non-unmet.
+209. added the option to change population for god in (r)edesignate command.
+210. added time check on mail lock files to avoid old files lying around.
+211. added ability for god to change combat statuses of nations.	
+212. added time check to lock files as well, (thrice mail lock death time).
+213. fixed bug in prep so that ships do not protect sectors from capture.
+214. fixed overflow bug in GOLDTHRESH jewel purchase during update.
+215. added new method for calculation of MORE_MONSTers (R. Caley)
+216. for the 100th time, made sure that volcano victims are not revealed.
+217. more adjustments to make sure sector locations are correct in randeven.c.
+218. removed restrictions on mill and granary redesignating.
+219. fixed spelling of "rebelion" to "rebellion" in two places in randeven.c.
+220. changed inflation to be a yearly rate (where did I leave my head?).
+221. adjusted offmap() in io.c to be consistent with coffmap().
+222. putzed around in npc.c trying to catch a bug.
+223. recenter new display upon going off screen.
+224. update.c[821]: ">" to ">=" take with exact number of men. [Dave Flowers]
+225. update.c[1017]: "min(" to "max(" (woops!! major typo) [Dave F.]
+226. trade.c: altered visibility of items for sale. [Dave F.]
+227. misc.c[498]: fixed overflow on gold scoring [Kenneth J Dalka]
+228. adjusted inflation calculation in update.c and reports.c.
+229. added the inflation estimation to the budget report.
+230. fixed bug with division of charity by population. [Dave F.]
+231. prevent passage of fleets through hostile cities.
+232. added some checks in npc.c for ownership in drafting in some sectors.
+233. removed destruction of troops on peaks, now that flight is possible.
+234. changed to min zero in attractiveness, now drift will no longer occur
+	for sectors with "zero" attractiveness.  [Dave F.]
 
 -------------------------------------------------------------------------
 | 2.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V5             |
 -------------------------------------------------------------------------
+o allow god to alter more nation status values... combat bonus, score,
+	other things.
 o new functions:
 	- status_value() = returns base values of attack.defend,etc.
 	- sect_movecost() = returns move cost for given unit in given sector.

@@ -293,21 +293,24 @@ hangup()
 	}
 	/*close file*/
 	fclose(fexe);
+
+	/* remove any existing mail reading/writing file */
+	if (mailok!=DONEMAIL) {
+		extern char tmp_mail_name[];
+		unlink(tmp_mail_name);
+	}
+
+	/* remove the lock file */
+	unlink(fison);
+	sprintf(line,"%s%hd.tmp",msgfile,country);
+	unlink(line);
+
 	/*send a message to God*/
 	if(mailopen( 0 )!=(-1)) {
 		fprintf(fm,"WARNING: Nation %s hungup on me.\n",curntn->name);
 		mailclose(0);
 	}
 
-	/* remove the lock file */
-	unlink(fison);
-	/* remove any existing mail reading/writing file */
-	if (mailok!=DONEMAIL) {
-		extern char tmp_mail_name[];
-		unlink(tmp_mail_name);
-	}
-	sprintf(line,"%s%hd.tmp",msgfile,country);
-	unlink(line);
 	/* exit program */
 	exit(FAIL);
 }

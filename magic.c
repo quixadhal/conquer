@@ -591,19 +591,19 @@ int *count;
 		clear();
 	}
 	if(magic(country,MA_MONST)==TRUE) {
-	mvprintw((*count)++,0,"  You have a 10 percent chance for %ld Jewels take over other orcs",ORCTAKE);
+	mvprintw((*count)++,0,"You have a 10 percent chance for %ld Jewels take over other orcs",ORCTAKE);
 	chance=10;
 	} else if(magic(country,AV_MONST)==TRUE) {
-	mvprintw((*count)++,0,"  You have a 6 percent chance for %ld Jewels take over other orcs",ORCTAKE);
+	mvprintw((*count)++,0,"You have a 6 percent chance for %ld Jewels take over other orcs",ORCTAKE);
 	chance=6;
 	} else if(magic(country,MI_MONST)==TRUE){
-	mvprintw((*count)++,0,"  You have a 3 percent chance for %ld Jewels to take over other orcs",ORCTAKE);
+	mvprintw((*count)++,0,"You have a 3 percent chance for %ld Jewels to take over other orcs",ORCTAKE);
 	chance=3;
 	}
 	if(chance==0) return(TRUE);
 
-	mvaddstr((*count)++,0,"DO YOU WISH TO TAKE OVER AN ORC NPC NATION");
-	mvaddstr((*count)++,0,"target cant be unmet, hostile, war, or jihad (enter y or n):");
+	mvaddstr((*count)++,0,"  Target can't be Unmet, Hostile, War, or Jihad");
+	mvaddstr((*count)++,0,"DO YOU WISH TO TAKE OVER AN ORC NPC NATION: [ny]");
 	refresh();
 	if(getch()=='y'){
 		done=FALSE;
@@ -620,14 +620,17 @@ int *count;
 			curntn->spellpts-=s_cost;
 			EDECSPL;
 			if(( takeover(chance,i)) !=0 )
-				mvprintw((*count)++,0," Successful: %d",i);
+				mvprintw((*count)++,0,"  Successful: %d",i);
 			else {
-				mvaddstr((*count)++,0," Failed: Nation becomes more hostile");
+				mvaddstr((*count)++,0,"  Failed: Nation becomes more hostile");
 				curntn->dstatus[i]++;
 				EADJDIP(country,i);
 			}
+		} else {
+			if (ntn[i].race==ORC) 
+				mvaddstr((*count)++,0,"  Wrong Race");
+			else mvaddstr((*count)++,0,"  That Nation is Outside Your Influence");
 		}
-		else mvaddstr((*count)++,0,"  Wrong Race");
 	}
 	return(done);
 }
@@ -828,7 +831,8 @@ god_magk()
 		county=3;
 		countx=0;
 		standout();
-		mvaddstr(0,0,"Do you wish to (A)dd or (R)emove a power? ");
+		mvaddstr(0,0,"Do you wish to (A)dd or (R)emove a power?");
+		clrtoeol();
 		refresh();
 		while (done==FALSE) {
 			done=TRUE;
@@ -870,9 +874,10 @@ god_magk()
 		}
 		else county++;
 		standout();
-		if (remove) mvaddstr(county++,0,"Which power to remove? ");
-		else mvaddstr(county++,0,"Which power to add? ");
+		if (remove) mvaddstr(county++,0,"Which power to remove?");
+		else mvaddstr(county++,0,"Which power to add?");
 		standend();
+		addch(' ');
 		refresh();
 		choice=get_number();
 		if(choice > 0 && choice <= MAXPOWER) {
@@ -888,8 +893,8 @@ god_magk()
 					else exenewmgk(powers[choice-1]);
 				}
 			} else {
-				if (remove) mvaddstr(county++,0," The nation doesn't have that power.");
-				else mvaddstr(county++,0," The nation already has that power.");
+				if (remove) mvaddstr(county++,0,"The nation doesn't have that power.");
+				else mvaddstr(county++,0,"The nation already has that power.");
 			}
 		}
 		mvaddstr(county++,0,"Do you wish to add or remove another power?");

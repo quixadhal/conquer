@@ -12,9 +12,10 @@
 
 #include <ctype.h>
 #ifndef	XENIX
+#include <sys/types.h>
 #include <sys/file.h>
 #else
-#include	<unistd.h>
+#include <unistd.h>
 #endif
 #include "header.h"
 #include "data.h"
@@ -120,7 +121,7 @@ attract(x,y,race)
 {
 	register struct s_sector	*sptr = &sct[x][y];
 	int	designation;
-	int	Attr = 1;
+	int	Attr = 0;
 
 	designation=sptr->designation;
 	if(sptr->tradegood != TG_none
@@ -134,7 +135,7 @@ attract(x,y,race)
 		if(sptr->jewels>=6) Attr+=GOLDATTR*sptr->jewels*2;
 		else	Attr+=GOLDATTR*sptr->jewels;
 	} else if(designation==DFARM){
-		if(ntn[sptr->owner].tfood <= ntn[sptr->owner].eatrate*(ntn[sptr->owner].tciv*11)/250)
+		if(ntn[sptr->owner].tfood*250 <= ntn[sptr->owner].eatrate*(ntn[sptr->owner].tciv*11))
 			Attr+=50*FARMATTR;
 		else Attr+=tofood(sptr,sptr->owner)*FARMATTR;
 	}
@@ -149,9 +150,9 @@ attract(x,y,race)
 
 	switch(race){
 	case DWARF:
-		if((designation==DGOLDMINE)&&(sptr->jewels>=4))
+		if((designation==DGOLDMINE)&&(sptr->jewels>3))
 			Attr += DGOLDATTR;
-		else if((designation==DMINE)&&(sptr->metal>=4))
+		else if((designation==DMINE)&&(sptr->metal>3))
 			Attr += DMINEATTR;
 		else if(designation==DTOWN) Attr += DTOWNATTR;
 		else if(designation==DCITY) Attr += DCITYATTR;
@@ -166,9 +167,9 @@ attract(x,y,race)
 		else Attr=0;
 		break;
 	case ELF:
-		if((designation==DGOLDMINE)&&(sptr->jewels>=4))
+		if((designation==DGOLDMINE)&&(sptr->jewels>3))
 			Attr += EGOLDATTR;
-		else if((designation==DMINE)&&(sptr->metal>=4))
+		else if((designation==DMINE)&&(sptr->metal>3))
 			Attr += EMINEATTR;
 		else if(designation==DTOWN) Attr += ECITYATTR;
 		else if(designation==DCITY) Attr += ECITYATTR;
@@ -183,9 +184,9 @@ attract(x,y,race)
 		else Attr=0;
 		break;
 	case HUMAN:
-		if((designation==DGOLDMINE)&&(sptr->jewels>=4))
+		if((designation==DGOLDMINE)&&(sptr->jewels>3))
 			Attr += HGOLDATTR;
-		else if((designation==DMINE)&&(sptr->metal>=4))
+		else if((designation==DMINE)&&(sptr->metal>3))
 			Attr += HMINEATTR;
 		else if(designation==DTOWN) Attr += HCITYATTR;
 		else if(designation==DCITY) Attr += HCITYATTR;
@@ -200,9 +201,9 @@ attract(x,y,race)
 		else Attr=0;
 		break;
 	case ORC:
-		if((designation==DGOLDMINE)&&(sptr->jewels>=4))
+		if((designation==DGOLDMINE)&&(sptr->jewels>3))
 			Attr += OGOLDATTR;
-		else if((designation==DMINE)&&(sptr->metal>=4))
+		else if((designation==DMINE)&&(sptr->metal>3))
 			Attr += OMINEATTR;
 		else if(designation==DTOWN) Attr += OCITYATTR;
 		else if(designation==DCITY) Attr += OCITYATTR;
@@ -240,8 +241,7 @@ int armynum;
 	int	leadflag=FALSE;		/* leader w/o group */
 	int	takesctr=FALSE; 	/* takesctr is # unowned sctrs*/
 
-	if(P_ASTAT>=NUMSTATUS) return(takesctr);
-	if(P_AMOVE==0) return(takesctr);
+	if(P_ASTAT>=NUMSTATUS || P_AMOVE==0) return(takesctr);
 
 	/* if leader w/o a group, set leadflag */
 	if((P_ATYPE>=MINLEADER)&&(P_ATYPE<MINMONSTER)&&(P_ASTAT!=GENERAL)) {
@@ -264,7 +264,7 @@ int armynum;
 		&&( curntn->arm[i].stat!=GARRISON )
 		&&( curntn->arm[i].stat!=TRADED )
 		&&( curntn->arm[i].stat<NUMSTATUS ))
-			sum+=curntn->arm[i].sold;
+			sum += curntn->arm[i].sold;
 	} else	{		/* not leader w/o group */
 		/* use menok as a temp vbl now == men in army */
 		menok=0;
@@ -302,11 +302,11 @@ int armynum;
 		&&( curntn->arm[x].stat!=ONBOARD )
 		&&( curntn->arm[x].stat!=TRADED )
 		&&( curntn->arm[x].stat<NUMSTATUS )){
-			where-=curntn->arm[x].sold;
-			if(where > 0) continue;
-			P_AXLOC=curntn->arm[x].xloc;
-			P_AYLOC=curntn->arm[x].yloc;
-			break;
+			if ((where-=curntn->arm[x].sold) <= 0) {
+				P_AXLOC=curntn->arm[x].xloc;
+				P_AYLOC=curntn->arm[x].yloc;
+				break;
+			}
 		}
 		if(x!=MAXARM) for(x=0;x<MAXARM;x++) {
 			if((curntn->arm[x].unittyp<MINLEADER )
@@ -425,7 +425,7 @@ void
 score()
 {
 	int x;
-	printf("\nupdating nations scores\n");
+	printf("\nUpdating nation's scores\n");
 	for(x=1;x<NTOTAL;x++) if(isntn(ntn[x].active))
 		ntn[x].score += score_one(x);
 }
@@ -435,9 +435,9 @@ score()
 /*	CHEAT() 						*/
 /* this routine cheats in favor of npc nations 			*/
 /*								*/
-/* I pride this code... it needs not to cheat to play a good	*/
-/* game.  This routine is the only cheating that it will do,	*/
-/* and it is fairly minor.					*/
+/* I take pride in this code... it needs not to cheat to play a */
+/* good	game.  This routine is the only cheating that it will	*/
+/* do, and it is fairly minor.					*/
 /****************************************************************/
 void
 cheat()
@@ -529,7 +529,7 @@ updexecs()
 #endif /*XENIX*/
 	int	armynum;
 	int moved,done,loop=0,number=0;
-
+	void move_people();
 	int execed[NTOTAL];
 
 	check();
@@ -576,7 +576,7 @@ updexecs()
 			fprintf(fnews,"1.\tthe computer will move for %s\n",curntn->name);
 			if (mailopen( country )!=(-1)) {
 				fprintf(fm,"Message to %s from CONQUER\n\n",curntn->name);
-				fprintf(fm,"The computer moved for you in the %s of Year %d\n",curntn->name,PSEASON(TURN),YEAR(TURN));
+				fprintf(fm,"The computer moved for you in the %s of Year %d\n",PSEASON(TURN),YEAR(TURN));
 				mailclose(country);
 			}
 			check();
@@ -670,35 +670,8 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 		for(x=(int)curntn->capx-2;x<=(int)curntn->capx+2;x++)
 			for(y=(int)curntn->capy-2;y<=(int)curntn->capy+2;y++)
 				if((ONMAP(x,y))&&(attr[x][y]>0)) attr[x][y]+=20;
+		move_people();
 
-/*MOVE CIVILIANS based on the ratio of attractivenesses
- *
- * EQUILIBRIUM(1) = A1/(A1+A2) * (P1+P2)
- * EQUILIBRIUM(2) = A2/(A1+A2) * (P1+P2)
- * MOVE 1/5 of way to equilibrium each turn
- * DELTA(1) = (EQUILIBRIUM(1)-P1)/5 = (A1P2-P1A2)/5(A1+A2)
- * DELTA(2) = (EQUILIBRIUM(2)-P2)/5 = (A2P1-P2A1)/5(A1+A2) = -DELTA(1)
- * ij is refered to as 1, xy as 2
- * NOTE AM ADDING 1 to divisor to prevent floating exception errors
- */
-		for(x=0; x<MAPX; x++ ) for(y=0; y<MAPY; y++) {
-
-			sptr = &sct[x][y];
-			if( sptr->owner != country ) continue;
-			if( sptr->people == 0 ) continue;
-
-			for(i=x-2;i<=x+2;i++) for(j=y-2;j<=y+2;j++) 
-			if(ONMAP(i,j)){
-				if( sct[i][j].owner != country)
-					continue;
-				moved=(sptr->people*attr[i][j]-sct[i][j].people*attr[x][y]);
-				moved /= (1+5*(attr[i][j]+attr[x][y]));
-				if( moved <= 0 ) continue;
-
-				sct[i][j].people += moved;
-				sptr->people -= moved;
-			} /* for */
-		} /* for */
 	} /* for */
 
 	/*zero out all recalculated values; do not clear god */
@@ -810,7 +783,7 @@ updcapture()
 	printf("distributing captured sectors\n");
 
 	/*look for any areas where armies alone in sector*/
-	prep(0,FALSE);
+	prep(0,-1);
 
 	for(country=1;country<NTOTAL;country++) 
 	if(ntn[country].active!=INACTIVE){
@@ -818,7 +791,7 @@ updcapture()
 		for(armynum=0;armynum<MAXARM;armynum++)
 /* cheat in favor of npcs as the create army routines assume 75 man armies */
 		if(P_ATYPE<MINLEADER) {
-			if((ispc(curntn->active)&&(P_ASOLD>TAKESECTOR))
+			if((ispc(curntn->active)&&(P_ASOLD>=TAKESECTOR))
 			||((isnotpc(curntn->active))&&(P_ASOLD>75))){
 				/* may not capture land while on a fleet */
 				if(P_ASTAT==ONBOARD) continue;
@@ -873,7 +846,7 @@ updcapture()
 					if (ispc(curntn->active)) {
 						if(mailopen(country)!=(-1)) {
 							fprintf(fm,"Message from Conquer\n\n");
-							fprintf(fm,"\tYour Scouting Unit %d was captured\n");
+							fprintf(fm,"\tYour Scouting Unit %d was captured\n",armynum);
 							fprintf(fm,"\t  by %s military in sector %d,%d\n",
 								   ntn[occval].name,(int)P_AXLOC,(int)P_AYLOC);
 							mailclose(country);
@@ -1009,12 +982,11 @@ updsectors()
 
 				printf("depleting nation %s\n",curntn->name);
 				deplete(country);
-				printf("TEMP: done depleting\n");
 			}
 
 			spreadsheet(country);
 			if ((int)curntn->popularity-2*curntn->inflation < (int)MAXTGVAL) {
-				curntn->popularity = min(0,(int)(curntn->popularity-2*curntn->inflation));
+				curntn->popularity = max(0,(int)(curntn->popularity-2*curntn->inflation));
 			} else curntn->popularity = (char) MAXTGVAL;
 			curntn->tsctrs = spread.sectors;
 			curntn->tciv=spread.civilians;
@@ -1024,10 +996,10 @@ updsectors()
 			charity=((spread.gold-curntn->tgold)*curntn->charity)/100;
 
 			if(charity < 0) charity = 0;
+			curntn->tgold = spread.gold - charity;
+
 			if(curntn->tciv > 0) charity /= curntn->tciv;
 			else charity = 0;
-
-			curntn->tgold = spread.gold - charity;
 
 			/* calculate poverty base */
 			if (curntn->tgold < 0L) {
@@ -1070,9 +1042,16 @@ updsectors()
 			/* plus maybe an adjustment for jewel production as a ratio */
 			/* for whatever is produced by the country.                 */
 
-			/* use charity here for gold lost to inflation */
-			charity = (curntn->tgold * curntn->inflation )/100;
-			curntn->tgold -= charity;
+			/* now find new total gold talons in nations*/
+			if (curntn->tgold > 1000000L) {
+				curntn->tgold = (long)(curntn->tgold /
+					(100.0+(float)curntn->inflation/4.0)) * 100L;
+			} else {
+				curntn->tgold = (long) (curntn->tgold * 100L) /
+					(100.0 + (float) curntn->inflation/4.0);
+			}
+
+			/* provide goods production */
 			curntn->metals=spread.metal;
 			curntn->jewels=spread.jewels;
 		}
@@ -1375,6 +1354,7 @@ updcomodities()
 	register struct s_sector	*sptr;
 	register int x,y;
 	long xx;
+	float tempflt;
 	long dead;
 
 	fprintf(fnews,"2\tWORLD ECONOMY & DECLARATIONS OF WAR\n");
@@ -1423,29 +1403,22 @@ updcomodities()
 		}
 		/*this state can occur if few people live in cities*/
 		if(curntn->tfood<0) curntn->tfood=0L;
-#ifdef XENIX
-		xx = curntn->tfood;
-		xx *= (100-curntn->spoilrate);
-		xx /= 100;
-		curntn->tfood = xx;
-#else
-		curntn->tfood *= (100-curntn->spoilrate);
-		curntn->tfood /= 100;
-#endif /*XENIX*/
+		tempflt = (float) curntn->tfood * (100-curntn->spoilrate);
+		curntn->tfood = (long) (tempflt / 100.0);
 
-		if(curntn->tgold>GOLDTHRESH*curntn->jewels){
+		if(curntn->tgold > GOLDTHRESH*curntn->jewels){
 			/* buy jewels off commodities board */
 			xx=curntn->tgold-GOLDTHRESH*curntn->jewels;
 			if (ispc(country)) {
 				if (mailopen(country)!=(-1)) {
 					fprintf(fm,"Message from Conquer\n\n");
-					fprintf(fm,"Gold imbalance forced your treasury to purchase");
-					fprintf(fm,"%ld jewels for %ld gold talons to compensate\n",
-						xx*GODJEWL/GODPRICE,xx);
+					fprintf(fm,"Gold imbalance forced your treasury to purchase\n");
+					fprintf(fm,"%ld jewels for %ld gold talons to compensate.\n",
+						xx/GODPRICE*GODJEWL,xx);
 					mailclose(country);
 				}
 			}
-			curntn->jewels += (xx*GODJEWL/GODPRICE);
+			curntn->jewels += (xx/GODPRICE*GODJEWL);
 			curntn->tgold  -= xx;
 		}
 
@@ -1549,4 +1522,61 @@ updleader()
 			break;
 		}
 	}
+}
+
+/* MOVE CIVILIANS based on the ratio of attractivenesses
+ *
+ * EQUILIBRIUM(1) = A1 / (A1 + A2) * (P1 + P2)
+ * EQUILIBRIUM(2) = A2 / (A1 + A2) * (P1 + P2)
+ * MOVE 1/5 of way to equilibrium each turn
+ * DELTA(1) = (EQUILIBRIUM(1) - P1) / 5 =(A1P2 - P1A2) / 5(A1 + A2)
+ * DELTA(2) = (EQUILIBRIUM(2) - P2) / 5 =(A2P1 - P2A1) / 5(A1 + A2) = -DELTA(1)
+ * (i, j) is refered to as 1, (x, y) as 2
+ */
+void
+move_people()
+{
+	register struct s_sector *sptr;
+	register int i, j, x, y;
+	int moved, t_attr;
+	long **newpop, *curpop;
+
+	newpop = (long **) m2alloc(MAPX, MAPY, sizeof(long));
+
+	for (x = 0; x < MAPX; x++)
+	for (y = 0; y < MAPY; y++)
+		if (sct[x][y].owner == country)
+			newpop[x][y] = sct[x][y].people;
+		else newpop[x][y] = 0;
+
+	for (x = 0; x < MAPX; x++)
+	for (y = 0; y < MAPY; y++) {
+		sptr = &sct[x][y];
+		if ((sptr->owner == country) && (sptr->people != 0)) {
+
+			for (t_attr = 0, i = x - 2; i < x + 3; i++)
+			for (j = y - 2; j < y + 3; j++)
+			if ((ONMAP(i, j)) && (sct[i][j].owner == country))
+				t_attr += attr[i][j];
+
+			if (t_attr > 0) {
+				t_attr *= 5;
+				curpop = &newpop[x][y];
+				for (i = x - 2; i < x + 3; i++)
+				for (j = y - 2; j < y + 3; j++)
+				if ((ONMAP(i, j)) && (sct[i][j].owner == country)) {
+					moved = sptr->people * attr[i][j];
+					if (moved > 0) {
+						moved /= t_attr;
+						*curpop -= moved;
+						newpop[i][j] += moved;
+					}
+				}
+			}
+		}
+	}
+	for (x = 0; x < MAPX; x++)
+	for (y = 0; y < MAPY; y++)
+	if (sct[x][y].owner == country)
+		sct[x][y].people = newpop[x][y];
 }

@@ -1,11 +1,15 @@
 /* Conquer: Copyright (c) 1988 by Edward M Barlow */
 #include	<ctype.h>
 #include	<stdio.h>
+#ifdef CONQUER
+#include	<sys/types.h>
+#include	<sys/stat.h>
+#endif /*CONQUER*/
 #include	"header.h"
 #include	"data.h"
 
 extern FILE *fnews;
-extern short country;
+extern short country,redraw;
 
 extern char *HVegcost, *OVegcost, *EVegcost, *DVegcost, *FVegcost;
 extern char *HElecost, *OElecost, *EElecost, *DElecost, *FElecost;
@@ -431,12 +435,12 @@ int	movee;
  */
 
 long
-solds_in_sector( x, y, country )
+solds_in_sector( x, y, nation )
 int	x;
 int	y;
-int	country;
+int	nation;
 {
-	register struct s_nation	*nptr = &ntn[country];
+	register struct s_nation	*nptr = &ntn[nation];
 	register int	j;
 	long	total = 0;
 
@@ -480,10 +484,10 @@ struct wght {
 };
 
 long
-score_one( country )
-int	country;
+score_one( nation )
+int	nation;
 {
-	struct	s_nation	*nptr = &ntn[ country ];
+	struct	s_nation	*nptr = &ntn[ nation ];
 	long	total = 0;
 	int	bonus;
 	struct	wght	*wght = &weights[ nptr->class ];
@@ -491,43 +495,43 @@ int	country;
 	total += wght->sectors * nptr->tsctrs / 2L;
 	total += wght->civilians * nptr->tciv / 1000L;
 	total += wght->soldiers * nptr->tmil / 1000L;
-	if(nptr->tgold > 0 ) total += wght->gold * nptr->tgold / 100000L;
+	if(nptr->tgold > 0 ) total += wght->gold * (nptr->tgold / 100000L);
 	total += wght->jewels * nptr->jewels / 100000L;
 	total += wght->metal * nptr->metals / 100000L;
-	total += wght->magics * num_powers(country,M_MIL);
-	total += wght->magics * num_powers(country,M_CIV);
-	total += wght->magics * num_powers(country,M_MGK);
+	total += wght->magics * num_powers(nation,M_MIL);
+	total += wght->magics * num_powers(nation,M_CIV);
+	total += wght->magics * num_powers(nation,M_MGK);
 	total += wght->ships * nptr->tships / 10L;
 	switch( nptr->class ) {
 	case 	C_KING:
-			bonus=(curntn->popularity+curntn->prestige-curntn->poverty);
+			bonus=(nptr->popularity+nptr->prestige-nptr->poverty);
 			break;
 	case	C_EMPEROR:
-			bonus=(curntn->power+curntn->prestige-curntn->poverty);
+			bonus=(nptr->power+nptr->prestige-nptr->poverty);
 			break;
 	case	C_WIZARD:
-			bonus=(curntn->knowledge+curntn->power-50);
+			bonus=(nptr->knowledge+nptr->power-50);
 			break;
 	case	C_PRIEST:
-			bonus=(curntn->wealth+curntn->terror-curntn->poverty);
+			bonus=(nptr->wealth+nptr->terror-nptr->poverty);
 			break;
 	case	C_PIRATE:
-			bonus=(curntn->reputation+curntn->wealth-50);
+			bonus=(nptr->reputation+nptr->wealth-50);
 			break;
 	case	C_TRADER:
-			bonus=(curntn->wealth+curntn->prestige-curntn->tax_rate*5);
+			bonus=(nptr->wealth+nptr->prestige-nptr->tax_rate*5);
 			break;
 	case	C_WARLORD:
-			bonus=(curntn->reputation+curntn->prestige-50);
+			bonus=(nptr->reputation+nptr->prestige-50);
 			break;
 	case	C_DEMON	:
-			bonus=(curntn->knowledge+curntn->terror-50);
+			bonus=(nptr->knowledge+nptr->terror-50);
 			break;
 	case	C_DRAGON:
-			bonus=(curntn->wealth+curntn->terror-50);
+			bonus=(nptr->wealth+nptr->terror-50);
 			break;
 	case	C_SHADOW:
-			bonus=(curntn->power+curntn->terror-50);
+			bonus=(nptr->power+nptr->terror-50);
 			break;
 	default:	bonus=0;
 	}
@@ -564,22 +568,28 @@ int	y;
 
 #ifdef CONQUER
 int
-units_in_sector(x,y,country)
+units_in_sector(x,y,nation)
 int	x;
 int	y;
 {
 	int count=0, armynum, nvynum;
+	struct	s_nation  *nptr = curntn;
+
+	curntn = &ntn[nation];
 	for(armynum=0;armynum<MAXARM;armynum++)
-		if((ASOLD>0)&&(AXLOC==x)&&(AYLOC==y)) count++;
+		if((P_ASOLD>0)&&(P_AXLOC==x)&&(P_AYLOC==y)) count++;
 	for(nvynum=0;nvynum<MAXNAVY;nvynum++)
-		if(((NWSHP+NMSHP+NGSHP)!=0)&&(NXLOC==x)&&(NYLOC==y)) count++;
+		if(((P_NWSHP+P_NMSHP+P_NGSHP)!=0)&&
+		(P_NXLOC==x)&&(P_NYLOC==y)) count++;
+
+	curntn = nptr;
 	return(count);
 }
 #endif CONQUER
 
 int
-num_powers(country,type)
-int country,type;
+num_powers(nation,type)
+int nation,type;
 {
 	int	count_magic=0;
 	int	try;
@@ -602,11 +612,11 @@ int country,type;
 			end=E_MGK;
 			break;
 		default:
-			printf("fatal error in num_powers");
+			fprintf(stderr,"fatal error in num_powers");
 			abrt();
 	}
 	for( try = start; try < start+end; try++ )
-		if( magic(country, powers[try] ) == 1 ) count_magic++;
+		if( magic(nation, powers[try] ) == 1 ) count_magic++;
 	return(count_magic);
 }
 
@@ -650,8 +660,8 @@ int	cntry;
 
 /* returns cost of magic power - returns -1 if invalid */
 long
-getmgkcost(type,country)
-int type, country;
+getmgkcost(type,nation)
+int type, nation;
 {
 	int i;
 	long cost;
@@ -659,26 +669,26 @@ int type, country;
 	int npowers;
 	switch(type) {
 	case M_MGK:
-		if(ntn[country].race==DWARF)		base=DWFMAGIC;
-		else if(ntn[country].race==HUMAN)	base=HUMMAGIC;
-		else if(ntn[country].race==ORC)		base=ORCMAGIC;
-		npowers=num_powers(country,M_CIV)+num_powers(country,M_MIL)+1
-		+2*num_powers(country,M_MGK);
+		if(ntn[nation].race==DWARF)		base=DWFMAGIC;
+		else if(ntn[nation].race==HUMAN)	base=HUMMAGIC;
+		else if(ntn[nation].race==ORC)		base=ORCMAGIC;
+		npowers=num_powers(nation,M_CIV)+num_powers(nation,M_MIL)+1
+		+2*num_powers(nation,M_MGK);
 		npowers/=2;
 		break;
 	case M_CIV:
-		if(ntn[country].race==DWARF)		base=DWFCIVIL;
-		else if(ntn[country].race==HUMAN)	base=HUMCIVIL;
-		else if(ntn[country].race==ORC)		base=ORCCIVIL;
-		npowers=num_powers(country,M_MGK)+num_powers(country,M_MIL)+1
-		+2*num_powers(country,M_CIV);
+		if(ntn[nation].race==DWARF)		base=DWFCIVIL;
+		else if(ntn[nation].race==HUMAN)	base=HUMCIVIL;
+		else if(ntn[nation].race==ORC)		base=ORCCIVIL;
+		npowers=num_powers(nation,M_MGK)+num_powers(nation,M_MIL)+1
+		+2*num_powers(nation,M_CIV);
 		npowers/=2;
 		break;
 	case M_MIL:
-		if(ntn[country].race==DWARF)		base=DWFMILIT;
-		else if(ntn[country].race==ORC)		base=ORCMILIT;
-		npowers=num_powers(country,M_CIV)+num_powers(country,M_MGK)+1
-		+2*num_powers(country,M_MIL);
+		if(ntn[nation].race==DWARF)		base=DWFMILIT;
+		else if(ntn[nation].race==ORC)		base=ORCMILIT;
+		npowers=num_powers(nation,M_CIV)+num_powers(nation,M_MGK)+1
+		+2*num_powers(nation,M_MIL);
 		npowers/=2;
 		break;
 	default:
@@ -704,11 +714,11 @@ register int	character;
 
 /* set up occ[][] for country.
  * if leader==true, only for leader sectors plus ntn.communicatins range
- * if shipchk==true, include ships on the sector search
+ * if leader==(-1), do not include ships on the sector search
  */
 void
-prep(country,leader)
-int country,leader;
+prep(nation,leader)
+int nation,leader;
 {
 	short armynum,nvynum;
 	int save,i,j,x,y,start,end,com;
@@ -716,8 +726,8 @@ int country,leader;
 	/*set occ to 0*/
 	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++) occ[i][j]=0;
 
-	save=country;
-	if(leader) {
+	save=nation;
+	if(leader==TRUE) {
 		/* only do the given country */
 		start=save;
 		end=save+1;
@@ -728,10 +738,10 @@ int country,leader;
 	}
 
 	/*set occ to country of occupant army*/
-	for(country=start;country<end;country++) if(ntn[country].active!=INACTIVE) {
-		curntn = &ntn[country];
+	for(nation=start;nation<end;nation++) if(ntn[nation].active!=INACTIVE) {
+		curntn = &ntn[nation];
 		for(armynum=0;armynum<MAXARM;armynum++){
-			if( leader ) {
+			if( leader==TRUE ) {
 				if((P_ATYPE<MINLEADER)
 				||(P_ATYPE>=MINMONSTER)
 				||(P_ASOLD<=0)) continue;
@@ -740,47 +750,47 @@ int country,leader;
 				com = P_NTNCOM; /* do communications radius */
 				for(x=i-com;x<=i+com;x++)
 				for(y=j-com;y<=j+com;y++)
-					if(ONMAP(x,y)) occ[x][y]=country;
+					if(ONMAP(x,y)) occ[x][y]=nation;
 			} else if((P_ASOLD>0)&&(P_ASTAT!=SCOUT)){
 				i=P_AXLOC;
 				j=P_AYLOC;
-				if((occ[i][j]== 0)||(occ[i][j]== country))
-					occ[i][j]= country;
+				if((occ[i][j]== 0)||(occ[i][j]== nation))
+					occ[i][j]= nation;
 				else occ[i][j]= NTOTAL;
 			}
 		}
-		if( !leader ) for(nvynum=0;nvynum<MAXNAVY;nvynum++){
+		if( leader==FALSE ) for(nvynum=0;nvynum<MAXNAVY;nvynum++){
 			if((P_NWSHP!=0)||(P_NGSHP!=0)||(P_NMSHP!=0)){
 				i=P_NXLOC;
 				j=P_NYLOC;
-				if((occ[i][j]== 0)||(occ[i][j]== country))
-					occ[i][j]= country;
+				if((occ[i][j]== 0)||(occ[i][j]== nation))
+					occ[i][j]= nation;
 				else occ[i][j]= NTOTAL;
 			}
 		}
 	}
 
-	country=save;
-	curntn = &ntn[country];
+	nation=save;
+	curntn = &ntn[nation];
 }
 
 #ifdef ADMIN
 /*routine to depelete a nation without a capitol */
 void
-deplete(country)
-int country;
+deplete(nation)
+int nation;
 {
 	struct s_nation *saventn=curntn;
 	int i,j,x,y,armynum;
 
-	x = ntn[country].capx;
-	y = ntn[country].capy;
-	if((sct[x][y].designation==DCAPITOL)&&((sct[x][y].owner==country)
+	x = ntn[nation].capx;
+	y = ntn[nation].capy;
+	if((sct[x][y].designation==DCAPITOL)&&((sct[x][y].owner==nation)
 	||(sct[x][y].owner==0)||(!isntn(ntn[sct[x][y].owner].active))))
 		return;
 
-	curntn = &ntn[country];
-	fprintf(fnews,"1.\tNation %s is depleted by the lack of a Capitol\n",ntn[country].name);
+	curntn = &ntn[nation];
+	fprintf(fnews,"1.\tNation %s is depleted by the lack of a Capitol\n",ntn[nation].name);
 
 	for(armynum=0;armynum<MAXARM;armynum++) if (P_ASOLD>0) {
 		/* first disband PDEPLETE% of the military */
@@ -788,25 +798,25 @@ int country;
 		(rand()%100<PDEPLETE||P_ATYPE==A_MERCENARY)) {
 			if(P_ATYPE==A_MERCENARY) {
 				MERCMEN += P_ASOLD;
-			} else if(ntn[sct[AXLOC][AYLOC].owner].race==ntn[country].race) {
+			} else if(ntn[sct[AXLOC][AYLOC].owner].race==ntn[nation].race) {
 				sct[P_AXLOC][P_AYLOC].people += P_ASOLD;
 			}
 			P_ASOLD=0;
 			if(ispc(curntn->active)) {
-				if (mailopen(country)!=(-1)) {
+				if (mailopen(nation)!=(-1)) {
 					fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
 					fprintf(fm,"\tYour %s Army %d disperses into the population\n",*(unittype+(P_ATYPE%UTYPE)),armynum);
-					mailclose(country);
+					mailclose(nation);
 				}
 			}
 		} else if(P_ATYPE>=MINMONSTER) {
 			/* disbanding of ALL monsters should take place */
 			P_ASOLD=0;
 			if(ispc(curntn->active)) {
-				if (mailopen(country)!=(-1)) {
+				if (mailopen(nation)!=(-1)) {
 					fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
 					fprintf(fm,"\tYour %s (unit %d) leaves due to the loss of your jewels.\n",*(unittype+(P_ATYPE%UTYPE)),armynum);
-					mailclose(country);
+					mailclose(nation);
 				}
 			}
 		}
@@ -815,13 +825,13 @@ int country;
 	/* check for sectors breaking away -- not capx, capy */
 	if(ispc(curntn->active)) {
 		/* create a summarized mail message of sectors effected */
-		if (mailopen(country)!=(1)) {
+		if (mailopen(nation)!=(1)) {
 			fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
 			fprintf(fm,"Riots and Rebellion flourish:\n");
 		}
 	}
 	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++)
-	if(sct[i][j].owner==country && (i!=x || j!=y) ) {
+	if(sct[i][j].owner==nation && (i!=x || j!=y) ) {
 		if(rand()%100 < PDEPLETE && sct[x][y].people>0) {
 			if(rand()%100 < PDEPLETE) {
 				/* sector riots */
@@ -844,9 +854,9 @@ int country;
 		}
 	}
 	if(ispc(curntn->active)) {
-		mailclose(country);
+		mailclose(nation);
 	} else if(isnpc(curntn->active)) {
-		if(sct[curntn->capx][curntn->capy].owner==country) {
+		if(sct[curntn->capx][curntn->capy].owner==nation) {
 			/* reset capitol for npcs */
 			sct[curntn->capx][curntn->capy].designation=DCAPITOL;
 			if(sct[curntn->capx][curntn->capy].fortress<1)
@@ -860,21 +870,21 @@ int country;
 
 /*routine to sack a nation's captiol */
 void
-sackem(country)
-	int country;
+sackem(cntry)
+	int cntry;
 {
 	struct s_nation *saventn=curntn;
 	int x,y,i,j,foundcap,nation;
 
 	/* hail the conquerer */
-	curntn = &ntn[country];
+	curntn = &ntn[cntry];
 	x = curntn->capx;
 	y = curntn->capy;
 	nation = sct[x][y].owner;
-	if(nation==country || nation==0) return;
+	if(nation==cntry || nation==0) return;
 
 	/* advertise */
-	fprintf(fnews,"1.\tCapitol of %s sacked by %s\n",ntn[country].name,ntn[nation].name);
+	fprintf(fnews,"1.\tCapitol of %s sacked by %s\n",ntn[cntry].name,ntn[nation].name);
 
 	/* first give all prizes to the conquerer */
 	if(curntn->tgold > 0) {			/* all gold */
@@ -894,7 +904,7 @@ sackem(country)
 			sct[x][y].designation = DCITY;
 		} else {
 			DEVASTATE(x,y);
-			sct[x][y].owner=country;
+			sct[x][y].owner=cntry;
 		}
 	}
 
@@ -902,7 +912,7 @@ sackem(country)
 	/* sacking does not occur next update for same sacking.   */
 	foundcap=FALSE;
 	for(i=0;foundcap==FALSE && i<MAPX;i++)
-	for(j=0;foundcap==FALSE && j<MAPY;j++) if(sct[i][j].owner==country) {
+	for(j=0;foundcap==FALSE && j<MAPY;j++) if(sct[i][j].owner==cntry) {
 		if(sct[i][j].designation==DCITY) {
 			x = i; y = j;
 			foundcap=TRUE;
@@ -918,13 +928,13 @@ sackem(country)
 	if ((x!=curntn->capx)||(y!=curntn->capy)) {
 		/* assign new pseudo capitol */
 		if(ispc(curntn->active)) {
-			if(mailopen(country)!=(-1)) {
-			fprintf(fm,"Message to %s from Conquer\n\n",ntn[country].name);
+			if(mailopen(cntry)!=(-1)) {
+			fprintf(fm,"Message to %s from Conquer\n\n",ntn[cntry].name);
 			fprintf(fm,"\tYour Capitol at sector location %d,%d\n",curntn->capx,curntn->capy);
 			fprintf(fm,"\t was overrun by nation %s.\n\n",ntn[nation].name);
 			fprintf(fm,"\tA temporary headquarters is now in sector %d,%d,\n",x,y);
 			fprintf(fm,"\t but designation of a new Capitol is recommended.\n");
-			mailclose(country);
+			mailclose(cntry);
 			}
 		}
 		curntn->capx=x;
@@ -932,13 +942,13 @@ sackem(country)
 	} else {
 		/* no new capitol assignment */
 		if(ispc(curntn->active)) {
-			if(mailopen(country)!=(-1)) {
-			fprintf(fm,"Message to %s from Conquer\n\n",ntn[country].name);
+			if(mailopen(cntry)!=(-1)) {
+			fprintf(fm,"Message to %s from Conquer\n\n",ntn[cntry].name);
 			fprintf(fm,"\tYour Capitol at sector location %d,%d\n",curntn->capx,curntn->capy);
 			fprintf(fm,"\t was overrun by nation %s.\n\n",ntn[nation].name);
 			fprintf(fm,"\tNo other land remains.  The destruction\n");
 			fprintf(fm,"\t of your nation seems imminent.\n");
-			mailclose(country);
+			mailclose(cntry);
 			}
 		}
 	}
@@ -949,28 +959,30 @@ sackem(country)
 
 /*destroy nation--special case if capitol not owned by other nation*/
 void
-destroy(country)
-int country;
+destroy(cntry)
+int cntry;
 {
 	short armynum, nvynum;
 	int i, x, y;
 	char buf[LINELTH];
 	struct s_nation	*nptr;
 
-	nptr = &ntn[country];
-	if( ismonst(nptr->active) ) return;
+	nptr = &ntn[cntry];
 	if( !isactive(nptr->active) ) return;
-	fprintf(fnews,"1.\tNation %s was destroyed ",nptr->name);
-	if(country!=sct[nptr->capx][nptr->capy].owner){
-		fprintf(fnews,"(their capitol is now owned by %s)\n",ntn[sct[nptr->capx][nptr->capy].owner].name);
-		/*get +5% to combat skill*/
-		ntn[sct[nptr->capx][nptr->capy].owner].aplus+=5;
+
+	if( !ismonst(nptr->active) ) {
+		fprintf(fnews,"1.\tNation %s was destroyed ",nptr->name);
+		if(cntry!=sct[nptr->capx][nptr->capy].owner){
+			fprintf(fnews,"(their capitol is now owned by %s)\n",ntn[sct[nptr->capx][nptr->capy].owner].name);
+			/*get +5% to combat skill*/
+			ntn[sct[nptr->capx][nptr->capy].owner].aplus+=5;
+		}
+		else fprintf(fnews,"(they owned their capitol)\n");
 	}
-	else fprintf(fnews,"(they owned their capitol)\n");
 
 	nptr->active=INACTIVE;
 	nptr->score=0;
-	sprintf(buf,"%s%d",msgfile,country);
+	sprintf(buf,"%s%d",msgfile,cntry);
 	unlink(buf);
 
 	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0) {
@@ -985,16 +997,16 @@ int country;
 	}
 	for(i=0;i<NTOTAL;i++) {
 		if (ntn[i].active < NPC_PEASANT ) {
-			ntn[i].dstatus[country]=UNMET;
+			ntn[i].dstatus[cntry]=UNMET;
 			nptr->dstatus[i]=UNMET;
 		} else {
-			ntn[i].dstatus[country]=WAR;
+			ntn[i].dstatus[cntry]=WAR;
 			nptr->dstatus[i]=WAR;
 		}
 	}
 	
 	/*if take them you get their gold*/
-	if(country!=sct[nptr->capx][nptr->capy].owner){
+	if(cntry!=sct[nptr->capx][nptr->capy].owner){
 		if(nptr->tgold>0) ntn[sct[nptr->capx][nptr->capy].owner].tgold+=nptr->tgold;
 		if(nptr->jewels>0) ntn[sct[nptr->capx][nptr->capy].owner].jewels+=nptr->jewels;
 		if(nptr->metals>0) ntn[sct[nptr->capx][nptr->capy].owner].metals+=nptr->metals;
@@ -1003,9 +1015,9 @@ int country;
 	}
 
 	/*if god destroys then kill all population*/
-	if(country==sct[nptr->capx][nptr->capy].owner){
+	if(cntry==sct[nptr->capx][nptr->capy].owner){
 		for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
-		if(sct[x][y].owner==country) {
+		if(sct[x][y].owner==cntry) {
 			sct[x][y].people=0;
 			sct[x][y].owner=0;
 			sct[x][y].designation=DNODESIG;
@@ -1014,7 +1026,7 @@ int country;
 	/*slowly take over and all people flee*/
 	else if(ntn[sct[nptr->capx][nptr->capy].owner].race!=nptr->race){
 		for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
-		if(sct[x][y].owner==country) {
+		if(sct[x][y].owner==cntry) {
 			/*all kinds of refugees to neighboring countries*/
 			flee(x,y,TRUE,FALSE);
 			sct[x][y].people=0;
@@ -1027,7 +1039,7 @@ int country;
 	/*else same race, so give all land to conqueror*/
 	else {
 		for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
-		if(sct[x][y].owner==country){
+		if(sct[x][y].owner==cntry){
 			sct[x][y].owner=sct[nptr->capx][nptr->capy].owner;
 			if( !ISCITY( sct[x][y].designation )) {
 			if(tofood( &sct[x][y],0)<DESFOOD)
@@ -1036,7 +1048,6 @@ int country;
 			}
 		}
 	}
-	return;
 }
 
 #define ALPHA_SIZE	128
@@ -1044,8 +1055,8 @@ int country;
 /*movecost contains movement cost unless water  -1 or unenterable land (-2)*/
 /* if water and not ajacent to land will cost -4*/
 void
-updmove(race,country)
-int country;
+updmove(race,cntry)
+int cntry;
 char race;
 {
 	register struct s_sector	*sptr;
@@ -1077,7 +1088,7 @@ char race;
 		} /* switch */
 	} /* for */
 
-	if((magic(country,DERVISH)==1) ||(magic(country,DESTROYER)==1)) {
+	if((magic(cntry,DERVISH)==1) ||(magic(cntry,DESTROYER)==1)) {
 		veg_cost[ ICE ] = 1;
 		veg_cost[ DESERT ] = 1;
 	}
@@ -1337,7 +1348,7 @@ char str[];
 	while(!done) {
 		ch=getch();
 		if (isprint(ch)) {
-			if (count<NAMELTH+1) {
+			if (count<NAMELTH) {
 				/* only input displayable characters */
 				addch(ch);
 				refresh();
@@ -1391,11 +1402,7 @@ get_country()
 		for (i=0;i<l;i++) {
 			ch=name[i];
 			if(ch < '0' || ch > '9' ) {
-				getyx(stdscr,i,l);
-				mvprintw(i+1,0,"Invalid Nation <%s> -- hit any key",name);
-				clrtoeol();
-				refresh();
-				getch();
+				errormsg("There is no nation by that name.");
 				return(NTOTAL);
 			} else {
 				hold *= 10;
@@ -1408,18 +1415,19 @@ get_country()
 	return(hold);
 }
 
-extern short country;
 /* finds a nation for god to be, returns 1 on failure */
 int
 get_god()
 {
-	clear();
-	mvaddstr(0,0,"SUPER USER; FOR WHAT NATION: ");
+	clear_bottom(0);
+	mvaddstr(LINES-4,0,"Super User; For what nation? ");
 	refresh();
 
 	/* return on no entry or bad entry */
 	if ((country=get_country())==(-1) || country==NTOTAL) {
 		country = 0;
+		redraw=DONE;
+		makebottom();
 		return(1);
 	}
 
@@ -1468,28 +1476,47 @@ char tmp_mail_name[LINELTH];
 int
 mailopen(to)
 {
+#ifdef CONQUER
 	char	line[LINELTH];
+#endif /*CONQUER*/
 	if(mailok != DONEMAIL) mailclose(ABORTMAIL);
 
 	if (to != NEWSMAIL) {
 #ifdef CONQUER
+		struct stat fst;
 		/* check if the player is currently reading messages */
 		sprintf(line,"%s%hd.tmp",msgfile,to);
-		if (access(line,00)==0) {
-			if (to>0 && to<NTOTAL) {
-				sprintf(line,"Nation %s is reading their mail... try again later.", ntn[to].name);
-				errormsg(line);
+		if (stat(line,&fst)==0) {
+			long now;
+			now = time(0);
+			if (now - fst.st_mtime < TIME_DEAD) {
+				if (to>=0 && to<NTOTAL) {
+					sprintf(line,"Nation %s is reading their mail... try again later.", ntn[to].name);
+					errormsg(line);
+				}
+				return(-1);
+			} else {
+				/* remove useless file */
+				unlink(line);
 			}
-			return(-1);
 		}
 
 		/* otherwise continue; checking for others */
 		/* this file name is also used in rmessages() */
 		sprintf(tmp_mail_name,"send.%s%hd",msgfile,to);
-		if (access(tmp_mail_name,00)==0) {
-			if (to>=0 && to<NTOTAL)
-			errormsg("Someone is already sending mail to Nation %s... try again later.", ntn[to].name);
-			return(-1);
+		if (stat(tmp_mail_name,&fst)==0) {
+			long now;
+			now = time(0);
+			if (now - fst.st_mtime < TIME_DEAD) {
+				if (to>=0 && to<NTOTAL) {
+					sprintf(line,"Someone is already mailing Nation %s... try again later.", ntn[to].name);
+					errormsg(line);
+				}
+				return(-1);
+			} else {
+				/* remove useless file */
+				unlink(tmp_mail_name);
+			}
 		}
 #endif /*CONQUER*/
 #ifdef ADMIN
@@ -1504,13 +1531,12 @@ mailopen(to)
 		return(-1);
 	}
 	mailok=to;
+	return(0);
 }
 
 void
 mailclose(to)
 {
-	char line[BIGLTH];
-
 	if(mailok==DONEMAIL) return;
 
 	if(to >= 0) {
@@ -1520,6 +1546,7 @@ mailclose(to)
 
 #ifdef CONQUER
 	if((to!=ABORTMAIL)&&(to==mailok)) {
+		char line[BIGLTH];
 		if (to==NEWSMAIL) {
 			/* send to the current newspaper */
 			sprintf(line,"cat %s >> news%d",tmp_mail_name,TURN-1);
@@ -1788,8 +1815,6 @@ compass(x0,y0,x1,y1)
 }
 
 #ifdef CONQUER
-#include	<sys/types.h>
-#include	<sys/stat.h>
 extern short xcurs;
 extern short ycurs;
 off_t conq_mail_size=0;

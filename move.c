@@ -276,11 +276,14 @@ mymove()
 				} else
 				if(((sct[XREAL][YREAL].designation==DTOWN)
 				||(sct[XREAL][YREAL].designation==DCAPITOL)
-				||(sct[XREAL][YREAL].designation==DCITY))){
+				||(sct[XREAL][YREAL].designation==DCITY))
+				&&(sct[XREAL][YREAL].owner==country
+				||(ntn[SOWN].dstatus[country]!=UNMET&&
+				ntn[SOWN].dstatus[country]<=NEUTRAL))) {
 					/* harbor */
-					if(P_NMOVE>=4) P_NMOVE-=4;
+					if(P_NMOVE>=3) P_NMOVE-=3;
 					else {
-						errormsg("You need 4 move points for that");
+						errormsg("You need 3 move points for that");
 						valid=FALSE;
 						xcurs=oldxcurs;
 						ycurs=oldycurs;
@@ -326,8 +329,7 @@ mymove()
 				P_NMOVE -= abs( movecost[XREAL][YREAL] );
 			}
 
-			if(P_NMOVE==0) 
-				done=TRUE;
+			if(P_NMOVE==0) done=TRUE;
 
 		} else if(armornvy==AORN){
 			errormsg("ERROR - NOT ARMY OR NAVY");
@@ -474,6 +476,19 @@ mymove()
 		/* if (other owner and unoccupied) or (no owner) you take*/
 		if(((P_ATYPE<MINLEADER)||(P_ASTAT==GENERAL))
 		&&(P_ASOLD>0)){
+			/*calc enemy soldiers */
+			total=0;
+			for(Tnation=0;Tnation<NTOTAL;Tnation++)
+			if(Tnation!=country)
+			for(Tarmynum=0;Tarmynum<MAXARM;Tarmynum++)
+			if((ntn[Tnation].arm[Tarmynum].sold>0)
+			&&(ntn[Tnation].arm[Tarmynum].xloc==XREAL)
+			&&(ntn[Tnation].arm[Tarmynum].yloc==YREAL)
+			&&((curntn->dstatus[Tnation]>=HOSTILE)
+			  ||(ntn[Tnation].dstatus[country]>=HOSTILE))
+			&&(ntn[Tnation].arm[Tarmynum].stat!=SCOUT)
+			&&(ntn[Tnation].arm[Tarmynum].unittyp!=A_NINJA))
+				total+=ntn[Tnation].arm[Tarmynum].sold;
 			if((groupmen>=TAKESECTOR)&&(SOWN==0 )){
 				mvaddstr(LINES-2,0,"Taking Unowned Sector");
 				clrtoeol();
@@ -573,9 +588,11 @@ mymove()
 		refresh();
 		getch();
 	}
-	whatcansee();
 	redraw=DONE;
 	prep(country,FALSE);
+	whatcansee();
+	move(0,0);
+	clrtobot();
 	makemap();
 	armornvy=AORN;
 	pager=0;

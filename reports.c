@@ -299,7 +299,7 @@ budget()
 {
 	short armynum,nvynum;
 	long numship=0L,costsold=0L,numsold=0L;
-	long nummonst=0L,costmonst=0L,money,chty;
+	long nummonst=0L,costmonst=0L,money,chty,infmoney;
 	int isgod=FALSE;
 
 	if(country==0) {
@@ -330,39 +330,46 @@ budget()
 			numship+=flthold(nvynum);
 
 	standout();
-	mvprintw(3,0,  "nation name is......%s",curntn->name);
+	mvprintw(2,0,  "nation name is......%s",curntn->name);
 	standend();
-	mvprintw(4,0,  "starting treasury..$%ld",startgold);
-	mvprintw(5,0,  "number of sectors...%d",spread.sectors);
+	mvprintw(3,0,  "starting treasury..$%ld",startgold);
+	mvprintw(4,0,  "number of sectors...%d",spread.sectors);
 	if(curntn->tfood<2*curntn->tciv) standout();
-	mvprintw(7,0,  "granary holds.....%8ld",curntn->tfood);
+	mvprintw(6,0,  "granary holds.....%8ld",curntn->tfood);
 	standend();
-	mvprintw(8,0, "jewels owned......%8ld",curntn->jewels);
-	mvprintw(9,0, "metal ore owned...%8ld",curntn->metals);
-	mvprintw(3,COLS-50, "%8ld people in gold mines.%8ld",spread.ingold,spread.revjewels);
-	mvprintw(4,COLS-50, "%8ld people in mines......%8ld",spread.inmetal,spread.revmetal);
-	mvprintw(5,COLS-50, "%8ld people in farms......%8ld",spread.infarm,spread.revfood);
-	mvprintw(6,COLS-50,"%8ld people in cities.....%8ld",spread.incap,spread.revcap);
-	mvprintw(7,COLS-50,"%8ld people in towns......%8ld",spread.incity,spread.revcity);
-	mvprintw(8,COLS-50, "%8ld people elsewhere.....%8ld",spread.inothr,spread.revothr);
+	mvprintw(7,0, "jewels owned......%8ld",curntn->jewels);
+	mvprintw(8,0, "metal ore owned...%8ld",curntn->metals);
+	mvprintw(2,COLS-50, "%8ld people in gold mines.%8ld",spread.ingold,spread.revjewels);
+	mvprintw(3,COLS-50, "%8ld people in mines......%8ld",spread.inmetal,spread.revmetal);
+	mvprintw(4,COLS-50, "%8ld people in farms......%8ld",spread.infarm,spread.revfood);
+	mvprintw(5,COLS-50,"%8ld people in cities.....%8ld",spread.incap,spread.revcap);
+	mvprintw(6,COLS-50,"%8ld people in towns......%8ld",spread.incity,spread.revcity);
+	mvprintw(7,COLS-50, "%8ld people elsewhere.....%8ld",spread.inothr,spread.revothr);
 	standout();
-	mvprintw(9,COLS-50,"%8ld people INCOME........%8ld",spread.civilians,spread.gold - curntn->tgold);
+	mvprintw(8,COLS-50,"%8ld people INCOME........%8ld",spread.civilians,spread.gold - curntn->tgold);
 	standend();
-	mvprintw(11,COLS-50,"%8ld troops...............%8ld",numsold,costsold);
-	mvprintw(12,COLS-50,"%8ld monsters.............%8ld",nummonst,costmonst);
+	mvprintw(10,COLS-50,"%8ld troops...............%8ld",numsold,costsold);
+	mvprintw(11,COLS-50,"%8ld monsters.............%8ld",nummonst,costmonst);
 
-	mvprintw(13,COLS-50,"%8ld ship holds @ %4d....%8ld",numship,SHIPMAINT,numship*SHIPMAINT);
-	mvprintw(14,COLS-50,"other expenses this turn......%8ld",startgold-curntn->tgold);
+	mvprintw(12,COLS-50,"%8ld ship holds @ %4d....%8ld",numship,SHIPMAINT,numship*SHIPMAINT);
+	mvprintw(13,COLS-50,"other expenses this turn......%8ld",startgold-curntn->tgold);
 	standout();
 	money=costmonst+costsold+(numship*SHIPMAINT)+startgold-curntn->tgold;
-	mvprintw(15,COLS-50,"TOTAL EXPENSES................%8ld",money);
-	money=spread.gold - curntn->tgold - money;	/* net income */
+	mvprintw(14,COLS-50,"TOTAL EXPENSES................%8ld",money);
 	standend();
-	mvprintw(17,COLS-50,"NET INCOME....................%8ld",money);
+	money=spread.gold - curntn->tgold - money;	/* net income */
 	chty = max((money*(long)curntn->charity)/100L,0L);
-	mvprintw(16,COLS-50,"CHARITY.......................%8ld",chty);
+	mvprintw(15,COLS-50,"CHARITY.......................%8ld",chty);
+	mvprintw(16,COLS-50,"NET INCOME....................%8ld",money);
+	infmoney = startgold + money - chty;
+	if (infmoney > 1000000L) {
+		infmoney = (long)(infmoney / (100.0+(float)curntn->inflation/4.0)) * 100L;
+	} else {
+		infmoney= (long) (infmoney * 100L) / (100.0 + (float) curntn->inflation/4.0);
+	}
+	mvprintw(17,COLS-50,"LOSS DUE TO INFLATION.........%8ld",(startgold + money-chty)-infmoney);
 	standout();
-	mvprintw(18,COLS-50,"NEXT SEASON'S TREASURY........%8ld",(startgold + money-chty));
+	mvprintw(18,COLS-50,"NEXT SEASON'S TREASURY........%8ld",infmoney);
 
 	mvaddstr(LINES-3,(COLS/2)-15,"HIT 'P' TO SEE PRODUCTION SCREEN");
 	mvaddstr(LINES-2,(COLS/2)-15,"HIT 'C' FOR CHANGE NATION SCREEN");
@@ -644,7 +651,7 @@ fleetrpt()
 					NADJGAL;
 					NADJCRW;
 					NADJHLD;
-					if(P_NMOVE>curntn->nvy[newnavy].smove)
+					if(P_NMOVE<curntn->nvy[newnavy].smove)
 						curntn->nvy[newnavy].smove=P_NMOVE;
 					P_NMOVE=0;
 					NADJMOV;

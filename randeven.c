@@ -23,7 +23,7 @@ char *randevents[] = {
 /* 2 */  "a province rebels",
 /* 3 */  "an evil wizard sets up",
 /* 4 */  "a tax revolt occurs",
-/* 5 */  "open rebelion flares",
+/* 5 */  "open rebellion flares",
 /* 6 */  "an army revolts",
 /* 7 */  "religions schism",
 /* 8 */  "peasants revolt",
@@ -493,6 +493,9 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 					done=TRUE;
 				}
 			}
+			/* decrement to contain proper value */
+			xpos--;
+			ypos--;
 			break;
 		case 19:
 		case 20:
@@ -519,6 +522,9 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 					sct[xpos][ypos].jewels = 0;
 				}
 			}
+			/* decrement to contain proper value */
+			xpos--;
+			ypos--;
 			break;
 		case 21:
 			/*flood*/
@@ -622,6 +628,9 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 				}
 			}
 			break;
+			/* decrement to contain proper value */
+			xpos--;
+			ypos--;
 		case 27:
 			/*plague -- 40% of populace in cities dies*/
 			strcpy(eventstr,"40% of populace & armies in towns die");
@@ -695,6 +704,9 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 					done=TRUE;
 				}
 			}
+			/* decrement to contain proper value */
+			xpos--;
+			ypos--;
 			break;
 		case 33:
 			/*new architect strengthens castle walls */
@@ -728,9 +740,12 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 					break;
 				}
 			}
+			/* decrement to contain proper value */
+			xpos--;
+			ypos--;
 			break;
 		case 35:
-			/*new leader sets up peace*/
+			/*diplomat sets up peace*/
 			for(newnation=0;newnation<NTOTAL;newnation++) 
 			if(( country!=newnation ) 
 			&&( isntn( ntn[newnation].active ))
@@ -816,6 +831,7 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 			switch(curntn->class) {
 			case C_WIZARD:
 				if(newpower==SUMMON) done=FALSE;
+				if(newpower==WYZARD) done=FALSE;
 				break;
 			case C_PRIEST:
 				if(newpower==RELIGION) done=FALSE;
@@ -918,7 +934,7 @@ char *event;
 	if(strlen(eventstr)>5) {
 #ifdef HIDELOC
 		/* make sure that volcano locations are not revealed */
-		if(strcmp(eventstr,"volcano erupted")!=0)
+		if(strcmp(eventstr,"all flee, 30%% die in 1 sector range")!=0)
 #endif HIDELOC
 		fprintf(fnews,"1. \tevent in %s -->%s\n",ntn[cntry].name,eventstr);
 #ifndef HIDELOC
@@ -994,7 +1010,7 @@ int	*new;
 	case 4: /* tax revolt */
 		if((*new=disolve(20, country, FALSE))!=0) return(reason);
 		break;
-	case 5: /* open rebelion */
+	case 5: /* open rebellion */
 		if((*new=disolve(30, country, FALSE))!=0) return(reason);
 		break;
 	case 6: /* general takes over province*/

@@ -113,7 +113,9 @@ trade()
 
 		/* go through list of commodities */
 		for (holdint=0;holdint<itemnum;holdint++) {
-			if (deal[holdint]==SELL) {
+			if ((deal[holdint]==SELL) && ((country==0) ||
+			(ntn[natn[holdint]].dstatus[country] != UNMET)
+			|| (natn[holdint] == country))) {
 				count++;
 				mvprintw(count,0,"%2d) %-20s",
 					holdint+1,
@@ -197,7 +199,8 @@ trade()
 				inloop=FALSE;
 				done=FALSE;
 				break;
-			} else if (holdint<1 || holdint>itemnum) {
+			} else if (holdint<1 || holdint>itemnum
+				|| ntn[natn[holdint - 1]].dstatus[country]==UNMET) {
 				tradeerr("Invalid Item Number");
 				return;
 			}

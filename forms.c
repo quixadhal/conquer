@@ -185,9 +185,9 @@ diploscrn()
 
 		/* display options */
 		standout();
-		mvaddstr(LINES-7,0,"HIT RETURN KEY TO CHANGE STATUS; HIT SPACE IF DONE");
-		mvprintw(LINES-6,0,"HIT 'B' KEY TO BRIBE NPC NATION (cost=$%ld per 1000 Mil.)",BRIBE);
-		mvaddstr(LINES-5,0,"ANY OTHER KEY TO CONTINUE:");
+		mvaddstr(LINES-7,COLS/2-26,"HIT RETURN KEY TO CHANGE STATUS; HIT SPACE IF DONE");
+		mvprintw(LINES-6,COLS/2-31,"HIT 'B' KEY TO BRIBE NPC NATION (cost=$%ld per 1000 Mil.)",BRIBE);
+		mvaddstr(LINES-5,COLS/2-21,"HIT ANY OTHER KEY TO SCROLL NATIONS LIST");
 		standend();
 		refresh();
 		k=getch();
@@ -219,12 +219,12 @@ diploscrn()
 			if((nation<=0)
 			||(nation>=NTOTAL)
 			||(!isnpc(ntn[nation].active))){
-				errormsg("NOT NON PLAYER COUNTRY");
+				errormsg("That nation is not a Non-Player Country");
 				if(isgod==TRUE) reset_god();
 				return;
 			}
-			if(ntn[country].dstatus[nation]==UNMET){
-				errormsg("YOU HAVE NOT MET COUNTRY");
+			if(ntn[nation].dstatus[country]==UNMET){
+				errormsg("They have no knowledge that you exist");
 				if(isgod==TRUE) reset_god();
 				return;
 			}
@@ -233,7 +233,7 @@ diploscrn()
 			    ||(ntn[nation].dstatus[country]==JIHAD)
 			    ||(ntn[nation].dstatus[country]==UNMET)
 			    ||(ntn[nation].dstatus[country]==TREATY))){
-				errormsg("Sorry, you can't bribe them");
+				errormsg("Sorry, you cannot bribe them");
 				return;
 			}
 
@@ -286,7 +286,8 @@ diploscrn()
 			getch();
 			if(isgod==TRUE) reset_god();
 			return;
-		} else if (isgod==FALSE && curntn->dstatus[nation]==UNMET) {
+		} else if (isgod==FALSE && curntn->dstatus[nation]==UNMET
+		&& ntn[nation].dstatus[country]==UNMET) {
 			errormsg("Sorry, you have not met that nation yet.");
 			if(isgod==TRUE) reset_god();
 			return;
@@ -481,8 +482,8 @@ change()
 	standout();
 	mvaddstr(LINES-6,COLS/2-26,"HIT 'B' FOR BUDGET SCREEN, 'P' FOR PRODUCTION SCREEN");
 	mvaddstr(LINES-5,COLS/2-25,"1) NAME 2) PASSWD 3) TAX RATE 4) CHARITY 5) TERROR");
-	if(magic(country,VAMPIRE)!=1)
-		mvaddstr(LINES-4,COLS/2-21,"6) ADD TO COMBAT BONUS");
+	if(magic(country,VAMPIRE)!=1 || isgod==TRUE)
+		mvaddstr(LINES-4,COLS/2-21,"6) ADJUST TO COMBAT BONUS");
 	else	mvaddstr(LINES-4,COLS/2-22,"CANT ADD TO COMBAT BONUS");
 	addstr(" 7) TOGGLE PC <-> NPC");
 
@@ -618,6 +619,24 @@ change()
 		}
 		break;
 	case '6':	/* combat bonus */
+#ifdef OGOD
+		if(isgod==TRUE) {
+			mvaddstr(LINES-2,0,"SUPER-USER: Change (A)ttack or (D)efense Bonus? ");
+			refresh();
+			if ((intval=getch())=='A' || intval=='a')  {
+				mvaddstr(LINES-1,0,"Enter new value for Attack Bonus: ");
+				refresh();
+				curntn->aplus = get_number();
+				if (curntn->aplus < 0) curntn->aplus = 0;
+			} else if (intval=='d' || intval == 'D') {
+				mvaddstr(LINES-1,0,"Enter new value for Defense Bonus: ");
+				refresh();
+				curntn->dplus = get_number();
+				if (curntn->dplus < 0) curntn->dplus = 0;
+			}
+			break;
+		}
+#endif /*OGOD*/
 		if(magic(country,VAMPIRE)==1) {
 			errormsg("VAMPIRES CAN'T ADD TO COMBAT BONUS");
 			break;
@@ -630,8 +649,8 @@ change()
 		for(armynum=0;armynum<MAXARM;armynum++)
 			if((P_ASOLD>0)&&(P_ATYPE<MINLEADER)) men+=P_ASOLD;
 		men = max( men, 1500);
-		armynum = max( curntn->aplus-intval, 10 );
-		cost = METALORE*men*armynum*armynum/100;
+		armynum = max( curntn->aplus-intval, 10 ) / 10;
+		cost = METALORE*men*armynum*armynum;
 		if( curntn->race == ORC) cost*=3;
 		mvprintw(LINES-1,0,"Do You Wish Spend %ld Metal On Attack (enter y or n):",cost);
 		refresh();
@@ -671,8 +690,9 @@ change()
 		break;
 	case '8':
 		if(isgod==TRUE){
-			clear();
+			standout();
 			mvaddstr(LINES-1,0,"DO YOU WANT TO DESTROY THIS NATION (y or n)");
+			standend();
 			refresh();
 
 			if(getch()=='y') {

@@ -3,6 +3,7 @@
 /*--------I DO NOT BELIEVE IT IS NECESSARY TO ALTER THIS FILE----------------*/
 #define	FAIL	1		/* fail return to shell			*/
 #define	SUCCESS	0		/* successful return to shell		*/
+#define TIME_DEAD	3600	/* number of seconds for file aging	*/
 #define	BIG	500000000L	/* BIGGER THAN ANYTHING SHOULD BE	*/
 				/* this is used to protect against overflow */
 #define	SCRARM	((LINES-14)/2)	/* number of armies to fit on screen	*/
@@ -203,7 +204,7 @@ struct s_sector
 	long	people;			/* civilians in sector		*/
 	short	i_people;		/* initial civilians in sector	*/
 	unsigned char	jewels;		/* jewel production ability	*/
-	unsigned char	fortress;	/* fortification level (0 to 9)	*/
+	unsigned char	fortress;	/* fortification level; 0 to 12	*/
 	unsigned char	metal;		/* metal produced by sector	*/
 	unsigned char	tradegood;	/* exotic trade goods in sector	*/
 	/* unsigned char	region;		/* index of region	*/

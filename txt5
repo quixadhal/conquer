@@ -216,19 +216,20 @@ inflation   = inflation is an indicator as to the actual value of the national
                   between 25%-125% of the tax rate [randomly determined]
                   plus (poverty - 50)/2 and is then adjusted by the ratio of
                   military to civilians.
+              Money lost due to inflation will be indicated in the budget.
 wealth      = see elsewhere.
 END
                 ADDITIONAL MODIFIERS TO NATIONAL ATTRIBUTES
 
 MAGIC POWERS ADD OR SUBTRACT 10 FROM POWERS AS FOLLOWS:
         SLAVER.....terror      ARCHITECT..storerate
-        RELIGION...popularity  URBAN......-popularity 
+        RELIGION...popularity  URBAN......-popularity
         DEMOCRACY..-terror     ROADS......communication
         KNOWALL....knowledge   DESTROYER..terror
         VAMPIRE....terror      
 
 CLASSES ADD 30 TO POWERS AS FOLLOWS:
-        kingdom....popularity    dragon.....terror        
+        kingdom....popularity    dragon.....terror
         wizard.....knowledge     priest.....popularity
         pirate.....terror        shadow.....terror
         warlord....prestige      demon......terror

@@ -3,13 +3,13 @@
 /*conquer : Copyright (c) 1988 by Ed Barlow.
  *  I spent a long time writing this code & I hope that you respect this.
  *  I give permission to alter the code, but not to copy or redistribute
- *  it without my explicit permission.	If you alter the code,
+ *  it without my explicit permission.  If you alter the code,
  *  please document changes and send me a copy, so all can have it.
- *  This code, to the best of my knowledge works well,	 but it is my first
+ *  This code, to the best of my knowledge works well,  but it is my first
  *  'C' program and should be treated as such.  I disclaim any
- *  responsibility for the codes actions (use at your own risk).	 I guess
+ *  responsibility for the codes actions (use at your own risk).  I guess
  *  I am saying "Happy gaming", and am trying not to get sued in the process.
- *										Ed
+ *                                                Ed
  */
 
 /*include files*/
@@ -410,7 +410,10 @@ coffmap()
 {
 	if((xcurs<=0)||(ycurs<=0)||(xcurs>=SCREEN_X_SIZE-1)
 	||((ycurs>=SCREEN_Y_SIZE-1))||((XREAL)>=MAPX)
-	 ||((YREAL)>=MAPY)) offmap();
+	 ||((YREAL)>=MAPY)) {
+	  centermap();
+	  redraw=PART;
+	}
 	
 	if(redraw!=DONE) {
 		if (redraw==FULL) {

@@ -633,8 +633,8 @@ printf("I AM VERY CONFUSED - PLEASE HELP... combat.c\n");
 				if((ntn[UOWNER(k)].arm[unit[k]].unittyp >= MINLEADER)
 				&&( ntn[UOWNER(k)].arm[unit[k]].sold == 0))
 					fprintf(fm," (killed)\n");
-				else if((ntn[owner[k]].arm[unit[k]].unittyp == A_MILITIA)
-				&&( ntn[owner[k]].arm[unit[k]].sold == 0))
+				else if((ntn[UOWNER(k)].arm[unit[k]].unittyp == A_MILITIA)
+				&&( ntn[UOWNER(k)].arm[unit[k]].sold == 0))
 				fprintf(fm," (disbanded)\n");
 				else fputc('\n',fm);
 			}
