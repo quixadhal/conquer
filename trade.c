@@ -911,6 +911,7 @@ uptrade()
 		}
 	}
 	fclose(tfile);
-#endif ADMIN
 }
+#endif ADMIN
 #endif TRADE
+

@@ -24,9 +24,10 @@ LIBRARIES = -lcurses
 #	if they do not use the -d option.
 DEFAULT = /c28/smile/game/default
 
-#CFLAGS  = -DDEFAULTDIR=\"$(DEFAULT)\" -O
+#	The following CFLAGS should be set by a normal user
+CFLAGS  = -DDEFAULTDIR=\"$(DEFAULT)\" -O
 #	The following CFLAGS should be used if you wish to debug the game
-CFLAGS  = -DDEFAULTDIR=\"$(DEFAULT)\" -DDEBUG -g
+#CFLAGS  = -DDEFAULTDIR=\"$(DEFAULT)\" -DDEBUG -g
 
 #	this is the name of the user executable
 #	the user executable contains commands for the games players
@@ -211,8 +212,8 @@ forms.o:	data.h header.h forms.c
 	$(CC) $(CFLAGS) -DCONQUER -c forms.c
 commands.o:	data.h header.h commands.c
 	$(CC) $(CFLAGS) -DCONQUER -c commands.c
-trade.o:	data.h header.h trade.h trade.c
+trade.o:	data.h header.h trade.c
 	$(CC) $(CFLAGS) -DCONQUER -c trade.c
-tradeA.o:	data.h header.h trade.h trade.c
+tradeA.o:	data.h header.h trade.c
 	$(CC) $(CFLAGS) -DADMIN -c trade.c
 	mv trade.o tradeA.o

@@ -123,17 +123,18 @@ monster()
 			}
 		}
 	}
-	else {
-		/*place a new Nomad army*/
+	/* place a few new Nomad armies */
+	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD<=0){
 		x=(rand()%(MAPX-8))+4;
 		y=(rand()%(MAPY-8))+4;
 		if((rand()%4==0)&&(is_habitable(x,y))) {
 			AXLOC=x;
 			AYLOC=y;
 			ASOLD=100+100*(rand()%10);
-			ATYPE=A_INFANTRY;
+			ATYPE=A_LT_CAV;
 			ASTAT=ATTACK;
 		}
+		if(rand()%3==0) break;
 	}
 	country=NLIZARD;
 	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0){
@@ -615,7 +616,7 @@ nationrun()
 {
 	int goldthresh,ironthresh,citythresh;
 	int armynum,loop;
-	int x,y,i;
+	int x,y,i,p;
 	long zz;
 
 #ifdef DEBUG
@@ -730,12 +731,18 @@ nationrun()
 		if(ntn[country].jewels > getmgkcost(M_MIL,country)) {
 			ntn[country].jewels-=getmgkcost(M_MIL,country);
 			if((zz=getmagic(M_MIL))!=0){
-				fprintf(fnews,"1.\tnation %s gets combat power number %ld\n",ntn[country].name,zz);
-				printf("\tnation %s gets combat power number %ld\n",ntn[country].name,zz);
+				for(p=S_MIL;p<=E_MIL;p++) if(powers[p]==zz){
+					fprintf(fnews,"1.\tnation %s gets combat power %s\n",ntn[country].name,pwrname[p]);
+					printf("\tnation %s gets combat power %s\n",ntn[country].name,pwrname[p]);
+					break;
+				}
 				exenewmgk(zz);
 			} else if((zz=getmagic(M_MIL))!=0){
-				fprintf(fnews,"1.\tnation %s gets combat power number %ld\n",ntn[country].name,zz);
-				printf("\tnation %s gets combat power number %ld\n",ntn[country].name,zz);
+				for(p=S_MIL;p<=E_MIL;p++) if(powers[p]==zz){
+					fprintf(fnews,"1.\tnation %s gets combat power %s\n",ntn[country].name,pwrname[p]);
+					printf("\tnation %s gets combat power %s\n",ntn[country].name,pwrname[p]);
+					break;
+				}
 				exenewmgk(zz);
 			}
 			else	ntn[country].jewels+=getmgkcost(M_MIL,country);
@@ -744,13 +751,19 @@ nationrun()
 		if(ntn[country].jewels > getmgkcost(M_CIV,country)) {
 			ntn[country].jewels-=getmgkcost(M_CIV,country);
 			if((zz=getmagic(M_CIV))!=0){
-				fprintf(fnews,"1.\tnation %s gets civilian power number %ld\n",ntn[country].name,zz);
-				printf("\tnation %s gets civilian power number %ld\n",ntn[country].name,zz);
+				for(p=S_CIV;p<=E_CIV;p++) if(powers[p]==zz){
+					fprintf(fnews,"1.\tnation %s gets civilian power %s\n",ntn[country].name,pwrname[p]);
+					printf("\tnation %s gets civilian power %s\n",ntn[country].name,pwrname[p]);
+					break;
+				}
 				exenewmgk(zz);
 			}
 			else if((zz=getmagic(M_CIV))!=0){
-				fprintf(fnews,"1.\tnation %s gets civilian power number %ld\n",ntn[country].name,zz);
-				printf("\tnation %s gets civilian power number %ld\n",ntn[country].name,zz);
+				for(p=S_CIV;p<=E_CIV;p++) if(powers[p]==zz){
+					fprintf(fnews,"1.\tnation %s gets civilian power %s\n",ntn[country].name,pwrname[zz]);
+					printf("\tnation %s gets civilian power %s\n",ntn[country].name,pwrname[zz]);
+					break;
+				}
 				exenewmgk(zz);
 			}
 			else	ntn[country].jewels+=getmgkcost(M_CIV,country);

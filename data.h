@@ -426,7 +426,7 @@ extern	void readdata(),redesignate(),redomil(),reduce(),rmessage(),score();
 extern	void see(),showscore(),update(),updmove(),verifydata(),verify_ntn();
 extern	void verify_sct(),wmessage(),writedata(),getdstatus(),exit();
 #ifdef TRADE
-extern	void trade(),uptrade();
+extern	void trade(),uptrade(),checktrade();
 #endif TRADE
 
 extern	char	*crypt(),*strcpy(),*strncpy(),*strcat(),*strncat();
