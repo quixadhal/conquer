@@ -18,12 +18,13 @@ int	__line__;
 	register struct s_nation	*nptr;
 	register int	i;
 	register int	country;
+	int j, k;
 	struct army	*a;
 
 	for( country = 0; country < NTOTAL; country++ ) {
 		nptr = &ntn[country];
 
-		if(nptr->active == 0) continue;
+		if(country !=0 && nptr->active == 0) continue;
 		if( nptr->metals < 0.0 ) {
 			fprintf( stderr, "file %s: line %d: nation[%d] metal = %ld\n",
 				__file__, __line__, country, nptr->metals );
@@ -54,15 +55,47 @@ int	__line__;
 					__file__, __line__, country, i, a->yloc );
 				a->yloc = 0;
 			}
+			if( a->stat == ONBOARD) {
+				if (a->smove != 0) {
+					fprintf( stderr, "file %s: line %d: nation[%d] army[%d] onboard move = %d\n",
+						__file__, __line__, country, i, a->smove );
+					a->smove = 0;
+				}
+				k = 0;
+				for (j = 0; j < MAXNAVY; j++) {
+					if (nptr->nvy[j].warships == 0
+					  && nptr->nvy[j].merchant == 0
+					  && nptr->nvy[j].galleys == 0)
+						continue;
+					if (nptr->nvy[j].armynum == i) {
+						k = 1;
+					}
+				}
+				if (k == 0) {
+					fprintf(stderr, "files %s: line %d: nation[%d] army[%d] onboard nothing\n",
+						__file__,__line__,country,i);
+					a->stat = DEFEND;
+				}
+			}
 			if( a->stat != ONBOARD && sct[a->xloc][a->yloc].altitude==WATER ) {
 				fprintf( stderr, "file %s: line %d: nation[%d] army[%d] loc=%d,%d (water) men=%d\n",
 				__file__,__line__,country,i,a->xloc,a->yloc,a->sold);
 				a->sold = 0;
 			}
-			if( a->stat == ONBOARD && a->smove != 0) {
-				/* don't echo since this is still getting */
-				/* set some place someplace I can't find yet */
-				a->smove = 0;
+		} /* for */
+
+		for( i = 0; i < MAXNAVY; i++ ) {
+			if (nptr->nvy[i].warships == 0
+			  && nptr->nvy[i].merchant == 0
+			  && nptr->nvy[i].galleys == 0)
+				continue;
+			if (nptr->nvy[i].armynum != MAXARM) {
+				a = &(nptr->arm[nptr->nvy[i].armynum]);
+				if (a->sold == 0 || a->stat != ONBOARD) {
+					fprintf(stderr, "file %s: line %d: nation[%d] navy[%d] carrying invalid troop\n",
+					       __file__,__line__,country,i);
+					nptr->nvy[i].armynum = MAXARM;
+				}
 			}
 		} /* for */
 

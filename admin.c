@@ -53,7 +53,9 @@ char **argv;
 	int geteuid(), getuid(), setuid(), realuser, l;
 	register int i,j;
 	char *name;
+#ifndef __STDC__
 	void srand();
+#endif
 	int getopt();
 	long time();
 	/* mflag = make world, a=add player, x=execute, p=print */

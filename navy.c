@@ -423,8 +423,11 @@ loadfleet()
 			}
 			P_ASTAT=DEFEND;
 			P_NARMY=MAXARM;
-			if ((sct[XREAL][YREAL].designation!=DCITY
-			&& sct[XREAL][YREAL].designation!=DCAPITOL)
+			if (!((sct[XREAL][YREAL].designation==DCITY
+			|| sct[XREAL][YREAL].designation==DCAPITOL)
+			&& (sct[XREAL][YREAL].owner==country
+			|| (!ntn[sct[XREAL][YREAL].owner].dstatus[country]!=UNMET
+			&& ntn[sct[XREAL][YREAL].owner].dstatus[country]<=NEUTRAL)))
 			|| P_NMOVE < N_CITYCOST) {
 				P_NMOVE=0;
 			} else {
@@ -495,8 +498,11 @@ loadfleet()
 				P_ASTAT=ONBOARD;
 				P_AMOVE=0;
 				P_NARMY=armynum;
-				if ((sct[XREAL][YREAL].designation!=DCITY
-				&& sct[XREAL][YREAL].designation!=DCAPITOL)
+				if (!((sct[XREAL][YREAL].designation==DCITY
+				|| sct[XREAL][YREAL].designation==DCAPITOL)
+				&& (sct[XREAL][YREAL].owner==country
+				|| (!ntn[sct[XREAL][YREAL].owner].dstatus[country]!=UNMET
+				&& ntn[sct[XREAL][YREAL].owner].dstatus[country]<=NEUTRAL)))
 				|| P_NMOVE < N_CITYCOST) {
 					P_NMOVE=0;
 				} else {

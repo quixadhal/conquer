@@ -63,6 +63,10 @@ mymove()
 	} else {	/*army*/
 		mvprintw(LINES-4,0,"ARMY %d: ",armynum);
 		clrtoeol();
+		if (P_ASTAT>=NUMSTATUS) {
+			groupmen = P_ASTAT - NUMSTATUS;
+			P_AMOVE = curntn->arm[groupmen].smove;
+		}
 		if(P_AMOVE==0){
 			errormsg("That Unit is Not Able to Move");
 			redraw=DONE;
@@ -74,8 +78,10 @@ mymove()
 		if(P_ASTAT>=NUMSTATUS) {
 			mvprintw(LINES-4,10,"Member of Army Group %d!! Continue? ",P_ASTAT-NUMSTATUS);
 			refresh();
-			if( getch() == 'y' )  P_ASTAT=ATTACK;
-			else {
+			if( getch() == 'y' )  {
+				P_ASTAT=ATTACK;
+				AADJSTAT;
+			} else {
 				redraw=DONE;
 				armornvy=AORN;
 				return;
@@ -261,7 +267,8 @@ mymove()
 				valid=FALSE;
 				xcurs=oldxcurs;
 				ycurs=oldycurs;
-			} else if(movecost[XREAL][YREAL] >= 0){
+			} else if(movecost[XREAL][YREAL] >= 0
+				  || movecost[XREAL][YREAL] == -2){
 				/* LAND OF SOME TYPE */
 				valid=FALSE;
 				/* check for nearby water */

@@ -94,6 +94,13 @@ Note: Sometimes curses does not include termcap or termlib.  If all the
 	unreferenced symbol errors occur,  try adding "-ltermcap" after
 	the "-lcurses" line in the makefile.
 
+Note2: With some versions of 'make' the SHELL environment variable is
+	read to determine under what shell jobs should be spawned.  The
+	Makefile for conquer was written with '/bin/sh' in mind, so if
+	any "command not found" errors appear, doing a:
+		setenv SHELL /bin/sh
+	before typing 'make', might alleviate the problem.
+
 -----------------------------------------------------------
 V   administration instructions
 -----------------------------------------------------------
@@ -109,7 +116,6 @@ The command line format for the administration commands is
 		-a          add new player
 		-x          execute program
 		-d DIR      to use play different game
-		-p          print a map
 		-r SCENARIO read map while making a new world
 			    uses SCENARIO.ele, SCENARIO.veg, &  SCENARIO.nat
 

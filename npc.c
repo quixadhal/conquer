@@ -487,7 +487,7 @@ redomil()
 	for(armynum=1;armynum<MAXARM;armynum++) if(P_ASOLD>0){
 		/* move army back if too far out */
 		ok = 0;
-		if (P_ASOLD < MINLEADER && P_ASOLD!=A_MILITIA) {
+		if (P_ATYPE < MINLEADER && P_ASOLD!=A_MILITIA) {
 			curntn->tmil += P_ASOLD;
 		}
 		for(x=(int)P_AXLOC-3;x<=(int)P_AXLOC+3;x++)
@@ -562,6 +562,7 @@ redomil()
 
 	/*too few soldiers on garrison*/
 	/*diff is number to change mil in cap (>0)*/
+	if (*(u_enmetal + (P_ATYPE%UTYPE)) > 0)
 	diff = (long) min(ideal-P_ASOLD,(int) (curntn->metals / *(u_enmetal + (P_ATYPE%UTYPE))));
 
 	diff=(long) min((int) diff, sct[curntn->capx][curntn->capy].people/2L);
@@ -636,6 +637,7 @@ redomil()
 	&&( P_ATYPE<MINLEADER )
 	&&( P_ASOLD < TAKESECTOR )
 	&&( curntn->tgold > 0 )
+	&&(curntn->metals >= (TAKESECTOR+20-P_ASOLD)* *(u_enmetal + (P_ATYPE%UTYPE)))
 	&&( fort_val(&sct[P_AXLOC][P_AYLOC]) > 0)
 	&&( sct[P_AXLOC][P_AYLOC].owner == country )) {
 #ifdef DEBUG
@@ -647,6 +649,7 @@ redomil()
 		else curntn->tgold-=(TAKESECTOR+20-P_ASOLD)*
 			*(u_encost + (P_ATYPE%UTYPE));
 		curntn->tmil += TAKESECTOR+20-P_ASOLD;
+		curntn->metals -= ((TAKESECTOR+20-P_ASOLD)* *(u_enmetal + (P_ATYPE%UTYPE)));
 		P_ASOLD = TAKESECTOR+20;
 	}
 
@@ -1160,6 +1163,15 @@ nationrun()
 
 	if( curntn->tgold > curntn->tciv ) curntn->charity=10;
 	else curntn->charity=0;
+	if( (curntn->tsctrs < 20) || (curntn->score < 20) ) {
+		if( curntn->tax_rate < 10 )
+			curntn->tax_rate = 10;
+	} else {
+		curntn->tax_rate = (int)min((int)(curntn->prestige/5),(int)((curntn->popularity+curntn->terror+3*curntn->charity)/10));
+		curntn->tax_rate = (int)min(curntn->tax_rate,20);
+		if(curntn->tax_rate < 4)
+			curntn->tax_rate = 4;
+	}
 
 	/* INTELLIGENT SECTOR REDESIGNATION */
 	/* note that only redesignate pc's if not designated yet */

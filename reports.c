@@ -143,7 +143,7 @@ armyrpt(repnum)
 				continue;
 			}
 #ifdef TRADE
-			if(P_ASTAT==TRADED) {
+			if(isgod==FALSE && P_ASTAT==TRADED) {
 				errormsg("May not change traded army");
 				continue;
 			}
@@ -154,7 +154,7 @@ armyrpt(repnum)
 			ypos++;
 			clrtoeol();
 #ifdef OGOD
-			if(isgod==TRUE) mvaddstr(ypos++,0,"GOD OPTIONS: 6) LOCATION 7) SOLDIERS");
+			if(isgod==TRUE) mvaddstr(ypos++,0,"GOD OPTIONS: 6) LOCATION 7) SOLDIERS 8) MOVE 9) UNITTYPE 0) STATUS ");
 			clrtoeol();
 #endif OGOD
 			ypos++;
@@ -272,10 +272,55 @@ armyrpt(repnum)
 					mvaddstr(ypos++,0,"What is the New Total Soldiers: ");
 					refresh();
 					men = get_number();
-					if (men>0) {
+					if (men>=0) {
 						P_ASOLD=men;
 						AADJMEN;
 					}
+				}
+				break;
+			case '8':
+				if (isgod == TRUE) {
+					mvaddstr(ypos, 0, "What is the new movement value?");
+					refresh();
+					men = get_number();
+
+					if (men >=0 && men <= 100) {
+						P_AMOVE = men;
+					}
+				}
+				break;
+			case '9':
+				if (isgod == TRUE) {
+					mvaddstr(ypos++, 0, "Change unit type; Normal 0-26, Leader 27-44, Monster 45-59");
+					mvaddstr(ypos++, 0, "[MajorHackEH?] New Type is? ");
+					refresh();
+					men = get_number();
+
+					if (men < 0 || men > MAXMONSTER) break;
+					if (men > 44) men += TWOUTYPE;
+					else if (men > NOUNITTYPES) men += UTYPE;
+					
+					P_ATYPE = men;
+				}
+				break;
+			case '0':
+				if (isgod == TRUE) {
+					mvprintw(ypos++, 0, "1) Mar 2) Sct 3) Garr 4) Trade 5) Mil 6) Fly 7) Def 8) MDef 9) Att 10) MAtt");
+					mvprintw(ypos++, 0, "11) Genrl 12) Sort 13) Sieg 14) Sgd 15) Onb 16) Rule 17+) Group (leader-=17)");
+					mvaddstr(ypos++, 0, "Set what status? ");
+					refresh();
+					men = get_number();
+
+					if (men < 0 || men > NUMSTATUS+MAXARM)
+					  break;
+					if (men >= NUMSTATUS) {
+					  i = curntn->arm[men-NUMSTATUS].unittyp;
+					  if (i < MINLEADER || i >= MINMONSTER) {
+					    errormsg("There is no such leader to group under");
+					    break;
+					  }
+					}
+					P_ASTAT = men;
 				}
 				break;
 #endif OGOD
@@ -585,9 +630,9 @@ fleetrpt()
 			clrtoeol();
 			refresh();
 			nvynum = get_number();
-			if(nvynum<0) break;
+			if(nvynum<0) continue;
 #ifdef TRADE
-			if (curntn->nvy[nvynum].commodity==TRADED) {
+			if (isgod == FALSE && curntn->nvy[nvynum].commodity==TRADED) {
 				errormsg("Sorry - That Navy is up for trade");
 				continue;
 			}
@@ -599,7 +644,7 @@ fleetrpt()
 			mvaddstr(ypos++,0,"OPTIONS: 1) TRANSFER / MERGE, 2) SPLIT NAVY, 3) DISBAND NAVY");
   			clrtoeol();
 #ifdef OGOD
-			if(isgod==TRUE) mvaddstr(ypos++,0,"GOD OPTIONS:  4) ADJUST SHIPS, 5) LOCATION, 6) CREW");
+			if(isgod==TRUE) mvaddstr(ypos++,0,"GOD OPTIONS:  4) ADJUST SHIPS, 5) LOCATION, 6) CREW 7) MOVE");
 			ypos++;
 			clrtoeol();
 #endif OGOD
@@ -630,6 +675,25 @@ fleetrpt()
 					errormsg("Sorry -- One of the two Armies must be unloaded");
 				}
 				else if((newx==P_NXLOC)&&(newy==P_NYLOC)) {
+					/* first check sizes */
+					for(i=N_LIGHT;i<=N_HEAVY;i++) {
+						if (P_NGAL(i) + SHIPS(curntn->nvy[newnavy].galleys,i) > N_MASK) {
+							i = (-1);
+							break;
+						}
+						if (P_NMER(i) + SHIPS(curntn->nvy[newnavy].merchant,i) > N_MASK) {
+							i = (-1);
+							break;
+						}
+						if (P_NWAR(i) + SHIPS(curntn->nvy[newnavy].warships,i) > N_MASK) {
+							i = (-1);
+							break;
+						}
+					}
+					if (i == (-1)) {
+					  errormsg("That would cause you to have too many ships of one type");
+					  break;
+					}
 					crew = flthold(nvynum)*P_NCREW;
 					people = fltmhold(nvynum)*P_NPEOP;
 					crew += flthold(newnavy)*curntn->nvy[newnavy].crew;
@@ -691,9 +755,10 @@ fleetrpt()
 				curntn->nvy[navy].people=P_NPEOP;
 				curntn->nvy[navy].smove=P_NMOVE;
 					
+				if (P_NWSHP != 0)
 				mvaddstr(LINES-2,0,"Do you wish to separate warships from remainder of fleet?");
 				refresh();
-				if(getch()=='y') {
+				if(P_NWSHP!=0 && getch()=='y') {
 					curntn->nvy[navy].warships=P_NWSHP;
 					P_NWSHP=0;
 					NADJWAR;
@@ -715,6 +780,7 @@ fleetrpt()
 					break;
 				}
 				for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
+					if (P_NWAR(shipsize) == 0) continue;
 					mvprintw(ypos,0,"How Many %s Warships To Split?",fltstr[shipsize]);
 					clrtoeol();
 					refresh();
@@ -724,6 +790,7 @@ fleetrpt()
 					(void) addwships(navy,shipsize,newnavy);
 				}
 				for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
+					if (P_NMER(shipsize) == 0) continue;
 					mvprintw(ypos,0,"How Many %s Merchants To Split?",fltstr[shipsize]);
 					clrtoeol();
 					refresh();
@@ -733,6 +800,7 @@ fleetrpt()
 					(void) addmships(navy,shipsize,newnavy);
 				}
 				for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
+					if (P_NGAL(shipsize) == 0) continue;
 					mvprintw(ypos,0,"How Many %s Galleys To Split?",fltstr[shipsize]);
 					clrtoeol();
 					refresh();
@@ -791,32 +859,50 @@ fleetrpt()
 			case '4':
 				if (isgod==TRUE) {
 					/* ADJUST SHIPS */
-					P_NWSHP=0;
-					P_NMSHP=0;
-					P_NGSHP=0;
 					for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
-						mvprintw(ypos,0,"How Many %s Warships?",fltstr[shipsize]);
+						mvprintw(ypos,0,"How Many %s Warships? [%d] ",
+							 fltstr[shipsize],P_NWAR(shipsize));
 						clrtoeol();
 						refresh();
 						newnavy = get_number();
-						if(newnavy>N_MASK||newnavy<0) newnavy=0;
-						(void) NADD_WAR(newnavy);
+						if (newnavy < 0 || newnavy > N_MASK) continue;
+						newnavy -= P_NWAR(shipsize);
+						if (newnavy > 0) {
+							(void) NADD_WAR(newnavy);
+						} else if (newnavy < 0) {
+							newnavy = -newnavy;
+							(void) NSUB_WAR(newnavy);
+						}
 					}
 					for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
-						mvprintw(ypos,0,"How Many %s Merchants?",fltstr[shipsize]);
+						mvprintw(ypos,0,"How Many %s Merchants? [%d] ",
+							 fltstr[shipsize], P_NMER(shipsize));
 						clrtoeol();
 						refresh();
 						newnavy = get_number();
-						if(newnavy>N_MASK||newnavy<0) newnavy=0;
-						(void) NADD_MER(newnavy);
+						if(newnavy>N_MASK||newnavy<0) continue;
+						newnavy -= P_NMER(shipsize);
+						if (newnavy > 0) {
+						  (void) NADD_MER(newnavy);
+						} else if (newnavy < 0) {
+						  newnavy = -newnavy;
+						  (void) NSUB_MER(newnavy);
+						}
 					}
 					for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
-						mvprintw(ypos,0,"How Many %s Galleys?",fltstr[shipsize]);
+						mvprintw(ypos,0,"How Many %s Galleys? [%d]",
+							 fltstr[shipsize], P_NGAL(shipsize));
 						clrtoeol();
 						refresh();
 						newnavy = get_number();
-						if(newnavy>N_MASK||newnavy<0) newnavy=0;
-						(void) NADD_GAL(newnavy);
+						if(newnavy>N_MASK||newnavy<0) continue;
+						newnavy -= P_NGAL(shipsize);
+						if (newnavy > 0) {
+						  (void) NADD_GAL(newnavy);
+						} else if (newnavy < 0) {
+						  newnavy = -newnavy;
+						  (void) NSUB_GAL(newnavy);
+						}
 					}
 					NADJWAR;
 					NADJMER;
@@ -850,6 +936,16 @@ fleetrpt()
 					if (crew>=0 && crew<=SHIPCREW) {
 						P_NCREW = crew;
 						NADJCRW;
+					}
+				}
+				break;
+			case '7':
+				if (isgod == TRUE) {
+					mvaddstr(ypos, 0, "Set what move value? ");
+					refresh();
+					newnavy = get_number();
+					if (newnavy <= 100 && newnavy >= 0) {
+						P_NMOVE = newnavy;
 					}
 				}
 				break;

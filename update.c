@@ -27,6 +27,16 @@ int	disarray;		/* TRUE if nation in disarray */
 int	**attr;			/* sector attractiveness */
 long	**newpop;		/* storage for old population */
 
+long
+dtol(d) double d;
+{
+	char tempstr[BIGLTH];
+	long l;
+	sprintf(tempstr,"%-60.0lf",d);
+	sscanf(tempstr,"%ld",&l);
+	return(l);
+}
+
 /****************************************************************/
 /*	UPDATE() - updates the whole world			*/
 /****************************************************************/
@@ -625,7 +635,7 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 			if(rand()%100 < 30) {	/* new leader takes over */
 				x++;
 				for(armynum=0;armynum<MAXARM;armynum++)
-					if(P_ATYPE == x) break;
+					if(P_ATYPE == x && P_ASOLD > 0) break;
 				if( armynum<MAXARM) {
 					P_ATYPE=x-1;
 					P_ASOLD= *(unitminsth+(x-1)%UTYPE);
@@ -699,8 +709,8 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 				ntn[country].spellpts+=3;
 		}
 		if(magic(country,MA_MONST)==TRUE) ntn[country].spellpts+=2;
-		else if(magic(country,AV_MONST)==TRUE) ntn[country].spellpts+=1;
-		else if((magic(country,MI_MONST)==TRUE)
+		if(magic(country,AV_MONST)==TRUE) ntn[country].spellpts+=1;
+		if((magic(country,MI_MONST)==TRUE)
 			&&( rand()%2==0)) ntn[country].spellpts+=1;
 	}
 	free(attr);
@@ -1212,10 +1222,10 @@ updmil()
 			&&( A->stat<NUMSTATUS ))
 				A->stat=FLIGHT;
 
-			if((magic(country,ROADS)==1)
+			if((magic(country,ROADS)==TRUE)
 			&&(sct[AX][AY].owner!=country)){
 				if(A->smove>7) A->smove-=4;
-				else A->smove=4;
+				else if (A->smove>4) A->smove=4;
 			}
 
 			if((magic(country,SAPPER)==1)
@@ -1411,7 +1421,7 @@ updcomodities()
 		tempflt = (float) curntn->tfood * (100-curntn->spoilrate);
 		curntn->tfood = (long) (tempflt / 100.0);
 
-		if(curntn->tgold > GOLDTHRESH*curntn->jewels){
+		if((0.0+curntn->tgold) - GOLDTHRESH*(0.0+curntn->jewels) > 0.0){
 			/* buy jewels off commodities board */
 			xx=curntn->tgold-GOLDTHRESH*curntn->jewels;
 			if (ispc(curntn->active)) {
@@ -1419,11 +1429,12 @@ updcomodities()
 					fprintf(fm,"Message from Conquer\n\n");
 					fprintf(fm,"Gold imbalance forced your treasury to purchase\n");
 					fprintf(fm,"%ld jewels for %ld gold talons to compensate.\n",
-						xx/GODPRICE*GODJEWL,xx);
+						dtol((double)xx*GODJEWL/GODPRICE)
+						,xx);
 					mailclose(country);
 				}
 			}
-			curntn->jewels += (xx/GODPRICE*GODJEWL);
+			curntn->jewels += dtol((double)xx*GODJEWL/GODPRICE);
 			curntn->tgold  -= xx;
 		}
 

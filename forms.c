@@ -579,17 +579,29 @@ change()
 		intval = get_number();
 		if (intval < 0) {
 			break;
-		} else if( intval > 100 )
+		} else if( intval > 100 ) {
 			errormsg("ERROR - invalid charity rate");
+		} else if (intval > 25) {
+			errormsg("You are kidding, right?");
 		/* this will protect from both underflow and overflow */
-		else if((int)curntn->popularity + 2*(intval - (int)curntn->charity)>100)
-			errormsg("ERROR - you may not increase charity that much");
-		else if((int)curntn->popularity + 2*(intval - (int)curntn->charity)<0)
-			errormsg("ERROR - you may not decrease charity that much");
-		else {
-			curntn->popularity += (unsigned char) 2*(intval - (int) curntn->charity);
-			curntn->charity = intval;
-			NADJNTN;
+		} else if(intval > curntn->charity) {
+			if (2 * (intval - (int)curntn->charity) + (int) curntn->popularity > 100) {
+				errormsg("ERROR - you may not increase charity that much");
+			} else {
+				curntn->popularity += (unsigned char) 2*(intval - (int) curntn->charity);
+				curntn->charity = intval;
+				NADJNTN;
+				NADJNTN2;
+			}
+		} else {
+			if (2 * (intval - (int)curntn->charity) < - (int) curntn->popularity) {
+				errormsg("ERROR - you may not decrease charity that much");
+			} else {
+				curntn->popularity += (unsigned char) 2*(intval - (int) curntn->charity);
+				curntn->charity = intval;
+				NADJNTN;
+				NADJNTN2;
+			}
 		}
 		break;
 	case '5':	/* terror */

@@ -178,15 +178,6 @@ int armynum,new_stat;
 		errormsg("Uh, sir.  Aren't we doing that already?");
 		return;
 	}
-	/* eliminate half starting movement if start out on march */
-	if( P_ASTAT==MARCH && new_stat!=MARCH ) {
-		if(P_AMOVE<(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/50){
-			errormsg("That troop has gone too far to stop marching");
-			return;
-		}
-		P_AMOVE-=(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/50;
-		AADJMOV;
-	}
 	if(new_stat == SCOUT) {
 		if(( P_ATYPE != A_SCOUT )&&( P_ASOLD >= 25)) {
 			errormsg("Need less than 25 men to scout");
@@ -232,6 +223,16 @@ int armynum,new_stat;
 			errormsg("Sorry, but you can't rule in that sector");
 			return;
 		}
+	}
+
+	/* eliminate half starting movement if start out on march */
+	if( P_ASTAT==MARCH && new_stat!=MARCH ) {
+		if(P_AMOVE<(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/50){
+			errormsg("That troop has gone too far to stop marching");
+			return;
+		}
+		P_AMOVE-=(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/50;
+		AADJMOV;
 	}
 
 	/* location dependent statuses make armies stay in place */

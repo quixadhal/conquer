@@ -628,9 +628,11 @@ int *count;
 			}
 		} else {
 			if (ntn[i].race==ORC) 
-				mvaddstr((*count)++,0,"  Wrong Race");
-			else mvaddstr((*count)++,0,"  That Nation is Outside Your Influence");
+				mvaddstr((*count)++,0,"  That Nation is Outside Your Influence");
+			else mvaddstr((*count)++,0,"  Wrong Race");
 		}
+		refresh();
+		sleep(2);
 	}
 	return(done);
 }

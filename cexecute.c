@@ -197,7 +197,6 @@ int	isupdate;	/* 0 if not update, 1 if update */
 			back into your capitol */
 			if((sct[x][y].owner!=country)&&(country!=0)) {
 				sct[curntn->capx][curntn->capy].people+=armynum;
-				fprintf(stderr,"ERROR: <%s> told to put %d civilians in sector %d,%d not owned - placed in capitol\n",curntn->name,armynum,x,y);
 				break;
 			}
 			sct[x][y].people=armynum;
@@ -206,7 +205,6 @@ int	isupdate;	/* 0 if not update, 1 if update */
 			/* if you dont own it, put people in your capitol */
 			if((sct[x][y].owner!=country)&&(country!=0)) {
 				sct[curntn->capx][curntn->capy].people+=armynum;
-				fprintf(stderr,"SACIV3: <%s> told to put %d civilians in sector %d,%d not owned - placed in capitol\n",curntn->name,armynum,x,y);
 			}
 			else
 			{
@@ -258,7 +256,7 @@ int	isupdate;	/* 0 if not update, 1 if update */
 		case DESTRY:
 			sct[ntn[armynum].capx][ntn[armynum].capy].owner=savectry;
 			country=armynum;
-			destroy(country);
+			if (isupdate) destroy(country);
 			country=savectry;
 			break;
 		case CHG_MGK:

@@ -581,7 +581,7 @@ struct	s_nation		/* player nation stats	*/
 
 /* magic macro: returns TRUE if the nation has that power*/
 #define	magic(NATION,POWER)	((ntn[NATION].powers&(POWER))!=0)
-#define	ONMAP(x,y)	(x>=0 && y>=0 && x<MAPX && y<MAPY)
+#define	ONMAP(x,y)	((x)>=0 && (y)>=0 && (x)<MAPX && (y)<MAPY)
 
 #ifndef HILIGHT
 #define	standout()
@@ -610,7 +610,7 @@ extern	long		lrand48();
 #define	check()	checkout(__FILE__,__LINE__)
 #endif DEBUG
 
-#define	GOLDTHRESH	10	/* min ratio of gold:jewels */
+#define	GOLDTHRESH	10L	/* min ratio of gold:jewels */
 
 #define	SALT "aa"		/* seed for crypt() encryption	*/
 

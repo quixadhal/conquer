@@ -61,7 +61,10 @@ char	**argv;
 	int geteuid(), getuid(), setuid();
 	register int i,j;
 	char name[NAMELTH+1],filename[FILELTH];
-	void srand(),init_hasseen(),mapprep();
+#ifdef __STDC__
+	void srand();
+#endif
+	void init_hasseen(),mapprep();
 	int getopt();
 	char passwd[PASSLTH+1];
 	long time();
@@ -1119,7 +1122,11 @@ int	alwayssee;	/* see even if cant really see sector */
 					mvprintw(nfound2*2+count,COLS-20,"%s: %d men  ",ntn[i].name,enemy);
 				else if(magic(i,THE_VOID)==TRUE)
 				mvprintw(nfound2*2+count,COLS-20,"%s: ?? men  ",ntn[i].name);
-				else mvprintw(nfound2*2+count,COLS-20,"%s: %ld men  ",ntn[i].name,(enemy*(rand()%60+70)/100));
+				else {
+					srand(i*17+enemy+TURN*3);
+					mvprintw(nfound2*2+count,COLS-20,"%s: %ld men  ",ntn[i].name,(enemy*(rand()%60+70)/100));
+					srand((unsigned) time((long *) 0));
+				}
 				count++;
 			}
 			enemy=0;
@@ -1137,7 +1144,11 @@ int	alwayssee;	/* see even if cant really see sector */
 					mvprintw(nfound2*2+count,COLS-20,"%s: %d ships",ntn[i].name,enemy);
 				else if(magic(i,THE_VOID)==TRUE)
 				mvprintw(nfound2*2+count,COLS-20,"%s: ?? ships",ntn[i].name);
-				else mvprintw(nfound2*2+count,COLS-20,"%s: %ld ships",ntn[i].name,(enemy*(rand()%60+70)/100));
+				else {
+					srand(i*17+enemy+TURN*3);
+					mvprintw(nfound2*2+count,COLS-20,"%s: %ld ships",ntn[i].name,(enemy*(rand()%60+70)/100));
+					srand((unsigned) time((long *) 0));
+				}
 				count++;
 			}
 		}
@@ -1177,8 +1188,11 @@ int	alwayssee;	/* see even if cant really see sector */
 
 		if((sptr->owner==country)||(country==0)||(magic(country,NINJA)==TRUE))
 		mvprintw(LINES-9,COLS-20,"people: %6d",sptr->people);
-		else
-		mvprintw(LINES-9,COLS-20,"people: %6d",sptr->people*(rand()%60+70)/100);
+		else {
+			srand(country*17+TURN*3+sptr->people);
+			mvprintw(LINES-9,COLS-20,"people: %6d",sptr->people*(rand()%60+70)/100);
+			srand((unsigned) time((long *) 0));
+		}
 		clrtoeol();
 		if((sptr->owner==country)
 		||(sptr->owner==0)

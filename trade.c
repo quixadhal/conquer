@@ -51,7 +51,8 @@ char *commodities[NUMPRODUCTS] = { "Gold", "Food", "Metal", "Jewels",
 #ifdef ADMIN
 char *tradefail[NUMPRODUCTS] = { "lack of gold", "lack of food",
 	"lack of metal", "lack of jewels", "land not owned",
-	"no available armies", "no available navies"};
+	"unavailable or destroyed armies",
+	"unavailable or destoryed navies"};
 #endif ADMIN
 #ifdef CONQUER
 /* Use this when you wish to bid something */
@@ -145,7 +146,7 @@ trade()
 					lvar2[holdint],
 					commodities[type2[holdint]]);
 				}
-				if (count>16) {
+				if (count>LINES-8) {
 					standout();
 					mvaddstr(LINES-2,30,"Hit Any Key to Continue");
 					standend();
@@ -571,6 +572,7 @@ int *count;
 		}
 	}
 	mvprintw((*count)++,0," JUST ENTERED %c so food value is %d", entered,temp);
+	refresh();
 	return(temp);
 }
 
@@ -659,6 +661,7 @@ takeback(cntry,item,longval,extint,isup)
 int cntry,item,isup,extint;
 long longval;
 {
+	if (cntry == -1) return;
 	switch(item)
 	{
 	case TDGOLD:
@@ -722,6 +725,7 @@ long longval;
 	case TDARMY:
 		/* find army number for cntry2 */
 		/* give army to cntry2 */
+		if(ntn[cntry1].arm[extra].sold <= 0) return -1;
 		while(unitnum==(-1)&&unitcount<MAXARM) {
 			if (ntn[cntry2].arm[unitcount].sold<=0) {
 				/* give army to cntry2 */
@@ -743,6 +747,9 @@ long longval;
 		break;
 	case TDSHIP:
 		/* give navy to cntry1 */
+		if(!(ntn[cntry1].nvy[extra].merchant!=0
+		   && ntn[cntry1].nvy[extra].warships!=0
+		   && ntn[cntry1].nvy[extra].galleys!=0) ) return -1;
 		while(unitnum==(-1)&&unitcount<MAXARM){
 			if ((int)ntn[cntry2].nvy[unitcount].merchant+ntn[cntry2].nvy[unitcount].warships+ntn[cntry2].nvy[unitcount].galleys == 0) {
 				/* give navy to cntry2 */
@@ -787,7 +794,7 @@ long longval;
 		returnval=longval;
 		break;
 	case TDLAND:
-		if (cntry2!=sct[(int)longval][extint].owner)
+		if (cntry2 == sct[(int)longval][extint].owner)
 		returnval=(long)tofood( &sct[(int)longval][extint],cntry1);
 		break;
 	case TDARMY:
@@ -795,6 +802,7 @@ long longval;
 		returnval=armyvalue(cntry2,extint);
 		break;
 	case TDSHIP:
+		curntn = &ntn[cntry2];
 		if (flthold(extint)>0)
 		returnval = (long)flthold(extint);
 		break;
@@ -976,7 +984,7 @@ uptrade()
 				whobuy[type1[itemnum]]=natn[itemnum];
 			} else {
 				/* return bid */
-				takeback(whobuy[itemnum],
+				takeback(natn[itemnum],
 					type2[type1[itemnum]],
 					lvar1[itemnum],(int)lvar2[itemnum],FALSE);
 			}
@@ -995,6 +1003,7 @@ uptrade()
 	for (count=0;count<itemnum;count++) {
 		if (deal[count]==SELL) {
 			/* adjust the displayed value */
+			if (type1[count] != TDLAND)
 			lvar1[count]=gettval(0,natn[count],type1[count],lvar1[count],extra[count]);
 			/* keep unsold items up for sale */
 			if(lvar1[count]>=0) fprintf(tfile,"%d %d %d %d %ld %ld %d\n", deal[count], natn[count],type1[count],type2[count],lvar1[count],lvar2[count],extra[count]);
@@ -1013,6 +1022,8 @@ uptrade()
 					ntn[whobuy[count]].name,ntn[natn[count]].name,tradefail[type2[count]]);
 				/* place it on the list for next turn */
 				/* adjust the displayed value */
+				/* let land fail during trade */
+				if (type1[count] != TDLAND)
 				lvar1[count]=gettval(0,natn[count],type1[count],lvar1[count],extra[count]);
 				if(lvar1[count]>=0) fprintf(tfile,"%d %d %d %d %ld %ld %d\n", SELL, natn[count],type1[count],type2[count],lvar1[count],lvar2[count],extra[count]);
 			} else {
@@ -1026,6 +1037,72 @@ uptrade()
 		}
 	}
 	fclose(tfile);
+}
+
+/* remove a nations items from the trading board */
+void 
+fixtrade (cntry)
+int cntry;
+{
+	FILE *tfile;
+	int holdint, notopen=FALSE;
+	int type1[MAXITM], type2[MAXITM], deal[MAXITM], extra[MAXITM];
+	int natn[MAXITM], itemnum, getland(), gettrade(), checkland();
+	long lvar1[MAXITM], lvar2[MAXITM], armyvalue();
+	void  setaside(), takeback();
+
+	/* open trading file */
+	if ((tfile=fopen(tradefile,"r")) == NULL ) {
+		notopen=TRUE;
+	}
+	itemnum = 0;
+
+	/* read in all of the data */
+	while (notopen==FALSE && !feof(tfile)) 
+	{
+		if (fscanf(tfile,"%d %d %d %d %ld %ld %d\n",&deal[itemnum],
+			&natn[itemnum],&type1[itemnum],&type2[itemnum],
+			&lvar1[itemnum],&lvar2[itemnum],&extra[itemnum]) == 7){
+			if (deal[itemnum]==NOSALE) {
+				/* remove item from sales list */
+				deal[type1[itemnum]]=NOSALE;
+			} else if (deal[itemnum]==SELL) {
+				itemnum++;
+			}
+		}
+	}
+	if (notopen==FALSE) fclose(tfile);
+
+	/* go through list of commodities */
+
+	for ( holdint=0; holdint<itemnum; holdint++) 
+	{
+		if ( deal[holdint]==SELL ) 
+		{
+
+			if ( natn[holdint] == cntry )
+			{
+				/* remove it from market */
+
+				if ( (tfile = fopen(tradefile,"a+"))==NULL)
+				{
+					printf("Error opening file for trading");
+					abrt();
+				}
+
+				fprintf(tfile, "%d %d %d %d %ld %ld %d\n", 
+				 NOSALE, natn[holdint], holdint, 0, 0L, 0L, 0);
+
+				fclose(tfile);
+
+				takeback( natn[holdint], type1[holdint], lvar1[holdint],
+					extra[holdint], FALSE);
+
+			}  /* natn == cntry */
+
+		} /* SELL order */
+
+	} /* loop through commodities */
 }
 #endif ADMIN
 #endif TRADE

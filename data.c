@@ -93,7 +93,7 @@ int unitminsth[]=		/* min strength of a unit */
 100,50,100,50,250,125,
 250,50,500,100,250,125,
 50, 50, 50, 75, 75,
-100, 50, 150, 150, 150,
+75, 50, 150, 150, 150,
 175, 150, 500, 500, 1000
 };
 
@@ -262,7 +262,7 @@ int	conq_mail_status;
 /*              0         0         0         0         0         0 */
 /* a value of x means any designation is possible */
 /*              fwbcwmhpgcfshfrwdpbcpstgponpmldpllpiopshmtpbcltismasspdsgridp*/
-char *tg_stype="xffffttttffffffffffftxlxllttuuctcccfffxxtccmmmmmmmm$$$$$$$$$$0";
+char *tg_stype="xffffttttffffffffffftxlxllttuuctcccfff?xtccmmmmmmmm$$$$$$$$$$0";
 char *tg_value="13335157911433442331131135734567789123937571111111111111111110";
 
 char	*tg_name[] = {

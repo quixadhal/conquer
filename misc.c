@@ -886,6 +886,9 @@ sackem(cntry)
 	/* advertise */
 	fprintf(fnews,"1.\tCapitol of %s sacked by %s\n",ntn[cntry].name,ntn[nation].name);
 
+        /* Remove goods from trade board */
+	fixtrade(cntry);
+
 	/* first give all prizes to the conquerer */
 	if(curntn->tgold > 0) {			/* all gold */
 		ntn[nation].tgold += curntn->tgold;
@@ -1088,9 +1091,9 @@ char race;
 		} /* switch */
 	} /* for */
 
-	if((magic(cntry,DERVISH)==1) ||(magic(cntry,DESTROYER)==1)) {
-		veg_cost[ ICE ] = 1;
-		veg_cost[ DESERT ] = 1;
+	if(magic(cntry,DERVISH) || magic(cntry,DESTROYER)) {
+		veg_cost[ ICE ] = 0;
+		veg_cost[ DESERT ] = 0;
 	}
 
 	for( j = 0; ele[j] != '0'; j++ ) {

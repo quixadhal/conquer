@@ -1,25 +1,25 @@
-                              MAGIC POWERS
+                                MAGIC POWERS
 
-Magic powers differentiate your nation from all the other nations in the
-world.  There are three types of powers - truly MAGICAL powers, which
-usually involve summoning or spell use, CIVILIAN powers, which are related
-to civilization and trade, and MILITARY powers, which measure your ability
-to make war.  
+Magic powers differentiate your nation from all  the  other  nations  in  the
+world.  There are three types of powers - truly MAGICAL powers, which usually
+involve summoning or spell use, CIVILIAN powers, which are related to civili-
+zation  and  trade,  and  MILITARY powers, which measure your ability to make
+war.
 
-All nations start with at least one power (based on race or class) and can 
-purchase additional powers by expending jewels.  On the Magic Screen ('M'), 
-if you have enough jewels, you will be asked if you wish to buy a magic
+All nations start with at least one power (based on race or  class)  and  can
+purchase  additional  powers by expending jewels.  On the Magic Screen ('M'),
+if you have enough jewels, you will be asked if  you  wish  to  buy  a  magic
 power.
- 
-The magic screen also permits you to see what powers you have, and to
-takeover ORC nations if you are an ORC nation with the appropriate powers.
-END
-                            HOW TO GET MAGIC
 
-Magic powers cost jewels to obtain; the chance to obtain a power is based on 
-your nations magic ability.  The formulae for this is to take two to the 
-power of the sum of the number of powers you have from that type and half 
-the number of other powers times your base value:
+The magic screen also permits you to see what powers you have, and  to  take-
+over ORC nations if you are an ORC nation with the appropriate powers.
+END
+                              HOW TO GET MAGIC
+
+Magic powers cost jewels to obtain; the cost to obtain a power  is  based  on
+your  nations  magic  ability.   The  formulae for this is to take two to the
+power of the sum of the number of powers you have from that type and half the
+number of other powers times your base value:
 
 jewel cost for civilian power = Base * 2**( #mgk/2 + #civ + #mil/2 )
 
@@ -102,44 +102,61 @@ Flight          -- give flight to a unit at a cost of 1 spell pt / 100 men
 Enhance Attack  -- 30% increase in attack at a cost of 1 spell pt / 300 men
 Enhance Defense -- 30% increase in defense at a cost of 1 spell pt / 300 men
 
-   All of the above spells except summoning have an effect area of one army
-unit and a duration of one turn.  Flight and the Combat Enhancements each
-cause the unit to lose one movement point due to the change in status.
+All of the above spells except summoning have an effect area of one army unit
+and  a  duration  of one turn.  Flight and the Combat Enhancements each cause
+the unit to lose one movement point due to the change in status.
 END
-                        SUMMONED MONSTERS
+                              SUMMONED MONSTERS
 
-A monster unit represents one monster, but is the equivalent in combat of an
+A monster unit represents one monster, but is the equivalent in combat of  an
 army of the given number of men.  When summoned, they appear in your Capitol,
-and are yours to command until you disband them or can not afford to pay
-their per/turn jewel cost *and* 5x that cost in gold.  Monsters may be
-wounded in combat as can normal army units.  Wounded monsters have a percent
+and are yours to command until you disband them or  can  not  afford  to  pay
+their  per/turn  jewel  cost  *and*  5x  that  cost in gold.  Monsters may be
+wounded in combat as can normal army units.  Wounded monsters have a  percent
 chance of dying based on the percent damage taken (a dragon (1000 men) taking
-200 equivalent men of damage has a 20% chance of dying).  Next turn, however
-its strength will be fully restored (1000 men again).  A number of the
-monsters will also have the ability of flight.
+200 equivalent men of damage has a 20% chance of dying).  Next turn,  however
+its  strength  will be fully restored (1000 men again).  A number of the mon-
+sters will also have the ability of flight.
 
-Spell points can accumulate from turn to turn, but there is a 25% chance
-that half your unused spell points disappear each turn... this gives you
-some incentive to use them.
+Spell points can accumulate from turn to turn, but there is a 25% chance that
+half  your  unused  spell points disappear each turn....  This gives you some
+incentive to use them.
 END
                         SUMMONED MONSTER TYPES
 
            spell    combat                 jewels      power
            points   bonus    move    men    turn       prerequisites
-SPIRIT        2       +0      x1      50     1000
-ASSASSIN      2      +20      x1      50      400      NINJA
-EFREET        2      +10      x1.5    50      400      DERVISH
-GARGOYLE      2      +10      x1      75      450      MI_MONST
-WRAITH        2      +10      x1      75      450      VAMPIRE
-HERO          2       +0      x1     100      200      WARRIOR
-CENTAUR       2      +10      x1.5    50      200      CAVALRY
-GIANT         5       +0      x1     150     2100
-SUPERHERO     5      +15      x1     150      450      WARLORD
-MUMMY         5      +15      x1     150     1000      VAMPIRE
-ELEMENTAL     5       +5      x1.5   175     1900      SORCERER
-MINOTAUR      5      +20      x1     150     2100      DESTROYER
-DEMON         10     +50      x1     500     6000      DESTROYER
-BALROG        10     +40      x1.5   500     6000      WIZARD & VAMPIRE
-DRAGON        15     +50      x2    1000    10000      MA_MONST & WIZARD
+Spirit        2       +0      x1      50     1000
+Assasin       2      +20      x1      50      400      NINJA
+Efreet        2      +10      x1.5    50      400      DERVISH
+Gargoyl       2      +10      x1      75      450      MI_MONST
+Wraith        2      +10      x1      75      450      VAMPIRE
+Hero          2       +0      x1      75      200      WARLORD
+Centaur       2      +10      x1.5    50      200      CAVALRY
+Giant         5       +0      x1     150     2100
+Suphero       5      +15      x1     150      450      WARRIOR
+Mummy         5      +15      x1     150     1000      VAMPIRE
+Elmentl       5       +5      x1.5   175     1900      SORCERER
+Mintaur       5      +20      x1     150     2100      DESTROYER
+Daemon        10     +50      x1     500     6000      DESTROYER
+Balrog        10     +40      x1.5   500     6000      WIZARD & VAMPIRE
+Dragon        15     +50      x2    1000    10000      MA_MONST & WIZARD
+END
+                   FURTHER RESTRICTIONS ON ACQUIRING MAGIC
+
+Note: This applies only to powers acquired during the course of the game  and
+not  to innate powers of nations.  Further, extra random powers bought by new
+nations are considered to be bought  on  their  first  turn  as  their  first
+action.
+
+God only:              KNOWALL
+Orc only:              MI_MONST, AV_MONST, MA_MONST, BREEDER
+PC only:               ARMOR, AVIAN, SAPPER,
+                       DEMOCRACY, NINJA, ROADS, SAILOR, SLAVER,
+                       SUMMON, WYZARD, SORCEROR
+Forbidden to Dwarves:  SUMMON, WYZARD, SORCEROR
+Forbidden to Elves:    DESTROYER, VAMPIRE, MINER
+Forbidden to Orcs:     RELIGION, CAVALRY
+Forbidden to NPC's:    CAVALRY
 END
 DONE

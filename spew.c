@@ -95,12 +95,13 @@ makemess(n,fp)
 int n;
 FILE *fp;
 {
-	char *fname;
+	char fname[BIGLTH];
 	char main_class[20];
 	int i;
 	HowMany = n;
 
-	fname = DEFFILE;
+	/* read in only the rules file in defaultdir */
+	sprintf(fname, "%s/%s", DEFAULTDIR, DEFFILE);
 	InFile = fopen( fname, "r" );
 	if( InFile == NULL ){
 		fprintf( stderr, "Can\'t open: %s\n", fname );

@@ -207,6 +207,7 @@ int ispsnt;		/* true/false */
 	ntn[new].powers= ntn[target].powers;
 	ntn[new].tships= 0;
 	ntn[new].tsctrs = split;
+	ntn[new].tax_rate = 10;
 
 	/* first check first letter of name */
 	if( markok(toupper(ntn[new].name[0]),FALSE) )

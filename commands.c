@@ -189,7 +189,7 @@ redesignate()
 			mvaddstr(LINES-3,7,"What nation owner:");
 			refresh();
 			x = get_country();
-			if (x<NTOTAL) sptr->owner=x;
+			if (x>0 && x<NTOTAL) sptr->owner=x;
 			reset_god();
 			return;
 		case 'p':
@@ -200,7 +200,9 @@ redesignate()
 			}
 			mvaddstr(LINES-3,7,"new population for sector: ");
 			refresh();
-			sptr->people = (long) get_number();
+			metal = get_number();
+			if (metal <= (-1)) return;
+			sptr->people = metal;
 			reset_god();
 			return;
 		case 't':
@@ -222,13 +224,17 @@ redesignate()
 				mvaddstr(LINES-1,7,"new sector value: ");
 				refresh();
 				x = get_number();
-				if(x<100 && x>=0)
+				if(x<100 && x>0) {
 				if(y>END_MINE) {
 					sptr->jewels = (char)x;
 					sptr->metal = 0;
 				} else {
 					sptr->metal  = (char)x;
 					sptr->jewels = 0;
+				}
+				} else {
+					sptr->jewels = 0;
+					sptr->metal = 0;
 				}
 			} else {
 				sptr->jewels=0;
@@ -1119,8 +1125,8 @@ rmessage()
 			if(strncmp(line,"END",3)==0) contd=TRUE;
 		}
 		standout();
-		mvaddstr(LINES-3,(COLS/2)-22,"HIT ANY KEY TO CONTINUE");
-		mvaddstr(LINES-2,(COLS/2)-22,"HIT RETURN TO DELETE MESSAGE");
+		mvaddstr(LINES-3,(COLS/2)-13,"HIT ANY KEY TO CONTINUE");
+		mvaddstr(LINES-2,(COLS/2)-16,"HIT RETURN TO DELETE MESSAGE");
 		standend();
 		refresh();
 		inpch=getch();

@@ -37,6 +37,11 @@ int	anation;		/*nation attacking in this fight*/
 int	dnation;		/*one nation defending in this fight*/
 int	count=0;                /*number of armies or navies in sector*/
 
+/* indicators of naval or army combat */
+#define COMBAT_X	0
+#define COMBAT_A	1
+#define COMBAT_N	2
+
 /************************************************************************/
 /*	COMBAT()	run all combat on the map			*/
 /*  	for each sector, determine if armies in with attack mode	*/
@@ -45,7 +50,7 @@ void
 combat()
 {
 	register int i,j;
-	char	**fought; 		/* TRUE if already fought in sctr */
+	char	**fought; 		/* SET: if already fought in sctr */
 	int	temp,ctry;
 	int	initialized=FALSE;	/* TRUE if arrays initialized */
 	short	armynum,nvynum;
@@ -60,7 +65,7 @@ combat()
 	/*for each nation, if in attack mode run a check*/
 
 	/* no sectors have been fought in yet */
-	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++) fought[i][j]=FALSE;
+	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++) fought[i][j]=COMBAT_X;
 
 	for(ctry=NTOTAL-1;ctry>0;ctry--) if(isactive(ntn[ctry].active)) {
 
@@ -72,12 +77,12 @@ combat()
 			if((aptr->sold>0)
 			&&(aptr->stat>=ATTACK)
 			&&(aptr->stat<=SORTIE||aptr->stat>=NUMSTATUS)
-			&&(!fought[aptr->xloc][aptr->yloc])){
+			&&(!(fought[aptr->xloc][aptr->yloc]&COMBAT_A))){
 
 			/* someone can initiate combat in xspot,yspot */
 			xspot=aptr->xloc;
 			yspot=aptr->yloc;
-			fought[xspot][yspot]=TRUE;
+			fought[xspot][yspot]|=COMBAT_A;
 
 			/*initialize matrix*/
 			if( !initialized ) {
@@ -131,12 +136,11 @@ combat()
 		/*navy combat*/
 		for(j=0;j<MAXNAVY;j++)
 		if((nptr->nvy[j].warships!=0)
-		&&(fought[nptr->nvy[j].xloc][nptr->nvy[j].yloc]==0)
-		&&(sct[nptr->nvy[j].xloc][nptr->nvy[j].yloc].altitude==WATER)){
+		&&(!(fought[nptr->nvy[j].xloc][nptr->nvy[j].yloc]&COMBAT_N))) {
 
 			xspot=nptr->nvy[j].xloc;
 			yspot=nptr->nvy[j].yloc;
-			fought[xspot][yspot]=1;
+			fought[xspot][yspot]|=COMBAT_N;
 
 			/*initialize matrix*/
 			if( !initialized ){
@@ -156,11 +160,12 @@ combat()
 			if(isactive(ntn[country].active))
 			for(nvynum=0;nvynum<MAXNAVY;nvynum++)
 			if((NWSHP+NMSHP+NGSHP!=0)
-			&&(abs(NXLOC-xspot)<=2)
-			&&(abs(NYLOC-yspot)<=2)
-			&&(sct[NXLOC][NYLOC].altitude==WATER)
+			&&(((NXLOC==xspot) && (NYLOC==yspot)) ||
+			   (sct[NXLOC][NYLOC].altitude==WATER
+			    &&(abs(NXLOC-xspot)<=2)
+			    &&(abs(NYLOC-yspot)<=2)))
 			&&(count<MGKNUM)) {
-				fought[NXLOC][NYLOC]=1;
+				fought[NXLOC][NYLOC]|=COMBAT_N;
 				if((country!=ctry)
 				&&(nptr->dstatus[country]>HOSTILE)){
 					valid=TRUE;
@@ -804,13 +809,15 @@ int	unitnum;	/* if -1 then normal, else retreat only unit ismerc */
 
 	for(cnum=0;cnum<count;cnum++) if(owner[cnum]>(-1)){
 		if( unitnum != (-1) ) cnum=unitnum;
-		if((side[cnum]==ATKR)&&(retreatside==ATKR)){
-			ntn[owner[cnum]].arm[unit[cnum]].xloc = retreatx;
-			ntn[owner[cnum]].arm[unit[cnum]].yloc = retreaty;
-		}
-		else if((side[cnum]==DFND)&&(retreatside==DFND)){
-			ntn[owner[cnum]].arm[unit[cnum]].xloc = retreatx;
-			ntn[owner[cnum]].arm[unit[cnum]].yloc = retreaty;
+		if(side[cnum] == retreatside){
+			if ((ntn[owner[cnum]].arm[unit[cnum]].unittyp==A_MARINES)||
+			    (ntn[owner[cnum]].arm[unit[cnum]].unittyp==A_SAILOR)){
+				ntn[owner[cnum]].arm[unit[cnum]].sold *= 85;
+				ntn[owner[cnum]].arm[unit[cnum]].sold /= 100;
+			} else {
+				ntn[owner[cnum]].arm[unit[cnum]].xloc = retreatx;
+				ntn[owner[cnum]].arm[unit[cnum]].yloc = retreaty;
+			}
 		}
 		if( unitnum != (-1) ) return;
 	}
@@ -868,8 +875,8 @@ navalcbt()
 	 *     galley crew                      2
 	 *     merchant crew                    4
 	 * soldiers onboard:
-      *     SAILOR/ARCHER                   3/4
-      *     MARINE                          1/3
+         *     SAILOR/ARCHER                   3/4
+         *     MARINE                          1/3
 	 *     others                          4/3
 	 */
 	for(j=0;j<count;j++) if(owner[j]!=(-1)){
@@ -959,9 +966,9 @@ navalcbt()
 	/* calculate capture percentages */
 	/*
 	 *  This formula produces:
-      *        0% capture for   1:100  odds
+         *        0% capture for   1:100  odds
 	 *        2% capture for   1:10   odds
-      *       15% capture for   1:1    odds
+         *       15% capture for   1:1    odds
 	 *       60% capture for  10:1    odds
 	 *      100% capture for >60:1    odds
 	 *      with linear progression between each.
@@ -1240,10 +1247,11 @@ navalcbt()
 		k=0;
 		for(i=0;i<j;i++) if(owner[j]==owner[i]) k=1;
 		if(k==0) {
-		if(side[i]==DFND)
+		if(side[j]==ATKR)
 			fprintf(fnews,", attacker %s",ntn[owner[j]].name);
-		else if(side[i]==ATKR)
+		else if(side[j]==DFND)
 			fprintf(fnews,", defender %s",ntn[owner[j]].name);
+		else fprintf(fnews,", neutral %s",ntn[owner[j]].name);
 		}
 	}
 	fprintf(fnews,"\n");
