@@ -111,8 +111,8 @@ do_nomad()
 		}
 		count=0;
 		while( TRUE ) {
-			x=(int)P_AXLOC+rand()%5-2;
-			y=(int)P_AYLOC+rand()%5-2;
+			x=(int)P_AXLOC+rand()%3-1;
+			y=(int)P_AYLOC+rand()%3-1;
 
 			if( count++ > 100 ) {
 				P_ASOLD=0;
@@ -139,6 +139,7 @@ do_nomad()
 			break;
 		}
 	}
+#ifdef MORE_MONST
 	/* place a few new Nomad armies */
 	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD<=0){
 		if(rand()%4!=0) continue;
@@ -152,6 +153,7 @@ do_nomad()
 			P_ASTAT=ATTACK;
 		}
 	}
+#endif /* MORE_MONST */
 }
 
 void
@@ -187,6 +189,7 @@ do_savage()
 			}
 		}
 	}
+#ifdef MORE_MONST
 	/* place a few new savage armies */
 	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD<=0){
 		x=(rand()%(MAPX-8))+4;
@@ -204,6 +207,7 @@ do_savage()
 			P_ASTAT=ATTACK;
 		}
 	}
+#endif /* MORE_MONST */
 }
 
 void
@@ -251,11 +255,13 @@ do_pirate()
 				P_NYLOC= ntn[x].nvy[y].yloc;
 			}
 		}
+#ifdef MORE_MONST
 		if(rand()%15==0) {
 			/*randomly add one warship to pirate fleet*/
 			shipsize = rand()%(N_HEAVY-N_LIGHT+1);
 			(void) NADD_WAR(1);
 		}
+#endif /* MORE_MONST */
 	}
 }
 #endif MONSTER
@@ -550,6 +556,7 @@ redomil()
 		diff=curntn->tmil-(6*ideal/5);
 		for(armynum=1;done==FALSE && armynum<MAXARM;armynum++){
 			if((P_ASOLD<=0)
+			||(P_ATYPE==A_ZOMBIE)
 			||(P_ATYPE==A_MILITIA)
 			||(P_ATYPE>=MINLEADER)
 			||(P_ASTAT==ONBOARD)
@@ -711,7 +718,7 @@ getdstatus()
 	for(x=1;x<NTOTAL;x++) if( isntn(ntn[x].active) ){
 		hostile = svhostile;
 		if(npctype(curntn->active) != npctype(ntn[x].active)) 
-			hostile+=20;	/* not same allignment */
+			hostile+=20;	/* not same alignment */
 		friendly = 60-hostile;
 	     	if( curntn->active==ISOLATIONIST ) friendly -= 20;
 		/* negate impact of above line on neutrals */
@@ -826,7 +833,7 @@ nationrun()
 	float	hunger;
 	long zz;
 	check();
-	prep(country,FALSE);
+	prep(country,FALSE,FALSE);
 
 	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) attr[x][y]=0;
 
@@ -1079,7 +1086,7 @@ nationrun()
 		if(curntn->metals >  3 * METALORE * curntn->tmil*x){
 			curntn->dplus+=1;
 			curntn->metals-=METALORE*curntn->tmil*x;
-			printf("\tnation %s buys +1 percent defence\n",curntn->name);
+			printf("\tnation %s buys +1 percent defense\n",curntn->name);
 		}
 	}
 	/* don't allow status ATTACK from own city */
@@ -1127,9 +1134,8 @@ n_unowned()
 {
 #ifdef XENIX
 	register int z;
-#else
-	register int x,y;
 #endif /*XENIX*/
+	register int x,y;
 
 	/* around capitol */
 	for(x=(int)curntn->capx-4;x<=(int)curntn->capx+4;x++){

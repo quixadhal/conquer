@@ -137,25 +137,66 @@ Orc         XOMNTNATTR     XOHILLATTR     XOCLERATTR     XOFOREATTR     XOWOODAT
 END
                             VIEWING THE WORLD
 
-When you log in, you will notice that you can only see a part of the
-world.  You must discover the world by getting certain magical powers,
-by taking land, or by moving armies and navies.  The use of SCOUT armies
-is intended for this purpose.
+When you first log in, you will notice that you can only see a portion of the
+entire world.  Your range of vision is determined by the magic powers you
+possess and the location of your sectors and armies.  Scouts are useful to
+expand the amount of land you can view.
 
 The 'd' command allows you to change what you see on the map.  You can
 alter the information in the sector and can  change the type of sectors that
-are highlighted as follows:
+are highlighted.  See the next two sections for the list of possible display
+and hightlight options.
 
-viewing options:  (d)esignation, (r)ace, (M)ove cost, (p)eople, (D)efense
-   (f)ood, (c)ontour, (v)egetation, (m)etal, (n)ation mark, (j)ewels, (i)tems
-highlight option: (o)wner (a)rmy (y)our Army, move (l)eft, (s)pecial, (x)=none
-toggle move mode: hit '/'
+Normally, the conquer display shows your chosen display option with blank
+spaces to the right to space out the map nicely.  But, you may also use the
+area thus provided to show a secondary display.  This secondary display may
+be turned on and off using the '/' display selection.  Also, you may
+distinguish between what to display in the primary or secondary display by
+prefacing your selection with either a '1' or '2'.   If neither is chosen,
+then the primary display is set to the selected option, while the secondary
+display is turned off.
+END
+                            DISPLAY OPTIONS
 
-Move mode ('/' toggle) will display both the current display as well as
-the move cost for each sector along side.
+This section describes the possible display options proceeded by their
+associated keystroke:
 
-I have tried to make the use of these options clear and self explanatory.
-Roman numerals (for population...) indicate thousands of people.
+ (d)  designation:  show your designations and other nation's marks.
+ (r)  race:  show race of owned sectors (Human, Orc, Elf, Dwarf, Lizard, etc.)
+ (M)  move cost:  show the cost in movement points to move into a sector.
+ (p)  people:  show how many people live in a sector; arabic numbers indicate
+        the amount in hundreds, while 'I', 'V' and 'X' are used to indicate
+        at least one thousand, five thousand, and ten thousand respectively.
+ (D)  defense:  show the relative defensive strength of a sector.  Both sector
+        terrain and sector fortifications are taken into account.
+ (f)  food:  display relative food production ability of a sector.
+ (c)  contour:  display the elevation symbol of each sector.
+ (v)  vegetation:  display the vegetation symbol of each sector.
+ (m)  metal:  show the relative metal production ability of a sector.
+ (n)  nation mark:  display the national mark for all owned sectors.
+ (j)  jewels:  show the relative jewel production ability of a sector.
+ (i)  items:  display the designation neccesary to take advantage of the
+        special item in a sector.
+END
+                         HIGHLIGHT OPTIONS
+
+This section describes the possible modes of highlighting proceeded by the
+keystroke used to select each:
+
+ (o)  owned:  highlight all sectors owned by your country.
+ (a)  army:  highlight all sectors containing army units.
+ (y)  your army:  hightlight all sectors containing at least on of your
+        army units.
+ (l)  moves left:  hightlight any sectors containing one of your armies with
+        movement points remaining.
+ (s)  special:  highlight any sector containing a special item visable to
+        your nation.
+ (x)  none:  do not highlight any sectors.
+
+   In general, the most useful displays are the production displays (food,
+metal, and jewels), and the most useful highlights are the army highlight
+(to show where your enemies are), and the moves left highlight (to indicate
+those units which may still be moved onto your enemies).
 END
                         COMMERCE AND TRADING
 

@@ -3,6 +3,9 @@
 #	BY CHANGING THIS FILE, YOU AGREE TO ABIDE BY THE LIMITATIONS STATED IN
 #	THE LIMITED USE CONTRACT CONTAINED IN THE FILE "header.h"
 #
+#	Make sure to set your desired configuration by
+#	editing the file "header.h".
+#
 #       This makefile has been modified to allow compilation using
 #       a parallelized make program.  It has been used successfully
 #       on an Encore Multimax parallel computer with both 4 and
@@ -12,6 +15,8 @@
 #
 #       Please report any problems to adb@bucsf.bu.edu
 #				   or adb@bu-cs.bu.edu
+#
+#	Conquer news mailing list: conquer-news-request@bu-cs.bu.edu.
 #
 MAKE	= /bin/make
 CC	= /bin/cc
@@ -44,9 +49,19 @@ SHARFLG = -D -c -l$(SHARLIM) -o$(SHARNAM)
 #	of conquer.  [not distributed with conquer V4]
 #GETOPT	= getopt.o
 
-#if the final link does not compile change to the line below
+#
+#	libraries for BSD systems:
 LIBRARIES = -lcurses -ltermcap
+#
+#	libraries for SYSV systems:
 #LIBRARIES = -lcurses
+#
+#	libraries for Xenix systems:
+#LIBRARIES = -ltermlib -ltcap -lcrypt
+
+#	CURRENT is this directory.  The directory where the source
+#	and Makefile are located
+CURRENT = /usr4/acm/stud/adb/src/conquer
 
 #	DEFAULT is the directory where default nations & help files will be 
 #	stored.	 It is also the default directory = where players will play 
@@ -193,17 +208,17 @@ new_game:	all insthelp
 insthelp:	helpfile
 	@echo Installing helpfiles
 	-$(RM) $(DEFAULT)/$(HELPOUT)0
-	-$(LN) $(HELPOUT)0 $(DEFAULT)/$(HELPOUT)0
+	-$(LN) $(CURRENT)/$(HELPOUT)0 $(DEFAULT)/$(HELPOUT)0
 	-$(RM) $(DEFAULT)/$(HELPOUT)1
-	-$(LN) $(HELPOUT)1 $(DEFAULT)/$(HELPOUT)1
+	-$(LN) $(CURRENT)/$(HELPOUT)1 $(DEFAULT)/$(HELPOUT)1
 	-$(RM) $(DEFAULT)/$(HELPOUT)2
-	-$(LN) $(HELPOUT)2 $(DEFAULT)/$(HELPOUT)2
+	-$(LN) $(CURRENT)/$(HELPOUT)2 $(DEFAULT)/$(HELPOUT)2
 	-$(RM) $(DEFAULT)/$(HELPOUT)3
-	-$(LN) $(HELPOUT)3 $(DEFAULT)/$(HELPOUT)3
+	-$(LN) $(CURRENT)/$(HELPOUT)3 $(DEFAULT)/$(HELPOUT)3
 	-$(RM) $(DEFAULT)/$(HELPOUT)4
-	-$(LN) $(HELPOUT)4 $(DEFAULT)/$(HELPOUT)4
+	-$(LN) $(CURRENT)/$(HELPOUT)4 $(DEFAULT)/$(HELPOUT)4
 	-$(RM) $(DEFAULT)/$(HELPOUT)5
-	-$(LN) $(HELPOUT)5 $(DEFAULT)/$(HELPOUT)5
+	-$(LN) $(CURRENT)/$(HELPOUT)5 $(DEFAULT)/$(HELPOUT)5
 	touch insthelp
 
 helpfile:	$(HELPOUT)0 $(HELPOUT)1 $(HELPOUT)2 $(HELPOUT)3 $(HELPOUT)4 $(HELPOUT)5

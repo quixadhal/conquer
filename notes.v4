@@ -102,13 +102,68 @@
  66. rewrote all routines that were called during a newlogin so that print
 	statments use the newerror() or newmsg() interface.
 ===4.0 patch number three released => 4.3 ==========================
+ 67. fixed a bug reported long ago.. negative treasury and charity.
+	I get too damn much mail.  [I just sent #3 out!!!!]
+ 68. main.c(798): "%s%s" to "%s%d"... fixes bug in sprintf.
+ 69. added sprinf(defaultdir,"") to main.c and admin.c.
+ 70. put test on error messages in place() to make sure it won't call newerror.
+ 71. moved the '-p' option from admin.c to main.c.
+ 72. made error messages in main.c go to stderr instead of stdout.
+ 73. made the '-p' flag display world as seen by nations eyes.
+ 74. made the designation portion of the display print elevation when NODESIG.
+ 75. added fix to make sure that demi-god exists.  [Richard Caley]
+ 76. added check to makeworld to make sure given demi-god name exists.
+ 76. also added a check to forms.c for demi-god name change.
+ 76. added checks for ORCTAKE definitions to newhelp.c [Jerome Marella]
+ 77. added a CURRENT directory definition to Makefile. [Kevin Coombes]
+ 78. fixed bugs in XENIX defines. [Jonathan Bayer]
+ 79. display.c(301): "+" -> '+'; I thought I fixed this *sigh*. [Richard Caley]
+ 80. added a REMAKE compiler option to allow destruction of currently running
+	games.  This is usable by demi-god to restart a campaign.
+ 81. fixed up the man page.
+ 82. wrote a non-echo string entry routine for curses password entry.
+ 83. added above routine to newlogin.c, makeworl.c, and forms.c.
+ 84. removed restriction on changing to NPC after making moves.
+	This makes sense... since players may move NPC pieces anyway.
+ 85. changed the makeworld routine to curses interface.  This is still
+	rather rudimentary, and will be worked on prior to Version 5.0.
+ 86. added NADJLOC; to the two split sections in reports.c:fleetrpt().
+ 87. corrected misspelling of alignment throughout code.
+ 88. added check to land_reachp() for neutral status.  [Michael D. Smith]
+ 89. added MORE_MONST compiler option to decide whether or not empty
+	monster armies should be filled during the game.
+ 90. fixed misspelling of 'defence' in npc.c and txt4.
+ 91. fixed overflow of jewels and metal displaying in newlogin.c.
+ 92. *&$%! fixed a stupid bug with checking if leader is really dead.
+ 93. added a 'shipchk' to the prep routine.  hopefully will fix land taking.
+ 94. added a redraw after movement if in army highlight mode.
+ 95. added in new method for displaying anything in 2nd column. [Richard Caley]
+ 96. tweeked the prompting for the second column display method.
+ 97. rewrote the section in the help files on the display mode.
+ 98. fixed major bug with destroying any army in water.  [Ben Herman]
+	Another bug I thought I fixed long ago. *sigh*
+ 99. newlogin.c(1034):  typo caused nations to be too close. [Wes Shreiner]
+100. decrease range of nomad movement to 1 sector from locaton.
+101. removed the shipchk from prep()... didn't do jack anyway.
+102. hacked at the display code some to fix redeclarations and unused vars.
+103. fixed the bug with not being able to take sectors.  involved status
+	of nations not being at WAR with nomads.  fixed this by setting
+	statuses in three places:  destroy(), place(), check().
+104. fixed seg fault when entering change() for savages.
+105. removed the printing to fp in change() routine.
+106. changed npctype to detect monsters, otherwise it core dumps.
+107. changed the alignment printing for savages back to what it was.
+108. made sure that NPCs do not group or disband ZOMBIES.
+109. added a NOSCORE compiler option to allow only god to see full score list.
+110. changed the class name NPC to monster.
 
 -------------------------------------------------------------------------
 | 2.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V4             |
 -------------------------------------------------------------------------
 o make land capture only occur during update.
-o make the create world routine interactive with curses display.
-o make the newlogin routine interactive with curses display.
+o some problems due to two nations capturing same land.  should fix by above.
+o some problems with MINER not providing initial stats on first turn after
+	nation has been added.
 o fix the helpfiles to reflect current changes in game as noted later in this
 	file.
 o there is some overflow somewhere, which creates a huge amount of gold

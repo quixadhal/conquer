@@ -67,13 +67,16 @@
 #define METALPCT 33	/* percent of tradegoods that are metals	*/
 #define JEWELPCT 33	/* percent of tradegoods that are luxury items	*/
 #define HIDELOC		/* defined if news is not to report sectors	*/
-
 #define OGOD		/* defined if you wish to enhance god powers.   */
-
-#define DERVDESG	/* allow DERVISH to redesignate in a DESERT/ICE	*/
+#define REMAKE		/* may make a world even if datafile exists.	*/
+			/* this allows demi-gods the ability to remake  */
+			/* their world.                                 */
+/* #define NOSCORE	/* only show full scores to god while in game	*/
+#define DERVDESG	/* allow DERVISH to redesignate in DESERT/ICE	*/
 #define MONSTER	45	/* defined if pirates/savages/nomads/lzard exist.
 			   represents # of sectors of land that need to be
 			   in world per pirate/savage/nomad nation	*/
+#define MORE_MONST	/* defined if destroyed monsters are replaced	*/
 #define NPC	45	/* defined if NPC nations should exist. The numeric
 			   represents # of sectors of land that need to be
 			   in world per non-player character nation	*/

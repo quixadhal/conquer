@@ -55,7 +55,7 @@ int	__line__;
 				__file__,__line__,country,i,a->xloc,a->yloc);
 				a->sold = 0;
 			}
-			if( sct[a->xloc][a->yloc].altitude==WATER ) {
+			if( a->stat != ONBOARD && sct[a->xloc][a->yloc].altitude==WATER ) {
 				fprintf( stderr, "file %s: line %d: nation[%d] army[%d] loc=%d,%d (water) men=%d\n",
 				__file__,__line__,country,i,a->xloc,a->yloc,a->sold);
 				a->sold = 0;
@@ -63,7 +63,14 @@ int	__line__;
 		} /* for */
 
 		for( i = 0; i < NTOTAL; i++ ) {
-			if( nptr->dstatus[i] > JIHAD ) {
+			if( ntn[i].active >= NPC_PEASANT ) {
+				if ( nptr->dstatus[i] != WAR ) {
+					nptr->dstatus[i] = WAR;
+				}
+				if ( ntn[i].dstatus[country] != WAR ) {
+					ntn[i].dstatus[country] = WAR;
+				}
+			} if( nptr->dstatus[i] > JIHAD ) {
 				fprintf( stderr, "file %s: line %d: nation[%d] diplomatic status with %d = %d\n",
 					__file__, __line__, country, i, nptr->dstatus[i] );
 				nptr->dstatus[i] = WAR;

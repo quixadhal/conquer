@@ -15,6 +15,7 @@
 /*DEFINE TEMPORARY VARIABLES FROM MAKEFILE*/
 #include <ctype.h>
 #include <stdio.h>
+#include <pwd.h>
 #include "header.h"
 #include "data.h"
 
@@ -24,6 +25,7 @@
 int pwater;		/* percent water in world (0-100) */
 extern short	country;
 extern int	numleaders;
+char datadir[FILELTH];
 char **area_map;			/*Value Map of Areas*/
 char **type;
 
@@ -41,106 +43,167 @@ nmountains--; \
 }
 
 void
+zeroworld()
+{
+	int i,armynum,nvynum;
+
+	/* initialize all countries */
+	for (i = 0; i < NTOTAL; i++) {
+		curntn = &ntn[i];
+		for (armynum=0; armynum < MAXARM; armynum++) {
+			P_ASOLD = (long)0;
+			P_AXLOC = P_AYLOC = P_ATYPE = P_AMOVE = (unsigned char)0;
+			P_ASTAT = DEFEND;
+		}
+		for (nvynum=0; nvynum < MAXNAVY; nvynum++) {
+			P_NWSHP = P_NMSHP = P_NGSHP = (unsigned short)0;
+			P_NCREW = P_NPEOP = P_NARMY = (unsigned char)0;
+			P_NXLOC = P_NYLOC = P_NMOVE = (unsigned char)0;
+		}
+		curntn->active = INACTIVE;
+		curntn->repro = (char)0;
+		curntn->jewels = curntn->tgold = curntn->metals = 0L;
+		curntn->powers = curntn->tciv = curntn->tmil = curntn->score = 0L;
+		curntn->race = TUNKNOWN;
+		curntn->maxmove = 0;
+		curntn->class = curntn->aplus = curntn->dplus = (short)0;
+		curntn->inflation = curntn->tsctrs = curntn->tships = (short)0;
+	}
+}
+
+void
 makeworld(rflag)
 int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 {
 	char passwd[PASSLTH+1],*getpass();
-	char newstring[BIGLTH];
+	char newstring[BIGLTH],tempc[BIGLTH];
 	FILE *fopen();
+	struct passwd *getpwnam();
+	int i,valid;
 
-	/*abort if datafile currently exists*/
-	if(access(datafile,00) == 0) {
-		printf("ABORTING: File %s exists\n",datafile);
-		printf("\tthis means that a game is in progress. To proceed, you must remove \n");
-		printf("\tthe existing data file. This will, of course, destroy that game.\n\n");
-		exit(FAIL);
-	}
-printf("\n************************** WELCOME TO CONQUER **************************");
-printf("\n*\tThe world will now be created...                               *");
-printf("\n*\t                                                               *");
-printf("\n*\tYour super user login will be 'god'.                           *");
-printf("\n*\t                                                               *");
-printf("\n*\tNon player countries will be read from the file 'nations'      *");
-printf("\n*\tand will have the same password as god (which you are about to *");
-printf("\n*\tenter). Add player nations with <conqrun -a>.  Have fun!!!     *");
-printf("\n*\t                                                               *");
-printf("\n*\tRemember to check the world out before playing to make sure    *");
-printf("\n*\tno nations are in bad positions (surrounded by water... )      *");
-printf("\n************************************************************************\n\n");
+	/* conquer makeworld information */
+	newinit();
+	sprintf(newstring, "Datadir: %s", datadir);
+	errorbar("World Generator", newstring);
 
-	printf("First, we must zero extraneous files from prior games\n");
-	printf("\tignore any errors this causes\n");
+	mvaddstr(0,COLS/2-9,"WELCOME TO CONQUER");
+	mvaddstr(2,5,"Genesis begins...  Your super user login will be 'god'.");
+	mvaddstr(3,0,"Non-player countries will be read in from the file 'nations',");
+	mvaddstr(4,0,"and will have the same password as god, which you will soon set.");
+	mvaddstr(5,0,"     To add players after building:  conqrun -a");
+	if (strcmp(datadir,"[default]")!=0)
+		printw(" -d %s", datadir);
+	addch('.');
+
+	newmsg("..Zero out extraneous files from prior games");
+	/* flush out beginning input */
+	while(getch()!='\n') ;
 	sprintf(newstring,"rm -f %s* %s* %s* %s* %s %s 2> /dev/null",
 		exefile, msgfile, newsfile, isonfile, tradefile, timefile);
-	printf("\t%s\n",newstring);
 	system(newstring);
-	printf("OK This has been done, Now to set up a new world\n\n");
+	newerror("....Initialize the nation structures");
+	zeroworld();
+	newerror("Initialization complete:  And there was light....");
 
-	while(TRUE) {			/* password routine */
-		strncpy(passwd,getpass("please enter new conquer super user password (remember this!):"),PASSLTH);
-		strncpy(ntn[0].passwd,getpass("please reenter conquer password:"),PASSLTH);
-		if((strlen(passwd)<2)
-		||(strncmp(ntn[0].passwd,passwd,PASSLTH)!=0)){
-			beep();
-			printf("\ninvalid super user password\n");
-		} else break;
-  	}
-
-	strncpy(ntn[0].passwd,crypt(passwd,SALT),PASSLTH);
-
-	/* finally ask for the secondary administrator */
-	printf("\nYou may now designate an alternate ruler for this world.");
-	while(TRUE) {
-		printf("\nWhat demi-god shall rule this world? ");
-		gets( newstring );
-		if (strlen(newstring)==0) {
-			printf("\nGod blesses this world with his presense!\n");
-			(void) strcpy(ntn[0].leader,LOGIN);
-			break;
-		} else if (strlen(newstring) <= LEADERLTH) {
-			/* HOW DO YOU VERIFY THAT IT IS AN ACTUAL USER? */
-			printf("\nThe demi-god %s may administrate this new world.\n",newstring);
-			(void) strncpy(ntn[0].leader,newstring,LEADERLTH);
-			break;
-		}
-		printf("\nName too long.");
-	}
-
-	while(TRUE) {
-		printf("\nplease enter the size of the world\n");
-
-		printf("values should be divisible by 8 & greater than 23\n");
-		printf("Enter number of X sectors: ");
-		gets( passwd );
-		world.mapx = atoi( passwd );
-		if(((world.mapx % 8) != 0 ) || (world.mapx<24)){
-			printf("ERROR: Invalid value entered\n");
+	valid=FALSE;
+	while(valid==FALSE) {			/* password routine */
+		mvprintw(7,0,"Enter Super-User Password: ");
+		clrtoeol();
+		refresh();
+		i = get_pass(newstring);
+		if (i < 4) {
+			newerror("Password Too Short");
+			continue;
+		} else if (i > PASSLTH) {
+			newerror("Password Too Long");
 			continue;
 		}
-		printf("Enter number of Y sectors: ");
-		gets( passwd );
-		world.mapy = atoi( passwd );
-		if(((world.mapy % 8) != 0 ) || (world.mapy<24)){
-			printf("ERROR: Invalid value entered\n");
+		mvprintw(7,0,"Reenter Super-User Password: ");
+		clrtoeol();
+		refresh();
+		i = get_pass(passwd);
+
+		if((i<4)||(i>PASSLTH)||(strncmp(passwd,newstring,PASSLTH)!=0)){
+			newerror("Invalid Password Match");
+		} else valid=TRUE;
+	}
+	strncpy(ntn[0].passwd,crypt(passwd,SALT),PASSLTH);
+	
+	/* finally ask for the secondary administrator */
+	mvaddstr(7,0,"You may now designate an alternate ruler for this world.");
+	while(TRUE) {
+		mvaddstr(8,0,"What demi-god shall rule this world? ");
+		clrtoeol();
+		refresh();
+		get_nname( newstring );
+		if (strlen(newstring)==0) {
+			newerror("God blesses this world with his presense!");
+			(void) strcpy(ntn[0].leader,LOGIN);
+			mvaddstr(7,0,"Demi-God: [none]");
+			clrtoeol();
+			break;
+		} else if (strlen(newstring) <= LEADERLTH) {
+			if (getpwnam(newstring)!=NULL) {
+				sprintf(tempc,"The demi-god %s may administrate this new world.",newstring);
+				newerror(tempc);
+				(void) strncpy(ntn[0].leader,newstring,LEADERLTH);
+				mvprintw(7,0,"Demi-God: %s",ntn[0].leader);
+				clrtoeol();
+				break;
+			} else {
+				sprintf(tempc,"Their is no mortal named %s on this system.",newstring);
+				newerror(tempc);
+			}
+		} else {
+			newerror("That Name is Too long.");
+		}
+	}
+	mvaddstr(8,0,"Please Enter the Size of the World.  [Divisible by 8 and > 23]");
+	clrtoeol();
+	while(TRUE) {
+		mvaddstr(9,0,"Enter number of X sectors: ");
+		clrtoeol();
+		refresh();
+		world.mapx = get_number();
+		if(((world.mapx % 8) != 0 ) || (world.mapx<24)){
+			newerror("Invalid X Value Entered");
 			continue;
 		}
 		break;
 	}
+	while (TRUE) {
+		mvaddstr(10,0,"Enter number of Y sectors: ");
+		clrtoeol();
+		refresh();
+		world.mapy = get_number();
+		if(((world.mapy % 8) != 0 ) || (world.mapy<24)){
+			newerror("Invalid Y Value Entered");
+			continue;
+		}
+		break;
+	}
+	mvprintw(8,0,"Map Size: %dx%d", (int)world.mapx, (int)world.mapy);
+	clrtoeol();
+	move(10,0);
+	clrtoeol();
 
 	getspace();	/* malloc space for this world */
 
 	/* get amount of water to have in the world */
 	while(TRUE) {
-		printf("\nEnter percent water to have in world (0-100): ");
-		gets( passwd );
-		pwater = (-1);
-		pwater = atoi( passwd );
+		mvaddstr(9,0,"Enter percent water to have in world (0-100): ");
+		clrtoeol();
+		refresh();
+		pwater = get_number();
 		if((pwater<0) || (pwater>100 )){
-			printf("ERROR: Invalid value entered\n");
+			newerror("Invalid Percentage Entered");
 			continue;
 		}
 		break;
 	}
+	mvprintw(9,0,"Percentage Water: %d", pwater);
+	clrtoeol();
+	refresh();
 
 	if( rflag==FALSE ) createworld();
 	else readmap();	/* read map in from mapfiles */
@@ -156,8 +219,10 @@ printf("\n**********************************************************************
 		fprintf(fm,"5\tGLOBAL ANNOUNCEMENTS\n");
 		fclose(fm);
 	} else {
-		fprintf(stderr,"error opening news file <%s>\n",newstring);
+		sprintf(tempc,"error opening news file <%s>\n",newstring);
+		newerror(tempc);
 	}
+	newreset();
 }
 
 void
@@ -181,12 +246,21 @@ createworld()	/* create world */
 	area_map = (char **) m2alloc(MAPX,MAPY,sizeof(char));
 	type = (char **) m2alloc(MAPX,MAPY,sizeof(char));
 
-	printf("\n\ncreating world\n");
-	printf("\tin the beginning, the world was a set of bits ordered in\n");
-	printf("\ta random way.  Then the conquer game administrator (hereafter\n");
-	printf("\tknown as god) decreed 'conqrun -m'!!!\n");
-	printf("\nday 1... and the variables were initialized\n\n");
+	mvaddstr(11,0,"Creating world");
+	mvaddstr(12,5,"In the beginning, the world was a set of bits ordered in");
+	mvaddstr(13,0,"a random way.  Then the conquer game administrator (hereafter");
+	mvaddstr(14,0,"known as god) decreed 'conqrun -m'!!!");
+
 	/*initialize variables */
+	newerror("Day 1... And the variables were initialized.");
+	move(11,0);
+	clrtoeol();
+	move(12,0);
+	clrtoeol();
+	move(13,0);
+	clrtoeol();
+	move(14,0);
+	clrtoeol();
 	avvalue = (((float) (100-pwater)/25.0)); /*Average water tvalue of sectors*/
 	for(i=0;i<MAXX;i++) for(j=0;j<MAXY;j++)
 		tplace[i][j] = area_map[i][j] = 0;
@@ -332,7 +406,8 @@ createworld()	/* create world */
 				else type[X*8+i][Y*8+j]=HALF;
 				break;
 			default:
-				fprintf(stderr,"ERROR\n");
+				newerror("Uh oh!!!  The world has gone wacky.");
+				newreset();
 				abrt();
 			}
 		}
@@ -350,7 +425,10 @@ createworld()	/* create world */
 	chance=0;
 	for(X=0;X<MAPX;X++) for(Y=0;Y<MAPY;Y++)
 		if(type[X][Y] == WATER) chance++;
-	printf("day 2... and god decreed that water should have %d / %d sectors\n",chance,NUMSECTS);
+
+	mvprintw(10,0,"Water: %d / %d sectors",chance,NUMSECTS);
+	clrtoeol();
+	newerror("Day 2... God added water to the world");
 
 	/*Newly added code to smooth the world out*/
 	for(X=1;X<MAPX-1;X++) for(Y=1;Y<MAPY-1;Y++) {
@@ -364,7 +442,10 @@ createworld()	/* create world */
 	chance=0;
 	for(X=0;X<MAPX;X++) for(Y=0;Y<MAPY;Y++)
 		if(type[X][Y] == WATER) chance++;
-	printf("\tbut god was not pleased and smoothed the oceans to %d / %d sectors\n\n",chance,NUMSECTS);
+
+	mvprintw(10,0,"Water: %d / %d sectors",chance,NUMSECTS);
+	clrtoeol();
+	newerror("But God was not pleased... and smoothed the oceans.");
 
 	/*Adjust world given sectors as land or sea, place vegetation,
 	designation, and altitude */
@@ -377,7 +458,9 @@ createworld()	/* create world */
 	avvalue	= PMOUNT * (100-pwater);
 	avvalue	/= 10000;
 	nmountains	= NUMSECTS * avvalue;
-	printf("day 3... god created %ld mountains and hills\n",nmountains);
+	
+	mvprintw(11,0,"Hills and Mountains: %d",nmountains);
+	newerror("Day 3... God created hills and mountains");
 
 	/* heuristic says that 5 is cutoff number to stop placing ranges */
 	/* and 1 third of mountains are placed as random hills		*/
@@ -568,13 +651,14 @@ rawmaterials() 		 /*PLACE EACH SECTOR'S RAW MATERIALS */
 	int valid;
 	int nmountains;
 	struct	s_sector	*sptr;
+	char newstring[BIGLTH];
 
 	TURN=1;
 
 	nmountains = 10 * (END_NORMAL+1);
 	for(i=0;i<=END_NORMAL;i++) nmountains -= ( *(tg_value+i) - '0');
 
-	printf("\nday 4... and god placed the worlds raw materials\n");
+	newerror("Day 4... God placed the world's raw materials");
 	for(y=0;y<MAPY;y++) for(x=0;x<MAPX;x++) {
 
 		sptr = &sct[x][y];
@@ -628,24 +712,41 @@ rawmaterials() 		 /*PLACE EACH SECTOR'S RAW MATERIALS */
 				sptr->tradegood = i;
 			}
 			if(sptr->tradegood == TG_none)
-				printf("??? DEBUG -tradegood==NONE\n");
+				newerror("??? DEBUG -tradegood==NONE");
 		}
 	}
 
-	printf("\nday 5... and god decreed that world would be populated\n");
-	printf("\tby all manner of creatures; big ones; little one; fat ones;\n");
-	printf("\tskinny ones; orange ones; turquois ones; bright blue ones\n");
-	printf("\tWAIT!!! god has suddenly realized that smurfs were taking things\n");
-	printf("\ttoo far and stopped creating new ones to place everybody on the map...\n");
+	mvprintw(13,5,"All manner of creatures were created: big ones, little ones,");
+	mvprintw(14,0,"fat ones, skinny ones, orange ones, turquois ones, bright blue ones.");
+	mvprintw(15,0,"WAIT!!!  God has suddenly realized that smurfs were taking things");
+	mvprintw(16,0,"too far and stopped creating new ones, and placed everybody on the map...");
+	newerror("Day 5... God decreed that world would be populated");
+	move(14,0);
+	clrtoeol();
+	move(15,0);
+	clrtoeol();
+	move(16,0);
+	clrtoeol();
 	populate();
 	MERCMEN = ST_MMEN;
 	MERCATT = ST_MATT;
 	MERCDEF = ST_MDEF;
-	printf("\nday 6... and god, who believed in a two day weekend, took off to\n\tthe local pub to celebrate...\n\n");
-	printf("day 7... and god rested (to get rid of that stupid hangover)\n");
-	printf("\tand thought about logging in to see what the world looks like\n");
-	printf("\tand about telling players to add themselves to the game\n");
-	printf("\twith the 'conqrun -a' command.\n");
+	newerror("Day 6... God, believing in long weekends, went and got smashed");
+	newerror("Day 7... God rested (to get rid of that stupid hangover)");
+	sprintf(newstring," ...Log in via 'conquer -n god");
+	if (strcmp(datadir,"[default]")!=0) {
+		strcat(newstring," -d ");
+		strcat(newstring,datadir);
+	}
+	strcat(newstring,"'");
+	newerror(newstring);
+	sprintf(newstring," ...Players may be added via 'conqrun -a");
+	if (strcmp(datadir,"[default]")!=0) {
+		strcat(newstring," -d ");
+		strcat(newstring,datadir);
+	}
+	strcat(newstring,"'");
+	newerror(newstring);
 }
 
 /*fill: subroutine to fill in a square edges with land or sea*/
@@ -722,7 +823,7 @@ fill_edge(AX,AY)
 void
 populate()
 {
-	int	i=0,x=0,y=0,j=0,xloc,yloc;
+	int	i=0,x=0,y=0,j=0,xloc,yloc,xpos,ypos;
 	int	nvynum=0,armynum=0,points,shipsize,temp,cnum;
 	short	short1,short2;			/*temporary short variables */
 	short	class;
@@ -747,7 +848,7 @@ populate()
 	for( country=1; country<NTOTAL; country++ ) {
 		curntn = &ntn[country];
 		if( isactive( curntn->active )) {
-			printf("THIS SHOULDNT HAPPEN\n");
+			newerror("THIS SHOULDNT HAPPEN");
 			continue;
 		}
 		strcpy(curntn->passwd,ntn[0].passwd);
@@ -819,8 +920,10 @@ populate()
 			} else	if(nnomads < MAXARM )	nnomads++;
 			break;
 	}
-	printf("placing %d lizards, %d pirates, %d savages, and %d nomads\n",
+	mvprintw(13,0,"Placing %d lizards, %d pirates, %d savages, and %d nomads",
 		nlizards,npirates,nbarbarians,nnomads);
+	clrtoeol();
+	refresh();
 
 	while((nlizards+npirates+nbarbarians+nnomads > 0 )&&(loopcnt++ <5000)) {
 		if( nlizards>0 ) {
@@ -987,40 +1090,49 @@ populate()
 		}
 	}
 
-	printf("all random population and monsters placed\n");
+	newerror("... All random population and monsters placed");
 #endif MONSTER
 
 	for (i=0;i<MAXHELP;i++) {
-	sprintf(fname,"%s/%s%d",DEFAULTDIR,helpfile,i);
-	if ((fp=fopen(fname,"r"))==NULL) {
-		printf("\tcannot find helpfile <%s>\n",fname);
-		printf("\tplease move it to %s\n",DEFAULTDIR);
-	}
+		sprintf(fname,"%s/%s%d",DEFAULTDIR,helpfile,i);
+		if ((fp=fopen(fname,"r"))==NULL) {
+			char tempc[BIGLTH];
+			sprintf(tempc,"cannot find helpfile <%s/%s>.",DEFAULTDIR,fname);
+			newerror(tempc);
+		}
 	}
 
 #ifdef NPC
-	printf("\nDo you want NPC nations in this campaign? (y or n)");
-	while( ((i=getchar()) != 'y')&&(i != 'n') ) ;
-	if( i!='y' ) return;
+	mvaddstr(14,0,"Do you want NPC nations in this campaign? (y or n)");
+	clrtoeol();
+	refresh();
+	while( ((i=getch()) != 'y')&&(i != 'n') ) ;
+	if( i!='y' ) {
+		newerror("OK; no NPC nations used");
+		return;
+	}
 	if((fp=fopen(npcsfile,"r"))==NULL) {
-		printf("error on read of %s file\n",npcsfile);
-		printf("Do you wish to use default NPC nations file (y or n)?");
+		mvaddstr(14,0,"Do you wish to use default NPC nations file (y or n)?");
+		clrtoeol();
+		refresh();
 		while( ((i=getchar()) != 'y')&&(i != 'n') ) ;
 		if( i=='y'){
 			sprintf(line,"%s/%s",DEFAULTDIR,npcsfile);
 			if ((fp=fopen(line,"r"))==NULL) {
-				printf("\nsorry; error on read of %s file\n",line);
+				newerror("Cannot read nation file... no NPCs added");
 				return;
-			} else printf("\nOK; default nations used\n");
+			} else newerror("OK; default nations used");
 		} else {
-			printf("\nOK; no NPC nations used\n");
+			newerror("OK; no NPC nations used");
 			return;
 		}
 	}
-	printf("reading npc nation data from file: %s\n",npcsfile);
-	printf("and adding 1 nation per %d land sectors\n",NPC);
 
 	cnum=1;
+	mvprintw(14,0,"ADDING NATIONS:");
+	refresh();
+	xpos = 16;
+	ypos = 14;
 	while(fgets(line,LINELTH,fp)!=NULL) {
 		/*read and parse a new line*/
 		if(line[0]!='#') {
@@ -1034,16 +1146,25 @@ populate()
 
 			country=cnum;
 			curntn = &ntn[country];
+			curntn->class = (short)class;
+			sprintf(line," %s (%s)",curntn->name,*(Class+curntn->class));
+			mvaddstr(ypos,xpos,line);
+			xpos += strlen(line);
+			if (xpos > COLS-20) {
+				xpos = 5;
+				ypos++;
+			}
+			refresh();
 			if( cnum > MAPX*MAPY/NPC*(100-pwater)/100 ) {
-				printf("world too small to add npc nation %d %s\n",cnum,curntn->name);
+				sprintf(line,"World too small to add npc nation %d %s",cnum,curntn->name);
+				newerror(line);
 				continue;
 			} 
 			if( isactive(ntn[cnum].active) ) {
-				printf("Too few nations permitted in world to add npc nation %d %s\n",cnum,curntn->name);
+				sprintf(line,"Not enough available nations to add npc nation %d %s",cnum,curntn->name);
+				newerror(line);
 				continue;
 			}
-			curntn->class = (short)class;
-			printf("adding npc nation %s (%s)\n",curntn->name,*(Class+curntn->class));
 			curntn->maxmove = short1;
 			curntn->repro = short2;
 			if( allign == 'G' )
@@ -1061,7 +1182,9 @@ populate()
 			else if( allign == 'i' )
 				curntn->active = ISOLATIONIST;
 			else {
-				printf("invalid nation allignment (%c) line is:\n\t%s\n",allign,line);
+				sprintf(line,"invalid nation alignment (%c)");
+				newerror(line);
+				newreset();
 				abrt();
 			}
 			strcpy(curntn->passwd,ntn[0].passwd);
@@ -1069,8 +1192,8 @@ populate()
 			points -= doclass( class, FALSE );
 			points -= startcost();
 			if(points < 10 ) {
-				printf("ERROR IN NATIONS FILE IN NATION %s\n",ntn[cnum].name);
-				printf("nation doesnt have enough points left for 10000 civilians\n");
+				newerror("ERROR: nation doesn't have enough points left for 10000 civilians");
+				newreset();
 				abrt();
 			}
 			curntn->tciv = 1000L * points;
@@ -1100,6 +1223,6 @@ populate()
 		}
 	}
 	att_base();	/* get nation attributes */
-	printf("all npc nations placed\n");
+	newerror("All NPC nations placed");
 #endif NPC
 }

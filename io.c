@@ -34,12 +34,74 @@ extern short country;			/* nation id of owner*/
 void
 getspace()
 {
+	if (sct != NULL) free(sct);
 	sct = (struct s_sector **) m2alloc(MAPX,MAPY,sizeof(struct s_sector));
+	if (occ != NULL) free(occ);
 	occ = (char **) m2alloc(MAPX,MAPY,sizeof(char));
+	if (movecost != NULL) free(movecost);
 	movecost = (short **) m2alloc(MAPX,MAPY,sizeof(short));
 }
 
-#ifdef ADMIN
+#ifdef CONQUER
+char **mapseen;
+
+/************************************************************************/
+/*	MAPPREP() - initialize map with what can be seen by nation.	*/
+/************************************************************************/
+void
+mapprep()
+{
+	int armynum, nvynum;
+	int x,y,i,j;
+
+	/* get space for map */
+	mapseen = (char **) m2alloc(MAPX,MAPY,sizeof(char));
+
+	/* initialize the array */
+	if (country==0 || magic(country,KNOWALL)==TRUE) {
+		armynum = TRUE;
+	} else {
+		armynum = FALSE;
+	}
+	for (x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {
+		mapseen[x][y] = armynum;
+	}
+
+	/* done for all knowing */
+	if (country==0 || magic(country,KNOWALL)==TRUE) return;
+
+	/* add all visible sectors from owned land */
+	for(x = 0; x < MAPX; x++)
+	for(y = 0; y < MAPY; y++)
+	if(sct[x][y].owner==country){
+		for(i=x-LANDSEE;i<=x+LANDSEE;i++)
+		for(j=y-LANDSEE;j<=y+LANDSEE;j++)
+		if (ONMAP(i,j)) {
+			mapseen[i][j]=TRUE;
+		}
+	}
+
+	/* now add all visible sections from armies */
+	for(armynum=0;armynum<MAXARM;armynum++)
+	if(P_ASOLD>0) {
+		for(i=(int)P_AXLOC-ARMYSEE;i<=(int)P_AXLOC+ARMYSEE;i++)
+		for(j=(int)P_AYLOC-ARMYSEE;j<=(int)P_AYLOC+ARMYSEE;j++)
+		if (ONMAP(i,j)) {
+			mapseen[i][j]=TRUE;
+		}
+	}
+
+	/* now add sectors visible by navy */
+	for(nvynum=0;nvynum<MAXNAVY;nvynum++)
+	if((P_NMSHP!=0)||(P_NWSHP!=0)||(P_NGSHP!=0)) {
+		for(i=(int)P_NXLOC-NAVYSEE;i<=(int)P_NXLOC+NAVYSEE;i++)
+		for(j=(int)P_NYLOC-NAVYSEE;j<=(int)P_NYLOC+NAVYSEE;j++)
+		if (ONMAP(i,j)) {
+			mapseen[i][j]=TRUE;
+		}
+	}
+}
+
 /************************************************************************/
 /*	PRINTELE() - print a sector.altitude map 			*/
 /************************************************************************/
@@ -48,13 +110,22 @@ printele()
 {
 	register int X, Y;
 	fprintf(stderr,"doing print of altitude\n");
+	if (country == 0) {
+		printf("Conquer %s.%d: Altitude Map of the World on Turn %d\n",
+			VERSION, PATCHLEVEL, TURN);
+	} else {
+		printf("Conquer %s.%d: Altitude Map for Nation %s on Turn %d\n",
+			VERSION, PATCHLEVEL, curntn->name, TURN);
+	}
 	for(Y=0;Y<MAPY;Y++) {
-		for(X=0;X<MAPX;X++) putc(sct[X][Y].altitude,stdout);
+		for(X=0;X<MAPX;X++) {
+			if(mapseen[X][Y]==TRUE) putc(sct[X][Y].altitude,stdout);
+			else putc(' ',stdout);
+		}
 		putc('\n',stdout);
 	}
 }
-#endif ADMIN
-#ifdef ADMIN
+
 /************************************************************************/
 /*	PR_NTNS() - print nation marks					*/
 /************************************************************************/
@@ -63,17 +134,25 @@ pr_ntns()
 {
 	register int X, Y;
 	fprintf(stderr,"doing print of nations\n");
+	if (country == 0) {
+		printf("Conquer %s.%d: Nation Map of the World on Turn %d\n",
+			VERSION, PATCHLEVEL, TURN);
+	} else {
+		printf("Conquer %s.%d: Nation Map for Nation %s on Turn %d\n",
+			VERSION, PATCHLEVEL, curntn->name, TURN);
+	}
 	for(Y=0;Y<MAPY;Y++) {
 		for(X=0;X<MAPX;X++) {
-			if(sct[X][Y].owner==0)
-				putc(sct[X][Y].altitude,stdout);
-			else putc(ntn[sct[X][Y].owner].mark,stdout);
+			if(mapseen[X][Y]==TRUE) {
+				if(sct[X][Y].owner==0)
+					putc(sct[X][Y].altitude,stdout);
+				else putc(ntn[sct[X][Y].owner].mark,stdout);
+			} else putc(' ',stdout);
 		}
 		putc('\n',stdout);
 	}
 }
-#endif ADMIN
-#ifdef ADMIN
+
 /************************************************************************/
 /*	PR_DESG() - print designations					*/
 /************************************************************************/
@@ -82,15 +161,53 @@ pr_desg()
 {
 	register int X, Y;
 	fprintf(stderr,"doing print of designations\n");
+	if (country == 0) {
+		printf("Conquer %s.%d: Designation Map of the World on Turn %d\n",
+			VERSION, PATCHLEVEL, TURN);
+	} else {
+		printf("Conquer %s.%d: Designation Map for Nation %s on Turn %d\n",
+			VERSION, PATCHLEVEL, curntn->name, TURN);
+	}
 	for(Y=0;Y<MAPY;Y++) {
 		for(X=0;X<MAPX;X++) {
-		    putc(sct[X][Y].designation,stdout);
-			
+			if (mapseen[X][Y]==TRUE) {
+				if (country==0 || magic(sct[X][Y].owner,NINJA)==TRUE
+				    || magic(sct[X][Y].owner,THE_VOID)!=TRUE) {
+					if(sct[X][Y].designation==DNODESIG)
+						putc(sct[X][Y].altitude,stdout);
+					else putc(sct[X][Y].designation,stdout);
+				} else putc('?',stdout);
+			} else putc(' ',stdout);
 		}
 		putc('\n',stdout);
 	}
 }
-#endif ADMIN
+
+/************************************************************************/
+/*	PRINTVEG() -	print a vegetation map subroutine		*/
+/************************************************************************/
+void
+printveg()
+{
+	register int X, Y;
+	fprintf(stderr,"doing print of vegetation\n");
+	if (country == 0) {
+		printf("Conquer %s.%d: Vegetation Map of the World on Turn %d\n",
+			VERSION, PATCHLEVEL, TURN);
+	} else {
+		printf("Conquer %s.%d: Vegetation Map for Nation %s on Turn %d\n",
+			VERSION, PATCHLEVEL, curntn->name, TURN);
+	}
+	for(Y=0;Y<MAPY;Y++) {
+		for(X=0;X<MAPX;X++) {
+			if(mapseen[X][Y]==TRUE) {
+				putc(sct[X][Y].vegetation,stdout);
+			} else putc(' ',stdout);
+		}
+		putc('\n',stdout);
+	}
+}
+#endif CONQUER
 
 /************************************************************************/
 /*	WRITEDATA() - write data to datafile 				*/
@@ -186,21 +303,6 @@ readdata()
 	close(fd);
 } /* readdata() */
 
-#ifdef ADMIN
-/************************************************************************/
-/*	PRINTVEG() -	print a vegetation map subroutine		*/
-/************************************************************************/
-void
-printveg()
-{
-	register int X, Y;
-	fprintf(stderr,"doing print of vegetation\n");
-	for(Y=0;Y<MAPY;Y++) {
-		for(X=0;X<MAPX;X++) putc(sct[X][Y].vegetation,stdout);
-		putc('\n',stdout);
-	}
-}
-#endif ADMIN
 #ifdef CONQUER
 /************************************************************************/
 /*	OFFMAP()	deal if cursor is off the map			*/
@@ -276,8 +378,7 @@ offmap()
 	}
 	whatcansee();
 }
-#endif CONQUER
-#ifdef CONQUER
+
 /************************************************************************/
 /*	PRINTSCORE()	- like it says					*/
 /************************************************************************/
@@ -314,20 +415,19 @@ printscore()
 					printf("%6s ",*(races+i));
 		}
 
+		printf("%8s ",*(Class+ntn[nationid].class));
+		printf(" %7s ",alignment[npctype(ntn[nationid].active)]);
 		if (isntn(ntn[nationid].active)) {
-			printf("%8s ",*(Class+ntn[nationid].class));
-			printf(" %7s ",allignment[npctype(ntn[nationid].active)]);
+#ifdef NOSCORE
+			printf("%6ld  %8s %8s   %8s %4s\n",
+				  ntn[nationid].score ,"-----","----" ,"-----","--");
+#else
 			printf("%6ld  %8ld %8ld   %8ld %4d\n",
 				  ntn[nationid].score ,ntn[nationid].tgold
 				  ,ntn[nationid].tmil ,ntn[nationid].tciv
 				  ,ntn[nationid].tsctrs );
+#endif /* NOSCORE */
 		} else {
-			if (ispeasant(ntn[nationid].active)) {
-				printf("%8s  %7s ","Peasant","Neutral");
-				/* info not kept track of yet */
-			} else {
-				printf("%8s  %7s ","Monster","Other");
-			}
 			printf("%6s  %8s %8s   %8s %4s\n",
 				  "---","-----","----","-----","--");
 		}
@@ -485,4 +585,43 @@ int	entrysize;	/* # bytes in items to be stored */
 			baseaddr[j] = baseaddr[j-1] + entrysize;
 	}
 	return(baseaddr);
+}
+
+/* If the string entered is too long, then a truncated */
+/* string is returned.  Length entered is returned.    */
+int
+get_pass(str)
+	char *str;
+{
+	char ch;
+	int done=FALSE,count=0;
+
+	while(done==FALSE) {
+		ch = getch();
+		if (ch=='\b' || ch=='\177') {
+			/* delete any entered characters */
+			if (count > 0) {
+				count--;
+			}
+		} else if (ch=='\025') {
+			/* make sure that ^U works */
+			count=0;
+		} else if (ch=='\n' || ch=='\r') {
+			done = TRUE;
+		} else if (ch != '\0') {
+			/* add any other character to the string */
+			if (count < PASSLTH) {
+				/* don't try adding too many */
+				str[count]= ch;
+			}
+			count++;
+		}
+	}
+	/* truncate too long a password and end others properly */
+	if (count > PASSLTH) {
+		str[PASSLTH] = '\0';
+	} else {
+		str[count] = '\0';
+	}
+	return(count);
 }

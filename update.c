@@ -308,6 +308,7 @@ int armynum;
 			&&( curntn->arm[x].stat!=SIEGED )
 			&&( curntn->arm[x].stat!=ONBOARD )
 			&&( curntn->arm[x].stat!=TRADED )
+			&&( curntn->arm[x].unittyp!=A_ZOMBIE )
 			&&( P_AXLOC==curntn->arm[x].xloc )
 			&&( P_AYLOC==curntn->arm[x].yloc )){
 				curntn->arm[x].stat=NUMSTATUS+armynum;
@@ -674,9 +675,11 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 		ntn[country].tships=0;
 		ntn[country].tmil=0;
 #ifdef XENIX
-		z = ntn[country].spellpts;
-		z /= 2;
-		ntn[country].spellpts = z;
+		if (rand()%4 == 0) {
+			z = ntn[country].spellpts;
+			z /= 2;
+			ntn[country].spellpts = z;
+		}
 #else
 		if(rand()%4==0) ntn[country].spellpts/=2;
 #endif /*XENIX*/
@@ -790,7 +793,7 @@ updcapture()
 				if(P_ASTAT==ONBOARD) continue;
 				/* may not capture water */
 				if(sct[P_AXLOC][P_AYLOC].altitude==WATER) {
-					printf("Nation %s Army %d in Water\n",curntn->name,armynum);
+					fprintf(stderr,"Nation %s Army %d in Water\n",curntn->name,armynum);
 					continue;
 				}
 				if(occ[P_AXLOC][P_AYLOC] != country) continue;
@@ -799,24 +802,22 @@ updcapture()
 					sptr->owner=country;
 					curntn->popularity++;
 				} else if((sptr->owner!=country)
-				&&(curntn->dstatus[sptr->owner]>=WAR)
-				&&(occ[P_AXLOC][P_AYLOC]==country)){
-
-					if((sptr->owner!=0)
-					&&(ntn[sptr->owner].race!=curntn->race))
+				&&(curntn->dstatus[sptr->owner]>=WAR)) {
+					if(ntn[sptr->owner].race!=curntn->race)
 						if(magic(country,SLAVER)==TRUE){
 							flee(P_AXLOC,P_AYLOC,1,TRUE);
-						}else{
+						} else {
 							flee(P_AXLOC,P_AYLOC,1,FALSE);
 						}
 
-				if((isntn( curntn->active ))
-				&&(isntn( ntn[sptr->owner].active)))
+					if((isntn( curntn->active ))
+					   &&(isntn( ntn[sptr->owner].active))) {
 #ifdef HIDELOC
-					fprintf(fnews,"3.\tarea captured by %s from %s\n",curntn->name,ntn[sptr->owner].name);
+						fprintf(fnews,"3.\tarea captured by %s from %s\n",curntn->name,ntn[sptr->owner].name);
 #else
-					fprintf(fnews,"3.\tarea %d,%d captured by %s from %s\n",P_AXLOC,P_AYLOC,curntn->name,ntn[sptr->owner].name);
+						fprintf(fnews,"3.\tarea %d,%d captured by %s from %s\n",P_AXLOC,P_AYLOC,curntn->name,ntn[sptr->owner].name);
 #endif HIDELOC
+					}
 					sptr->owner=country;
 					curntn->popularity++;
 				}
@@ -987,10 +988,11 @@ updsectors()
 			/* take out for charity */
 			charity=((spread.gold-curntn->tgold)*curntn->charity)/100;
 
-			if(charity > 0) curntn->tgold = spread.gold - charity;
-			else curntn->tgold = spread.gold;
+			if(charity > 0) charity = 0;
 			if(curntn->tciv > 0) charity /= curntn->tciv;
 			else charity = 0;
+
+			curntn->tgold = spread.gold - charity;
 
 			/* give them some benefit of the doubt */
 			curntn->popularity += 5*charity;
@@ -1053,7 +1055,7 @@ updmil()
 
 		dissarray=TRUE;
 		for(armynum=0;armynum<MAXARM;armynum++)
-			if (P_ATYPE==(getleader(curntn->class)-1)) {
+			if (P_ATYPE==(getleader(curntn->class)-1) && P_ASOLD>0) {
 				dissarray=FALSE;
 				break;
 			}

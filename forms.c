@@ -13,6 +13,7 @@
 /*	screen subroutines	*/
 
 #include <ctype.h>
+#include <pwd.h>
 #include "header.h"
 #include "data.h"
 
@@ -62,11 +63,21 @@ showscore()
 					mvaddstr(ypos+4,0,"class:");
 					mvaddstr(ypos+5,0,"alignment:");
 					mvaddstr(ypos+6,0,"score:");
+#ifdef NOSCORE
+					mvaddstr(ypos+7,0,"npc nation:");
+					if (country==0) {
+						mvaddstr(ypos+8,0,"talons:");
+						mvaddstr(ypos+9,0,"military:");
+						mvaddstr(ypos+10,0,"civilians:");
+						mvaddstr(ypos+11,0,"sectors:");
+					}
+#else
 					mvaddstr(ypos+7,0,"talons:");
 					mvaddstr(ypos+8,0,"military:");
 					mvaddstr(ypos+9,0,"civilians:");
 					mvaddstr(ypos+10,0,"sectors:");
 					mvaddstr(ypos+11,0,"npc nation:");
+#endif /* NOSCORE */
 				}
 
 				/* display nation information */
@@ -79,8 +90,19 @@ showscore()
 					if(ntn[nationid].race==*(races+i)[0])
 						mvprintw(ypos+3,xpos,"%s",*(races+i));
 				mvprintw(ypos+4,xpos,"%s",*(Class+ntn[nationid].class));
-				mvprintw(ypos+5,xpos,"%s",allignment[npctype(ntn[nationid].active)]);
+				mvprintw(ypos+5,xpos,"%s",alignment[npctype(ntn[nationid].active)]);
 				mvprintw(ypos+6,xpos,"%ld",ntn[nationid].score);
+#ifdef NOSCORE
+				if(isnpc(ntn[nationid].active))
+					mvprintw(ypos+7,xpos,"Yes");
+				else mvprintw(ypos+7,xpos,"No");
+				if (country==0) {
+					mvprintw(ypos+8,xpos,"%ld",ntn[nationid].tgold);
+					mvprintw(ypos+9,xpos,"%ld",ntn[nationid].tmil);
+					mvprintw(ypos+10,xpos,"%ld",ntn[nationid].tciv);
+					mvprintw(ypos+11,xpos,"%d",ntn[nationid].tsctrs);
+				}
+#else
 				mvprintw(ypos+7,xpos,"%ld",ntn[nationid].tgold);
 				mvprintw(ypos+8,xpos,"%ld",ntn[nationid].tmil);
 				mvprintw(ypos+9,xpos,"%ld",ntn[nationid].tciv);
@@ -88,6 +110,7 @@ showscore()
 				if(isnpc(ntn[nationid].active))
 					mvprintw(ypos+11,xpos,"Yes");
 				else mvprintw(ypos+11,xpos,"No");
+#endif /* NOSCORE */
 				count++;
 				if(count<MAXINSCR && count%MAXINROW==0) {
 					ypos+=RPT_LINES;
@@ -356,7 +379,6 @@ change()
 	short armynum;
 	char passwd[PASSLTH+1];
 	short isgod=FALSE;
-	FILE *fp;
 #ifdef OGOD
 	FILE *ftmp;
 #endif OGOD
@@ -366,13 +388,15 @@ change()
 		isgod=TRUE;
 		if (get_god()) return;
 	}
-	fp=fopen("temp","w");
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
+ 
+	/* continuous loop */
+	while(1) {
 	clear();
 	standout();
 	mvaddstr(0,(COLS/2)-10,"NATION STATS SUMMARY");
 	mvprintw(3,0,"nation name is %s",curntn->name);
-	mvprintw(4,0,"allignment is %s",allignment[npctype(curntn->active)]);
+	mvprintw(4,0,"alignment is %s",alignment[npctype(curntn->active)]);
+
 	if (isgod==TRUE)
 		mvprintw(5,0,"active is %d",curntn->active);
 	mvprintw(6,0,"tax_rate...... %2d%%",curntn->tax_rate);
@@ -393,41 +417,26 @@ change()
 		addstr(" (NPC)");
 	else	addstr(" (MON)");
 	mvprintw(14,0,"nations mark is...%c ",curntn->mark);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 	for(i=1;i<8;i++) if(curntn->race==*(races+i)[0]){
 		mvprintw(15,0, "nation race is....%s  ",*(races+i));
 		break;
 	}
 
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 	mvprintw(3,COLS/2-12, "terror........ %3d",curntn->terror);
 	mvprintw(4,COLS/2-12, "popularity.... %3d",curntn->popularity);
 	mvprintw(5,COLS/2-12, "prestige...... %3d",curntn->prestige);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
-	fflush( fp );
 	mvprintw(6,COLS/2-12, "knowledge..... %3d",curntn->knowledge);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
-	fflush( fp );
 	temp = P_EATRATE;
 	mvprintw(7,COLS/2-12, "eatrate.......%3.2f",temp);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
-	fflush( fp );
 	mvprintw(8,COLS/2-12, "wealth........ %3d",curntn->wealth);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
-	fflush( fp );
 	mvprintw(9,COLS/2-12,"charity....... %2d%%",curntn->charity);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
-	fflush( fp );
 	mvprintw(10,COLS/2-12,"communication.%3.2f",(float) P_NTNCOM);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 	mvprintw(11,COLS/2-12,"reputation.... %3d",curntn->reputation);
 	mvprintw(12,COLS/2-12,"spoilrate.....%3d%%",curntn->spoilrate);
 	mvprintw(13,COLS/2-12,"farm ability.. %3d",curntn->farm_ability);
 	mvprintw(14,COLS/2-12,"mine ability.. %3d",curntn->mine_ability);
 	mvprintw(15,COLS/2-12,"poverty rate.. %2d%%",curntn->poverty);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 	mvprintw(16,COLS/2-12,"power......... %3d",curntn->power);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 
 	if (country!=0) {
 		mvprintw(12,0,"leader is %s",curntn->leader);
@@ -442,7 +451,6 @@ change()
 		mvprintw(4,COLS-30, "mercs defense bonus...+%2d%%",MERCDEF);
 		mvprintw(12,COLS-30,"total mercs.......%8ld",MERCMEN);
 	}
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 
   	mvprintw(5,COLS-30, "maximum move rate.......%2d",curntn->maxmove);
   	mvprintw(6,COLS-30, "reproduction rate......%2d%%",curntn->repro);
@@ -450,7 +458,6 @@ change()
 
 	mvprintw(9,COLS-30,"jewels ..........$%8ld",curntn->jewels);
 	mvprintw(10,COLS-30,"metal & minerals..%8ld",curntn->metals);
-	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 	if(curntn->tfood<2*curntn->tciv) standout();
 	mvprintw(11,COLS-30,"food in granary...%8ld",curntn->tfood);
 	standend();
@@ -479,57 +486,59 @@ change()
 	switch(getch()){
 	case '1': /*get name*/
 		clear();
-		mvaddstr(0,0,"what name would you like:");
+		mvaddstr(0,0,"What name would you like:");
 		clrtoeol();
 		refresh();
 		get_nname(string);
 		if((strlen(string)<=1)||(strlen(string)>NAMELTH)){
-			errormsg("invalid name");
-			if(isgod==TRUE) reset_god();
-			return;
+			errormsg("Invalid name length");
+			break;
 		}
 		/*check if already used*/
 		else for(i=1;i<(country-1);i++){
 			if((strcmp(ntn[i].name,string)==0)&&(i!=country)) {
-				errormsg("name already used");
-				if(isgod==TRUE) reset_god();
-				fclose(fp); return;
+				errormsg("Name already used");
+				break;
 			}
 		}
-		errormsg("new name can be used following next update");
+		errormsg("New name can be used following next update");
 		strcpy(curntn->name,string);
 		ECHGNAME;
 		break;
 	case '2': /*change password */
 		clear();
+		/* minimum password length setting */
+		if (country != 0) intval=2;
+		else intval=4;
 		if(isgod!=TRUE){
-			mvaddstr(0,0,"what is your current password:");
+			mvaddstr(0,0,"What is your current password:");
 			refresh();
-			gets(command);
+			(void) get_pass(command);
 			strncpy(passwd,crypt(command,SALT),PASSLTH);
 			if((strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)
-			    &&(strncmp(passwd,curntn->passwd,PASSLTH)!=0)){
-				errormsg("invalid password");
-				fclose(fp); return;
+			&&(strncmp(passwd,curntn->passwd,PASSLTH)!=0)){
+				break;
 			}
 		}
-		mvaddstr(2,0,"what is your new password:");
+		mvaddstr(2,0,"What is your new password:");
 		refresh();
-		gets(command);
-		if((strlen(command)>PASSLTH)||(strlen(command)<2)) {
-			errormsg("invalid new password");
-			if(isgod==TRUE) reset_god();
-			fclose(fp); return;
+		i = get_pass(command);
+		if (i<intval) {
+			errormsg("Password too short");
+			break;
+		} if (i>PASSLTH) {
+			errormsg("Password too long");
+			break;
 		}
 		strncpy(passwd,command,PASSLTH);
-		mvaddstr(4,0,"reenter your new password:");
+		mvaddstr(4,0,"Reenter your new password:");
 		refresh();
-		gets(command);
+		(void) get_pass(command);
 		if(strncmp(passwd,command,PASSLTH)!=0) {
-			if(isgod==TRUE) reset_god();
-			fclose(fp); return;
+			errormsg("Invalid password match; Password unchanged");
+			break;
 		}
-		errormsg("new password can be used following next update");
+		errormsg("New password can be used following next update");
 		strncpy(curntn->passwd,crypt(command,SALT),PASSLTH);
 		ECHGPAS;
 		break;
@@ -640,14 +649,13 @@ change()
 		}
 		break;
 	case '7':
-		if( startgold != curntn->tgold ) {
-			errormsg("Sorry: you have already made some moves this turn!");
-			break;
-		} else if(ispc(curntn->active)) {
+		if(ispc(curntn->active)) {
 			errormsg("Note: you get no mail while playing as an NPC!");
 			curntn->active *= 4;
-		} else if(isnpc(curntn->active))
+		} else if(isnpc(curntn->active)) {
+			errormsg("Okay.... you have now come back to reality.");
 			curntn->active /= 4;
+		}
 		NADJNTN;
 		break;
 	case '8':
@@ -680,7 +688,7 @@ change()
 				beep();
 				errormsg("error opening country's file");
 				reset_god();
-				fclose(fp); return;
+				return;
 			}
 			/* adjust commodities */
 			mvaddstr(LINES-2,0,"CHANGE: 1) Gold 2) Jewels 3) Iron 4) Food ?");
@@ -725,29 +733,32 @@ change()
 		if(isgod==TRUE) {
 			mvaddstr(LINES-2,0,"ENTER CONQUER SUPER-USER PASSWORD:");
 			refresh();
-			getstr(string);
+			(void) get_pass(string);
 			strcpy(passwd,crypt(string,SALT));
 			if(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0) break;
 			mvaddstr(LINES-1,0,"PROMOTE WHAT USER TO DEMI-GOD? ");
 			refresh();
 			get_nname(string);
-			if (strlen(string)!=0) {
+			if (strlen(string)!=0 && getpwnam(string)!=NULL) {
 				strncpy(ntn[0].leader,string,LEADERLTH);
 			}
 		}
 		break;
 	case 'p':
-	case 'P': produce(); fclose(fp); return;
+	case 'P': 
+		produce();
+		if (isgod==TRUE) reset_god();
+		return;
 	case 'b':
-	case 'B': budget(); fclose(fp); return;
+	case 'B':
+		budget();
+		if(isgod==TRUE) reset_god();
+		return;
 	default:
 		if(isgod==TRUE) reset_god();
-		fclose(fp);
 		return;
 	}
-	if(isgod==TRUE) reset_god();
-	fclose(fp);
-	change();
+	} /* end of continuous loop */
 }
 
 void

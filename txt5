@@ -17,7 +17,7 @@ warlord  1      1       2     0    1     1      1     0   *    HOD   WARLORD
 demon    1      0       1     0    1     0      5     0   4    O     DESTROYER
 dragon   0      0       0    10   20     0      0     0   4    O     MA_MONST
 shadow   1      0       0     0    0     5      0     0   2    O     VOID
-NPC      1      1       0     0    1     1      1     0   0    HDEO  None
+monster  1      1       0     0    1     1      1     0   0    HDEO  None
 END
                                ADDITIONAL SCORING
 

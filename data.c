@@ -51,9 +51,9 @@ char *soldname[]= { "?","MARCH","SCOUT","GARRISON","TRADED","MILITIA",
 
 char *directions[]= { "here", "north", "northeast", "east", "southeast",
 	"south", "southwest", "west", "northwest"};
-char *Class[]= { "NPC", "king", "emperor", "wizard", "priest", "pirate",
+char *Class[]= { "monster", "king", "emperor", "wizard", "priest", "pirate",
 "trader", "warlord", "demon", "dragon", "shadow"};
-char *allignment[]= { "","Good","Neutral","Evil","Other" };
+char *alignment[]= { "Other","Good","Neutral","Evil","Other" };
 
 char *unittype[]= {
 "Militia", "Goblins", "Orcs", "Infantry", "Sailors", "Marines", "Archers",

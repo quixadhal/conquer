@@ -198,7 +198,9 @@ main()
 	fprintf(fp,"s/XTOMANYPEOPLE/%d/g\n",TOMANYPEOPLE);
 	fprintf(fp,"s/XABSMAXPEOPLE/%d/g\n",ABSMAXPEOPLE);
 	fprintf(fp,"s/XFINDPERCENT/%d/g\n",FINDPERCENT);
+#ifdef ORCTAKE
 	fprintf(fp,"s/XTAKEPRICE/%d/g\n",ORCTAKE);
+#endif ORCTAKE
 
 	fprintf(fp,"s/XTGATTR/%d/g\n",TGATTR);
 	fprintf(fp,"s/XOTHRATTR/%d/g\n",OTHRATTR);

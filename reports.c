@@ -297,7 +297,7 @@ budget()
 {
 	short armynum,nvynum;
 	long numship=0L,costsold=0L,numsold=0L;
-	long nummonst=0L,costmonst=0L,money;
+	long nummonst=0L,costmonst=0L,money,chty;
 	int isgod=FALSE;
 
 	if(country==0) {
@@ -357,9 +357,10 @@ budget()
 	money=spread.gold - curntn->tgold - money;	/* net income */
 	standend();
 	mvprintw(17,COLS-50,"NET INCOME....................%8ld",money);
-	mvprintw(16,COLS-50,"CHARITY.......................%8ld",max((money*(long)curntn->charity)/100L,0L));
+	chty = max((money*(long)curntn->charity)/100L,0L);
+	mvprintw(16,COLS-50,"CHARITY.......................%8ld",chty);
 	standout();
-	mvprintw(18,COLS-50,"NEXT SEASON'S TREASURY........%8ld",(startgold + money)*(100L-(long)curntn->charity)/100L);
+	mvprintw(18,COLS-50,"NEXT SEASON'S TREASURY........%8ld",(startgold + money-chty));
 
 	mvaddstr(LINES-3,(COLS/2)-15,"HIT 'P' TO SEE PRODUCTION SCREEN");
 	mvaddstr(LINES-2,(COLS/2)-15,"HIT 'C' FOR CHANGE NATION SCREEN");
@@ -694,6 +695,7 @@ fleetrpt()
 					NADJMER;
 					NADJGAL;
 					NADJHLD;
+					NADJLOC;
 					break;
 				} else if(P_NARMY!=MAXARM) {
 					errormsg("Army must be unloaded before Navy is divided");
@@ -738,6 +740,7 @@ fleetrpt()
 				NADJMER;
 				NADJGAL;
 				NADJHLD;
+				NADJLOC;
 				break;
 			case '3':
 				/* DISBAND NAVY */

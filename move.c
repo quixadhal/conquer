@@ -506,6 +506,7 @@ mymove()
 					flee(XREAL,YREAL,0,FALSE);
 				}
 				mvprintw(LINES-2,0,"TAKING SECTOR");
+				clrtoeol();
 				refresh();
 				sleep(2);
 				SOWN=country;

@@ -158,7 +158,7 @@ struct	s_world
 	short	turn;		/* game turn			*/
 	long	m_mil;		/* number of mercs available	*/
 	short	m_aplus;	/* mercenary attack bonus	*/
-	short	m_dplus;	/* mercenary defence bonus	*/
+	short	m_dplus;	/* mercenary defense bonus	*/
 	long	w_jewels;	/* jewels in world		*/
 	long	w_gold;		/* gold talons in world		*/
 	long	w_food;		/* food in world		*/
@@ -218,8 +218,8 @@ struct navy
 
 
 /* NATION STRATEGY: a nation's strategy is a part of the ntn[].active
- * variable which tells if it is a PC or NPC, its allignment, and its
- * constraints allignments can be good, neutral, or evil. 
+ * variable which tells if it is a PC or NPC, its alignment, and its
+ * constraints alignments can be good, neutral, or evil. 
  * NPC Nations can be Expansionsist (with 0,2,4,6 sectors to expand into)
  * or Isolationist.	*/
 #define	INACTIVE	0
@@ -246,7 +246,7 @@ struct navy
 #define NPC_SAVAGE	21
 
 #define	ispc(x)		(((x)==PC_GOOD)||((x)==PC_EVIL)||((x)==PC_NEUTRAL))
-#define	npctype(x)	(ispc(x) ? (x) : (x)/4)
+#define	npctype(x)	(ispc(x) ? (x) : (ismonst(x)?0:(x)/4))
 #define	isgood(x)	(npctype(x) == 1)
 #define	isneutral(x)	(npctype(x) == 2)
 #define	isevil(x)	(npctype(x) == 3)
@@ -616,7 +616,7 @@ extern int	aretheyon(),armygoto(),navygoto(),getselunit();
 extern int	unitvalid(),access(),orctake(),fort_val();
 extern int	addgships(),addmships(),addwships(),fltships();
 extern int	fltghold(),fltwhold(),fltmhold(),flthold(),compass();
-extern int	get_country(),check_lock(),doclass();
+extern int	get_country(),check_lock(),doclass(),get_pass();
 extern unsigned short	fltspeed();
 extern void	do_pirate(), do_nomad(), do_savage(), do_lizard();
 extern void	getjewel(),getmetal(),loadfleet(),removemgk(),exenewmgk();
@@ -629,7 +629,8 @@ extern void	combinearmies(),change_status(),reducearmy(),splitarmy();
 extern void	errormsg(), clear_bottom(), addgroup(),ext_cmd();
 extern void	randomevent(), wdisaster(), weather(), deplete();
 extern void	verify_ntn(), verify_sct(), verifydata(), prep();
-extern void	newbye(), newreset(), newmsg(), newerror(), newinit();
+extern void	errorbar(), newbye(), newreset(), newmsg(), newerror();
+extern void	newinit();
 extern void	destroy(), updmove(), spreadsheet(), mailopen(), mailclose();
 extern void	updexecs(), updcapture(), updsectors();
 extern void	updmil(), updcomodities(), updleader();
@@ -881,7 +882,7 @@ if((sct[X][Y].designation == DCAPITOL) \
 extern	FILE	*fm;
 extern	int	mailok;
 extern	char	*seasonstr[];
-extern	char	*allignment[];	
+extern	char	*alignment[];	
 extern	struct	s_sector	**sct;
 extern	struct	s_nation	ntn[NTOTAL];
 extern	struct	s_nation	*curntn;	

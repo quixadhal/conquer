@@ -206,12 +206,19 @@ int	move_points;
 			*/
 			/* BUG: should engage if army is hostile but does not own sector */
 			/* BUG: take into account THE_VOID, HIDDEN, and NINJA */
-			/* BUG: NEUTRAL does not allow to pass */
 			if( (own = sct[x][y].owner) > 0 &&
 			ntn[own].dstatus[moving_country] >= WAR &&
 			x != bx && y != by &&
 			solds_in_sector( x, y, own ) > 0 ) {
 				continue;	/* at war with the owner, may not pass */
+			}
+
+			if( own > 0 &&
+			ntn[moving_country].dstatus[own] < WAR &&
+			ntn[own].dstatus[moving_country] > ALLIED &&
+			ntn[own].dstatus[moving_country] < WAR) {
+				/* not at war with owner & owner is neutral,no passing*/
+				continue;
 			}
 
 			level++;
@@ -693,7 +700,9 @@ register int	character;
 }
 
 /* set up occ[][] for country.
-   if leader==true, only for leader sectors plus ntn.communicatins range */
+ * if leader==true, only for leader sectors plus ntn.communicatins range
+ * if shipchk==true, include ships on the sector search
+ */
 void
 prep(country,leader)
 int country,leader;
@@ -722,7 +731,7 @@ int country,leader;
 			if( leader ) {
 				if((P_ATYPE<MINLEADER)
 				||(P_ATYPE>=MINMONSTER)
-				||(P_ASOLD==0)) continue;
+				||(P_ASOLD<=0)) continue;
 				i=P_AXLOC;
 				j=P_AYLOC;
 				com = P_NTNCOM; /* do communications radius */
@@ -967,15 +976,14 @@ int country;
 		NGSHP=0;
 	}
 	for(i=0;i<NTOTAL;i++) {
-		ntn[i].dstatus[country]=UNMET;
-		nptr->dstatus[i]=UNMET;
+		if (ntn[i].active < NPC_PEASANT ) {
+			ntn[i].dstatus[country]=UNMET;
+			nptr->dstatus[i]=UNMET;
+		} else {
+			ntn[i].dstatus[country]=WAR;
+			nptr->dstatus[i]=WAR;
+		}
 	}
-#ifdef MONSTER
-	for(i=NTOTAL-4;i<NTOTAL;i++) {
-	        ntn[i].dstatus[country]=WAR;
-		nptr->dstatus[i]=WAR;
-	}
-#endif
 	
 	/*if take them you get their gold*/
 	if(country!=sct[nptr->capx][nptr->capy].owner){

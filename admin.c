@@ -38,6 +38,7 @@ short	dismode=2;
 /* nation id of owner*/
 short	country=0;
 struct	s_nation	*curntn;
+extern char datadir[];
 
 FILE *fexe, *fopen();
 
@@ -54,14 +55,15 @@ char **argv;
 	long time();
 	/* mflag = makeworld, a=add player, x=execute, p=print */
 	/* rflag = make world from read in files */
-	int mflag, aflag, xflag, pflag, rflag;
+	int mflag, aflag, xflag, rflag;
 	char string[FILELTH];
 	extern char *optarg;
 	char defaultdir[BIGLTH],cq_opts[BIGLTH];
-	struct passwd *getpwnam();
+	struct passwd *getpwnam(), *pwent;
 
-	mflag = aflag = xflag = pflag = rflag = 0;
+	mflag = aflag = xflag = rflag = 0;
 	srand((unsigned) time((long *) 0));
+	strcpy(datadir,"");
 	strcpy(cq_opts,"");
 	name = string;
 	*name = 0;
@@ -102,9 +104,9 @@ char **argv;
 				if (i<l) {
 					/* grab the data directory */
 					for (j=0; j<l-i && cq_opts[i+j]!=',';j++) {
-						defaultdir[j] = cq_opts[i+j];
+						datadir[j] = cq_opts[i+j];
 					}
-					defaultdir[j]='\0';
+					datadir[j]='\0';
 					i += j-1;
 				}
 				break;
@@ -123,13 +125,8 @@ char **argv;
 	     }
 	}
 
-	/* set the default data directory */
-	if (defaultdir[0] == '\0') {
-		strcpy(defaultdir, DEFAULTDIR);
-	}
-
 	/* process the command line arguments */
-	while((i=getopt(argc,argv,"maxpr:d:"))!=EOF) switch(i){
+	while((i=getopt(argc,argv,"maxr:d:"))!=EOF) switch(i){
 	/* process the command line arguments */
 	case 'm':  /* make a new world*/
 		mflag++;
@@ -140,9 +137,6 @@ char **argv;
 	case 'x': /* execute program*/
 		xflag++;
 		break;
-	case 'p': /* print the map*/
-		pflag++;
-		break;
 	case 'r': /* read map file */
 		rflag++;
 		if(strlen(optarg) > NAMELTH){
@@ -152,15 +146,14 @@ char **argv;
 		strcpy(scenario, optarg);
 		break;
 	case 'd':
-		strcpy(defaultdir, optarg);
+		strcpy(datadir, optarg);
 		break;
 	case '?': /*  print out command line arguments */
-		printf("Command line format: %s [-maxp -dDIR -rSCENARIO]\n",argv[0]);
+		printf("Command line format: %s [-max -dDIR -rSCENARIO]\n",argv[0]);
 		printf("\t-m          make a world\n");
 		printf("\t-a          add new player\n");
 		printf("\t-x          execute program\n");
 		printf("\t-d DIR      to use play different game\n");
-		printf("\t-p          print a map\n");
 		/* printf("\t-r SCENARIO read map while making a new world\n\t\t\tuses SCENARIO.ele, SCENARIO.veg, &  SCENARIO.nat\n"); */
 		exit(SUCCESS);
 	};
@@ -170,9 +163,15 @@ char **argv;
 	(void) setuid (geteuid ()) ;
 
 	/* set proper defaultdir */
-	if (defaultdir[0] != '/') {
-		strcpy(cq_opts, defaultdir);
-		sprintf(defaultdir, "%s/%s", DEFAULTDIR, cq_opts);
+	if (datadir[0] != '/') {
+		if (strlen(datadir) > 0) {
+			sprintf(defaultdir, "%s/%s", DEFAULTDIR, datadir);
+		} else {
+			strcpy(defaultdir,DEFAULTDIR);
+			strcpy(datadir,"[default]");
+		}
+	} else {
+		strcpy(defaultdir,datadir);
 	}
 
 	/* now that we have parsed the args, we can got to the
@@ -183,17 +182,63 @@ char **argv;
 		exit(FAIL);
 	}
 	if((mflag)||(rflag)) {
+#ifdef REMAKE
+		/* check if datafile currently exists*/
+		if(access(datafile,00) == 0) {
+			/* read in the data*/
+			readdata();
+			verifydata( __FILE__, __LINE__ );
+
+			/* verify ability to remake the world */
+			if ((realuser != (getpwnam(LOGIN))->pw_uid ) &&
+			    ((pwent=getpwnam(ntn[0].leader)) == NULL ||
+				realuser != pwent->pw_uid )) {
+				printf("Sorry -- you can not create a world\n");
+				printf("you need to be logged in as %s",LOGIN);
+				if (strcmp(LOGIN, ntn[0].leader)!=0) {
+					printf(" or %s",ntn[0].leader);
+				}
+				printf(".\n");
+				exit(FAIL);
+			}
+			printf("************* WARNING!!!! *******************\n\n");
+			printf("    There is already a game in progress.\n\n");
+			printf("*********************************************\n\n");
+			printf("Do you wish to destroy the current game? ");
+			scanf("%s",string);
+			if (strcmp(string,"yes")!=0 && strcmp(string,"y")!=0) {
+				printf("Okay... the world is left intact\n");
+				exit(FAIL);
+			}
+			printf("Are you absolutely certain? ");
+			scanf("%s",string);
+			if (strcmp(string,"yes")!=0 && strcmp(string,"y")!=0) {
+				printf("Okay... the world is left intact\n");
+				exit(FAIL);
+			}
+			printf("The re-destruction of the world has begun...\n");
+			sleep(1);
+		}
+#else
+		/* check for god permissions */
 		if(realuser!=(getpwnam(LOGIN)->pw_uid)) {
 			printf("Sorry -- you can not create a world\n");
-			printf("you need to be logged in as %s",LOGIN);
-			if (strcmp(LOGIN, ntn[0].leader)!=0) {
-				printf(" or %s",ntn[0].leader);
-			}
-			printf("\n");
+			printf("you need to be logged in as %s.\n",LOGIN);
+			exit(FAIL);
 		}
+
+		/* check if datafile already exists*/
+		if(access(datafile,00) == 0) {
+			printf("ABORTING: File %s exists\n",datafile);
+			printf("\tthis means that a game is in progress. To proceed, you must remove \n");
+			printf("\tthe existing data file. This will, of course, destroy that game.\n\n");
+			exit(FAIL);
+		}
+#endif /* REMAKE */
+
+		makeworld(rflag);
 		sprintf(string,"%sup",isonfile);
 		unlink(string);
-		makeworld(rflag);
 		exit(SUCCESS);
 	}
 
@@ -245,8 +290,9 @@ char **argv;
 	}
 
 #ifdef OGOD
-	if((realuser!=(getpwnam(LOGIN)->pw_uid))&&
-	   (realuser!=(getpwnam(ntn[0].leader)->pw_uid))) {
+	if ((realuser != (getpwnam(LOGIN))->pw_uid ) &&
+	  ((pwent=getpwnam(ntn[0].leader)) == NULL ||
+	  realuser != pwent->pw_uid )) {
 		printf("Sorry -- you can not administrate conquer\n");
 		printf("you need to be logged in as %s",LOGIN);
 		if (strcmp(LOGIN, ntn[0].leader)!=0) {
@@ -257,29 +303,11 @@ char **argv;
 	}
 #endif OGOD
 
-	if (pflag) {	/* print a map of the game */
-		fprintf(stderr,"\nFor convenience, this output is to stderr,\n");
-		fprintf(stderr,"while the maps will be sent to stdout.\n\n");
-		fprintf(stderr,"\tThe valid options are,\n");
-		fprintf(stderr,"\t\t1) altitudes\n\t\t2) vegetations\n");
-		fprintf(stderr,"\t\t3) nations\n");
-		fprintf(stderr,"\t\t4) designations\n\n");
-		fprintf(stderr,"\tWhat type of map? ");
-		scanf("%hd", &dismode);
-		fprintf(stderr,"\n");
-		if(dismode==1) printele();
-		else if(dismode==2) printveg();
-		else if(dismode==3) pr_ntns();
-		else if(dismode==4) pr_desg();
-		else {
-		     fprintf(stderr,"must be 1-4\n");
-		     exit(FAIL);
-		}
-		exit(SUCCESS);
-	} else if (xflag) {	/* update the game */
+	if (xflag) {	/* update the game */
 #ifndef OGOD
-		if((realuser!=(getpwnam(LOGIN)->pw_uid))&&
-		   (realuser!=(getpwnam(ntn[0].leader)->pw_uid))) {
+		if ((realuser != (getpwnam(LOGIN))->pw_uid ) &&
+		  ((pwent=getpwnam(ntn[0].leader)) == NULL ||
+		  realuser != pwent->pw_uid )) {
 			printf("sorry -- your uid is invalid for updating\n");
 			printf("you need to be logged in as %s",LOGIN);
 			if (strcmp(LOGIN, ntn[0].leader)!=0) {
@@ -318,11 +346,10 @@ char **argv;
 	printf("error: must specify an option\n");
 
 	/*  print out command line arguments */
-	printf("Command line format: %s [-maxp -dDIR]\n",argv[0]);
+	printf("Command line format: %s [-max -dDIR]\n",argv[0]);
 	printf("\t-a       add new player\n");
 	printf("\t-d DIR   to use play different game\n");
 	printf("\t-m       make a world\n");
-	printf("\t-p       print a map\n");
 	printf("\t-x       execute program\n");
 	exit(SUCCESS);
 }
@@ -378,8 +405,7 @@ att_base()
 		WORLDMIL+=curntn->tmil;
 	}
 	if (WORLDGOLD==0) WORLDGOLD=1;
-	printf("calculating new national attributes:  sum of scores=%ld of mil=%ld\n",WORLDSCORE,WORLDMIL);
-
+	
 	/* count the number of sectors */
 	for(country=1;country<NTOTAL;country++) {
 		if(!isntn(ntn[country].active)) continue;

@@ -253,8 +253,10 @@ dispitem(item, amount)
 	}
 
 	/* now show the extras for the Raw Materials */
-	printw(", %ld jewels", amount*NLJEWELS/Mvalues[CH_RAWGOODS]);
-	printw(", and %ld metal.", amount*NLMETAL/Mvalues[CH_RAWGOODS]);
+	printw(", %ld jewels", (long) (amount *
+		((float)NLJEWELS/Mvalues[CH_RAWGOODS])));
+	printw(", and %ld metal.", (long) (amount *
+		((float)NLMETAL/Mvalues[CH_RAWGOODS])));
 }
 
 /* show the current amount for country item */
@@ -277,21 +279,21 @@ showitem(line,item)
 	line++;
 
 	/* now show the extras for the Raw Materials */
-	if (NLJEWELS==NLMETAL) {
-		sprintf(tempc,"%ld jewels & metal",
-			   spent[CH_RAWGOODS]*NLJEWELS);
-		mvprintw(line,0,"%38s",tempc);
-		mvprintw(line,COLS/2+10,"%ld jewels & metal",NLJEWELS);
-	} else {
-		sprintf(tempc,"%ld jewels",
-			   spent[CH_RAWGOODS]*NLJEWELS);
-		mvprintw(line,0,"%38s",tempc);
-		mvprintw(line++,COLS/2+10,"%ld jewels",NLJEWELS);
-		sprintf(tempc,"%ld metal",
-			   spent[CH_RAWGOODS]*NLMETAL);
-		mvprintw(line,0,"%38s",tempc);
-		mvprintw(line,COLS/2+10,"%ld metals",NLMETAL);
-	}
+#if NLJEWELS==NLMETAL
+	sprintf(tempc,"%ld jewels & metal",
+		   spent[CH_RAWGOODS]*NLJEWELS);
+	mvprintw(line,0,"%38s",tempc);
+	mvprintw(line,COLS/2+10,"%ld jewels & metal",NLJEWELS);
+#else
+	sprintf(tempc,"%ld jewels",
+		   spent[CH_RAWGOODS]*NLJEWELS);
+	mvprintw(line,0,"%38s",tempc);
+	mvprintw(line++,COLS/2+10,"%ld jewels",NLJEWELS);
+	nsprintf(tempc,"%ld metal",
+		    spent[CH_RAWGOODS]*NLMETAL);
+	mvprintw(line,0,"%38s",tempc);
+	mvprintw(line,COLS/2+10,"%ld metals",NLMETAL);
+#endif
 }
 
 /* convert the stored information into the nation statistics */
@@ -347,7 +349,7 @@ newlogin()
 	int temp,ypos,xpos;
 	int more=TRUE;	/*0 if add another player*/
 	long x;
-	char tempc[LINELTH],strin[LINELTH+1];
+	char tempc[LINELTH];
 	char passwd[PASSLTH+1];
 	register i;
 
@@ -432,18 +434,20 @@ newlogin()
 			mvprintw(2,0,"Enter National Password: ");
 			clrtoeol();
 			refresh();
-			gets(tempc);
-			if((strlen(tempc)<2)||(strlen(tempc)>PASSLTH)) {
-				newerror("Invalid Password Length");
+			i = get_pass(tempc);
+			if (i < 2) {
+				newerror("Password Too Short");
+				continue;
+			} else if (i > PASSLTH) {
+				newerror("Password Too Long");
 				continue;
 			}
 			mvprintw(2,0,"Reenter National Password: ");
 			clrtoeol();
 			refresh();
-			gets(passwd);
+			i = get_pass(passwd);
 
-			if((strlen(tempc)<2)||(strlen(tempc)>PASSLTH)
-			   ||(strncmp(passwd,tempc,PASSLTH)!=0)){
+			if((i<2)||(i>PASSLTH)||(strncmp(passwd,tempc,PASSLTH)!=0)){
 				newerror("Invalid Password Match");
 			} else valid=TRUE;
 		}
@@ -595,7 +599,7 @@ newlogin()
 				break;
 			}
 		}
-		mvprintw(2,COLS/2,"Alignment: %s", allignment[curntn->active]);
+		mvprintw(2,COLS/2,"Alignment: %s", alignment[curntn->active]);
 		clrtoeol();
 
 
@@ -1044,7 +1048,7 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 				}
 				if(is_habitable(x,y)) placed=1;
 				/*important that no countries near*/
-				for(i=x-2;i<=x+2;i++) for(j=y-2;j<=y+2;j++){
+				for(i=x-4;i<=x+4;i++) for(j=y-4;j<=y+4;j++){
 				if((isntn(ntn[sct[i][j].owner].active))
 					&&(sct[i][j].owner!=0)) placed=0;
 				}
@@ -1148,6 +1152,7 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 		else if (curntn->location==FAIR) t=1;
 		else if (curntn->location==GREAT) t=2;
 		else {
+			if (ispc(curntn->active))
 			newerror("Error in finding placement");
 			t=0;
 		}
@@ -1168,10 +1173,21 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 				sct[i][j].people=people;
 				sct[x][y].people-=people;
 			}
+		/* make sure status is set properly */
+		for(i=0;i<NTOTAL;i++) {
+			if (ntn[i].active < NPC_PEASANT) {
+				ntn[i].dstatus[country]=UNMET;
+				ntn[country].dstatus[i]=UNMET;
+			} else {
+				ntn[i].dstatus[country]=WAR;
+				ntn[country].dstatus[i]=WAR;
+			}
+		}
 	}
 	else {
-		if(curntn->location==OOPS) newerror("MAJOR ERROR IN PLACEMENT");
-		else if(curntn->location==RANDOM) {
+		if(curntn->location==OOPS) {
+			newerror("MAJOR ERROR IN PLACEMENT");
+		} else if(curntn->location==RANDOM) {
 			newerror("Random Place Failed, trying to place again");
 			curntn->location=OOPS;
 			place(-1,-1);
@@ -1292,7 +1308,7 @@ nstartcst()	/* to be used for new method */
 
 	/* extra points for starting late */
 	points -= (float) (TURN-1) / LATESTART;
-	if( (TURN-1)/LATESTART > 0.0 ) {
+	if( (float)(TURN-1)/LATESTART > 0.0 ) {
 		sprintf(temp,"%.1f points added for starting late",
 			   (float) (TURN-1) / LATESTART);
 		newerror(temp);

@@ -39,6 +39,8 @@ short	redraw=TRUE;	/* if TRUE: redraw map		*/
 int	done=FALSE;	/* if TRUE: you are done	*/
 short	hilmode=HI_OWN;	/* hilight mode */
 short	dismode=DI_DESI;/* display mode			*/
+short	otherdismode= -(DI_MOVE);
+short	otherhilmode= HI_OWN;
 short	selector=0;	/* selector (y vbl) for which army/navy... is "picked"*/
 short	pager=0;	/* pager for selector 0,1,2,3*/
 short	country=0;	/* nation id of owner*/
@@ -59,7 +61,7 @@ char	**argv;
 	int geteuid(), getuid(), setuid();
 	register int i,j;
 	char name[NAMELTH+1],filename[FILELTH];
-	void srand(),init_hasseen();
+	void srand(),init_hasseen(),mapprep();
 	int getopt();
 	char passwd[PASSLTH+1];
 	long time();
@@ -67,15 +69,16 @@ char	**argv;
 #ifdef SYSMAIL
 	extern char sysmail[];
 #endif SYSMAIL
-	int sflag=FALSE,l;
+	int sflag=FALSE,pflag=FALSE,l;
 
 	char defaultdir[BIGLTH],tmppass[PASSLTH+1];
 	char cq_opts[BIGLTH];
-	struct passwd *getpwnam();
+	struct passwd *getpwnam(), *pwent;
 
 	owneruid=getuid();
 	srand((unsigned) time((long *) 0));
 	strcpy(name,"");
+	strcpy(defaultdir,"");
 	strcpy(cq_opts,"");
 
 	/* check conquer options */
@@ -168,7 +171,7 @@ char	**argv;
 	}
 
 	/* process the command line arguments */
-	while((i=getopt(argc,argv,"hGn:d:s"))!=EOF) switch(i){
+	while((i=getopt(argc,argv,"Ghpn:d:s"))!=EOF) switch(i){
 	/* process the command line arguments */
 	case 'h': /* execute help program*/
 		initscr();
@@ -181,6 +184,9 @@ char	**argv;
 		endwin();
 		putchar('\n');
 		exit(SUCCESS);
+	case 'p': /* print the map*/
+		pflag++;
+		break;
 	case 'G':
 		Gaudy = TRUE;
 		break;
@@ -198,12 +204,13 @@ char	**argv;
 		sflag++;
 		break;
 	case '?': /*  print out command line arguments */
-		printf("Command line format: %s [-Ghs -d DIR -nNAT]\n",argv[0]);
-		printf("\t-G       gaudily highlight nation in news\n");
-		printf("\t-n NAT   play as nation NAT\n");
-		printf("\t-h       print help text\n");
-		printf("\t-d DIR   to use play different game\n");
-		printf("\t-s       print scores\n");
+		fprintf(stderr,"Command line format: %s [-Ghps -d DIR -nNAT]\n",argv[0]);
+		fprintf(stderr,"\t-n NAT   play as nation NAT\n");
+		fprintf(stderr,"\t-d DIR   to use play different game\n");
+		fprintf(stderr,"\t-G       gaudily highlight nation in news\n");
+		fprintf(stderr,"\t-h       print help text\n");
+		fprintf(stderr,"\t-p       print a map\n");
+		fprintf(stderr,"\t-s       print scores\n");
 		exit(SUCCESS);
 	};
 
@@ -211,13 +218,14 @@ char	**argv;
 	 * dir where the files are kept and do some work.
 	 */
 	if (chdir(defaultdir)) {
-		printf("unable to change dir to %s\n",defaultdir);
+		fprintf(stderr,"unable to change dir to %s\n",defaultdir);
 		exit(FAIL);
 	}
 
 	readdata();				/* read data*/
 	verifydata( __FILE__, __LINE__ );	/* verify data */
 
+	/* now print the scores */
 	if(sflag){
 		printscore();
 		exit(SUCCESS);
@@ -233,15 +241,13 @@ char	**argv;
 		(void) setuid (geteuid ()) ;
 	}
 
-	/* at this stage must be a normal interactive game */
-
-	printf("conquer %s.%d: Copyright (c) 1988 by Edward M Barlow\n",VERSION,PATCHLEVEL);
+	fprintf(stderr,"conquer %s.%d: Copyright (c) 1988 by Edward M Barlow\n",VERSION,PATCHLEVEL);
 
 	/* check for update in progress */
 	sprintf(filename,"%sup",isonfile);
 	if(check_lock(filename,FALSE)==TRUE) {
-		printf("Conquer is updating\n");
-		printf("Please try again later.\n");
+		fprintf(stderr,"Conquer is updating\n");
+		fprintf(stderr,"Please try again later.\n");
 		exit(FAIL);
 	}
 
@@ -250,19 +256,22 @@ char	**argv;
 	*     if you fail give name of administrator of game
 	*/
 	if (name[0] == '\0') {
-		printf("what nation would you like to be: ");
+		if (pflag != FALSE)
+			fprintf(stderr,"Display map for what nation: ");
+		else fprintf(stderr,"What nation would you like to be: ");
 		gets(name);
 	}
 #ifdef OGOD
 	if(strcmp(name,"god")==0 || strcmp(name,"unowned")==0) {
 		if ((owneruid != (getpwnam(LOGIN))->pw_uid ) &&
-		    (owneruid != (getpwnam(ntn[0].leader))->pw_uid )) {
-			printf("Sorry -- you can not login as god\n");
-			printf("you need to be logged in as %s",LOGIN);
+		  ((pwent=getpwnam(ntn[0].leader)) == NULL ||
+		  owneruid != pwent->pw_uid )) {
+			fprintf(stderr,"Sorry -- you can not login as god\n");
+			fprintf(stderr,"you need to be logged in as %s",LOGIN);
 			if (strcmp(LOGIN, ntn[0].leader)!=0) {
-				printf(" or %s",ntn[0].leader);
+				fprintf(stderr," or %s",ntn[0].leader);
 			}
-			printf("\n");
+			fprintf(stderr,"\n");
 			exit(FAIL);
 		}
 		strcpy(name,"unowned");
@@ -276,20 +285,20 @@ char	**argv;
 		if(strcmp(name,ntn[i].name)==0) country=i;
 
 	if(country==(-1)) {
-		printf("Sorry, name <%s> not found\n",name);
-		printf("\nFor rules type <conquer -h>");
-		printf("\nFor information on conquer please contact %s.",OWNER);
-		printf("\nTo enter this campaign please send mail to %s", LOGIN);
+		fprintf(stderr,"Sorry, name <%s> not found\n",name);
+		fprintf(stderr,"\nFor rules type <conquer -h>");
+		fprintf(stderr,"\nFor information on conquer please contact %s.",OWNER);
+		fprintf(stderr,"\nTo enter this campaign please send mail to %s", LOGIN);
 		if (strcmp(LOGIN, ntn[0].leader)!=0) {
-			printf(" or %s",ntn[0].leader);
+			fprintf(stderr," or %s",ntn[0].leader);
 		}
-		printf(".\n");
+		fprintf(stderr,".\n");
 		return;
-	} else if(country==0) {
+	} else if(country==0 && !pflag) {
 		sprintf(filename,"%sadd",isonfile);
 		if(check_lock(filename,FALSE)==TRUE) {
-			printf("A new player is being added.\n");
-			printf("Continue anyway? [y or n]");
+			fprintf(stderr,"A new player is being added.\n");
+			fprintf(stderr,"Continue anyway? [y or n]");
 			while(((i=getchar())!='y')&&(i!='n')) ;
 			if(i!='y') exit(FAIL);
 		}
@@ -297,26 +306,64 @@ char	**argv;
 	curntn = &ntn[country];
 
 	/*get encrypted password*/
-	strncpy(tmppass,getpass("\nwhat is your nation's password:"),PASSLTH);
+	fprintf(stderr,"\nWhat is your Nation's Password: ");
+	strncpy(tmppass,getpass(""),PASSLTH);
 	strncpy(passwd,crypt(tmppass,SALT),PASSLTH);
 	if((strncmp(passwd,curntn->passwd,PASSLTH)!=0)
 	&&(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
-		strncpy(tmppass,getpass("\nerror: reenter your nation's password:"),PASSLTH);
+		fprintf(stderr,"\nError: Reenter your Nation's Password: ");
+		strncpy(tmppass,getpass(""),PASSLTH);
 		strncpy(passwd,crypt(tmppass,SALT),PASSLTH);
 		if((strncmp(passwd,curntn->passwd,PASSLTH)!=0)
 		&&(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
-			printf("\nSorry:");
-			printf("\nFor rules type <conquer -h>");
-			printf("\nFor information on conquer please contact %s.",
+			fprintf(stderr,"\nSorry:");
+			fprintf(stderr,"\nFor rules type <conquer -h>");
+			fprintf(stderr,"\nFor information on conquer please contact %s.",
 				OWNER);
-			printf("\nTo enter this campaign please send mail to %s",
+			fprintf(stderr,"\nTo enter this campaign please send mail to %s",
 				LOGIN);
 			if (strcmp(LOGIN, ntn[0].leader)!=0) {
-				printf(" or %s",ntn[0].leader);
+				fprintf(stderr," or %s",ntn[0].leader);
 			}
-			printf(".\n");
+			fprintf(stderr,".\n");
 			exit(FAIL);
 		}
+	}
+
+	/* now print the maps */
+	if (pflag) {	/* print a map of the game */
+		fprintf(stderr,"\nFor convenience, this output is to stderr,\n");
+		fprintf(stderr,"while the maps will be sent to stdout.\n\n");
+		fprintf(stderr,"\tThe valid options are,\n");
+		fprintf(stderr,"\t\t1) altitudes\n\t\t2) vegetations\n");
+		fprintf(stderr,"\t\t3) nations\n");
+		fprintf(stderr,"\t\t4) designations\n\n");
+		fprintf(stderr,"\tWhat type of map? ");
+		scanf("%hd", &dismode);
+		fprintf(stderr,"\n");
+		switch(dismode) {
+		case 1:
+			mapprep();
+			printele();
+			break;
+		case 2:
+			mapprep();
+			printveg();
+			break;
+		case 3:
+			mapprep();
+			pr_ntns();
+			break;
+		case 4:
+			mapprep();
+			pr_desg();
+			break;
+		default:
+			fprintf(stderr,"Invalid Choice\n");
+		     exit(FAIL);
+			break;
+		}
+		exit(SUCCESS);
 	}
 
 	initscr();		/* SET UP THE SCREEN */
@@ -410,7 +457,7 @@ char	**argv;
 	signal(SIGTERM,hangup);		/* likewise for cheats!! */
 
 	noecho();
-	prep(country,FALSE);		/* initialize prep array */
+	prep(country,FALSE);	/* initialize prep array */
 	whatcansee();			/* what can they see */
 
 	/* initialize mail files */
@@ -492,6 +539,10 @@ parse()
 {
 	char	name[LINELTH+1];
 	char	passwd[PASSLTH+1];
+	struct passwd *getpwnam(), *pwent;
+#ifdef DEBUG
+	void sect_info();
+#endif /* DEBUG */
 	int	ocountry;
 
 	switch(getch()) {
@@ -499,10 +550,18 @@ parse()
 		ext_cmd( -1 );
 		curntn->tgold -= MOVECOST;
 		break;
-	case '':	/*redraw the screen*/
+	case '':	/* redraw the screen */
 		whatcansee();	/* what can they see */
 		redraw=TRUE;
 		break;
+#ifdef DEBUG
+	case '\t':	/* debugging information for god and demi-god */
+		if ((owneruid != (getpwnam(LOGIN))->pw_uid ) &&
+		    ((pwent=getpwnam(ntn[0].leader))==NULL || owneruid != pwent->pw_uid ))
+			break;
+		sect_info();
+		break;
+#endif /* DEBUG */
 	case 'a':	/*army report*/
 		redraw=TRUE;
 		armyrpt(0);
@@ -607,7 +666,10 @@ parse()
 		mymove();
 		curntn->tgold -= MOVECOST;
 		makebottom();
-		prep(country,FALSE);
+		prep(country,FALSE,TRUE);
+		if (hilmode == HI_ARMY || hilmode == HI_YARM) {
+			redraw = TRUE;
+		}
 		pager=0;
 		selector=0;
 		break;
@@ -743,7 +805,7 @@ parse()
 	case 'z':	/*login as new user */
 #ifdef OGOD
 		if ((owneruid != (getpwnam(LOGIN))->pw_uid ) &&
-		    (owneruid != (getpwnam(ntn[0].leader))->pw_uid )) break;
+		    ((pwent=getpwnam(ntn[0].leader))==NULL || owneruid != pwent->pw_uid )) break;
 #endif
 		clear();
 		redraw=TRUE;
@@ -795,7 +857,7 @@ parse()
 		}
 
 		/* remove old lock file -- new one already made */
-		sprintf(fison,"%s%s",isonfile,ocountry);
+		sprintf(fison,"%s%d",isonfile,ocountry);
 		unlink(fison);
 
 		fclose(fexe);
@@ -803,13 +865,13 @@ parse()
 	 	sprintf(name,"%s%d",exefile,country);
 	 	if ((fexe=fopen(name,"a"))==NULL) {
 			beep();
-			printf("error opening %s\n",name);
+			fprintf(stderr,"error opening %s\n",name);
 			unlink(fison);
 			exit(FAIL);
 	 	}
 		curntn = &ntn[country];
 
-		printf("\n");
+		fprintf(stderr,"\n");
 		readdata();
 		execute(FALSE);
 
@@ -846,6 +908,66 @@ parse()
 		beep();
 	}
 }
+
+#ifdef DEBUG
+/************************************************************************/
+/*	SECT_INFO() - display sector debugging information		*/
+/************************************************************************/
+void
+sect_info()
+{
+	int i,j,acnt1=0,acnt2=0,ncnt1=0,ncnt2=0,x,y;
+
+	/* erase prior information */
+	for(i=0;i<LINES-13;i++) {
+		move(i,COLS-21);
+		clrtoeol();
+	}
+	
+	standout();
+	mvaddstr(0,COLS-20,"Sector Information");
+	mvprintw(1,COLS-20,"  x = %2d, y = %2d  ",(int)XREAL,(int)YREAL);
+	standend();
+	
+	/* find units in the sector */
+	for (i=0;i<NTOTAL;i++) if (ntn[i].active != INACTIVE) {
+		x = 0;
+		for (j=0;j<MAXARM;j++) {
+			if (ntn[i].arm[j].sold > 0 && ntn[i].arm[j].xloc == XREAL
+			    && ntn[i].arm[j].yloc == YREAL ) x++;
+		}
+		y = 0;
+		for (j=0;j<MAXNAVY;j++) {
+			if (ntn[i].nvy[j].xloc != XREAL ||
+			    ntn[i].nvy[j].yloc != YREAL ) continue;
+			if (ntn[i].nvy[j].warships!=0 ||
+			    ntn[i].nvy[j].merchant!=0 ||
+			    ntn[i].nvy[j].galleys!=0) y++;
+		}
+		if (i!=country) {
+			acnt2 += x;
+			ncnt2 += y;
+		} else {
+			acnt1 = x;
+			ncnt1 = y;
+		}
+	}
+
+	mvprintw(3,COLS-20,"Own A_Units: %d", acnt1);
+	mvprintw(4,COLS-20,"Own N_Units: %d", ncnt1);
+	mvprintw(5,COLS-20,"Other A_Units: %d", acnt2);
+	mvprintw(6,COLS-20,"Other N_Units: %d", ncnt2);
+
+	mvprintw(8,COLS-20,"Occval: %d", occ[XREAL][YREAL]);
+
+	/* let them look at the information */
+	errormsg("");
+
+	/* fix the display */
+	makeside(FALSE);
+	makebottom();
+}
+#endif /* DEBUG */
 
 /************************************************************************/
 /*	MAKESIDE() -	make the right hand side display		*/
@@ -1182,7 +1304,7 @@ int	dounlink;	/* TRUE if want to do unlink */
 	nocrmode();
 	endwin();
 	if (fexe!=NULL) fclose(fexe);
-	printf("quit & save\n");
+	fprintf(stderr,"quit & save\n");
 	exit(SUCCESS);
 }
 
