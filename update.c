@@ -1,4 +1,4 @@
-/*conquest is copyrighted 1986 by Ed Barlow.
+/*conquer is copyrighted 1986 by Ed Barlow.
  *  I spent a long time writing this code & I hope that you respect this.  
  *  I give permission to alter the code, but not to copy or redistribute
  *  it without my explicit permission.  If you alter the code, 
@@ -11,25 +11,30 @@
  */
 
 #include "header.h"
+#include "data.h"
 #include <ctype.h>
 
 FILE *fnews, *fopen();
 
 extern short country;
 int attr[MAPX][MAPY];     /*sector attactiveness*/
-extern short occ[MAPX][MAPY];
 extern short movecost[MAPX][MAPY];
 
 /*update nation file*/
 update()
 {
+	register struct s_sector	*sptr;
+	register struct nation		*nptr;
+	FILE *fpmsg;
+	register int i, j;
 	register int x,y;
-	int moved,armynum,nvynum,done,finis=0,j,i,number=0;
+	int moved,armynum,nvynum,done,finis=0, number=0;
 	int food,iron;
 	char command[80];
 	int execed[MAXNTN];
+	long	city_pop, cap_pop;
 
-	if ((fnews=fopen(NEWSFILE,"w"))==NULL) {
+	if ((fnews=fopen(newsfile,"w"))==NULL) {
 		printf("error opening news file\n");
 		exit(1);
 	}
@@ -38,75 +43,88 @@ update()
 	country=0;
 	execute();
 	for(i=0;i<MAXNTN;i++) execed[i]=0;
-	system("/bin/date");
+	system("date");
 	while(finis==0){
 		/*get random active nation*/
 		country=(rand()%(MAXNTN-1))+1;
-		if(ntn[country].active>0) {
-			done=0;
-			number=0;
-			/*Find the next unupdated nation*/
-			while(done==0){
-				if((ntn[country].active>0)&&(execed[country]==0)) {
-					done=1;
-					execed[country]=1;
-				}
-				else {
-					country++;
-					number++;
-					if(number>MAXNTN) {
-						finis=1;
-						done=1;
-					}
-					else if(country>=MAXNTN) country=1;
-				}
+		if(ntn[country].active <= 0)
+			continue;
+
+		done=0;
+		number=0;
+		/*Find the next unupdated nation*/
+		while(done==0){
+			if((ntn[country].active>0)&&(execed[country]==0)) {
+				done=1;
+				execed[country]=1;
 			}
+			else {
+				country++;
+				number++;
+				if(number>MAXNTN) {
+					finis=1;
+					done=1;
+				}
+				else if(country>=MAXNTN) country=1;
+			}
+		}
 
-			if(finis==0){
-				printf("updating nation number %d -> %s\n",country,ntn[country].name);
+		if(finis==1)
+			continue;
 
-				/*if execute is 0 and PC nation then they did not move*/
-				if((execute()==0)&&(ntn[country].active==1)){
-					printf("nation %s did not move\n",ntn[country].name);
+		printf("updating nation number %d -> %s\n",country,ntn[country].name);
+
+		/*if execute is 0 and PC nation then they did not move*/
+		if((execute()==0)&&(ntn[country].active==1)){
+			printf("\tnation %s did not move\n",ntn[country].name);
 #ifdef CMOVE
-					printf("the computer will move for %s\n",ntn[country].name);
-					fprintf(fnews,"1.\tthe computer will move for %s\n",ntn[country].name);
-					nationrun();
+			printf("\tthe computer will move for %s\n",ntn[country].name);
+			fprintf(fnews,"1.\tthe computer will move for %s\n",ntn[country].name);
+			nationrun();
 #endif
-				}
+		}
 #ifdef NPC
-				/*run npc nations*/
-				if(ntn[country].active>=2) nationrun();
+		/*run npc nations*/
+		if(ntn[country].active>=2) {
+			nationrun();
+			/*do magic*/
+			if(magic(country,MA_MONST)==1) {
+				if(x=takeover(5,0)==1)
+				printf("SUCCESSFUL TAKEOVER OF %d",x);
+			} else if(magic(country,AV_MONST)==1) {
+				if(x=takeover(3,0)==1)
+				printf("SUCCESSFUL TAKEOVER OF %d",x);
+			} else if(magic(country,MI_MONST)==1){
+				if(x=takeover(1,0)==1)
+				printf("SUCCESSFUL TAKEOVER OF %d",x);
+			}
+		}
 #endif
-				/*do magic*/
-				if(magic(country,MI_MONST)==1){
-					if(magic(country,AV_MONST)==1) {
-						if(magic(country,MA_MONST)==1)
-							takeover(5,0);
-						else takeover(3,0);
-					}
-					else takeover(1,0);
-				}
 
-				/*update movement array*/
-				updmove(ntn[country].race);
+		/*update movement array*/
+		updmove( ntn[country].race );
 
-				/*THIS IS WHERE YOU ZERO THE ATTR MATRIX*/
-				/*calculate sector attractiveness*/
-				for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {
-					if((sct[x][y].owner==country)&&(isdigit(sct[x][y].vegitation)!=0)){
-						attr[x][y]=attract(x,y,ntn[country].race);
-					}
-					else if(((magic(country,DERVISH)==1)||(magic(country,DESTROYER)==1))&&((sct[x][y].vegitation==ICE)||(sct[x][y].vegitation==DESERT))) {
-						attr[x][y]=36;
-					}
-					else attr[x][y]=0;
-				}
+		/*THIS IS WHERE YOU ZERO THE ATTR MATRIX*/
+		/*calculate sector attractiveness*/
+		for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {
+			sptr = &sct[x][y];
+			if((sptr->owner==country)
+			&&(isdigit(sptr->vegetation)!=0)){
+				attr[x][y]=attract(x,y,ntn[country].race);
+			}
+			else if(((magic(country,DERVISH)==1)
+			||(magic(country,DESTROYER)==1))
+			&&((sptr->vegetation==ICE)
+			||(sptr->vegetation==DESERT))) {
+				attr[x][y]=36;
+			}
+			else attr[x][y]=0;
+		}
 
-				/*if near capital add to attr*/
-				for(x=ntn[country].capx-2;x<=ntn[country].capx+2;x++)
-					for(y=ntn[country].capy-2;y<=ntn[country].capy+2;y++)
-						if(attr[x][y]>0) attr[x][y]+=20;
+		/*if near capital add to attr*/
+		for(x=ntn[country].capx-2;x<=ntn[country].capx+2;x++)
+			for(y=ntn[country].capy-2;y<=ntn[country].capy+2;y++)
+				if(attr[x][y]>0) attr[x][y]+=20;
 
 /*MOVE CIVILIANS based on the ratio of attractivenesses
 	 *
@@ -118,35 +136,72 @@ update()
 	 * ij is refered to as 1, xy as 2
 	 * NOTE AM ADDING 1 to divisor to prevent floating exception errors
 	 */
-				for(x=0;x<MAPX-1;x++) for(y=0;y<MAPY-1;y++) for(i=(-2);i<=2;i++) for(j=(-2);j<=2;j++)
-				if((x+i>0)&&(x+i<MAPX)&&(x+j>0)&&(x+j<MAPY)&&(sct[x+i][y+j].owner==country)&&(sct[x][y].owner==country)) {
-					moved=(sct[x][y].people*attr[x+i][y+j]-sct[x+i][y+j].people*attr[x][y])/(1+5*(attr[x+i][y+j]+attr[x][y]));
-					sct[x+i][y+j].people += moved;
-					sct[x][y].people -= moved;
-				}
-			}
-		}
-	}
+		for(x=0; x<MAPX; x++ ) {
+			for(y=0; y<MAPY; y++) {
+				sptr = &sct[x][y];
+				if( sptr->owner != country )
+					continue;
+				if( sptr->people == 0 )
+					continue;
+
+				for(i=x-2;i<=x+2;i++) {
+					if( i < 0 || i >= MAPX  )
+						continue;
+
+					for(j=y-2;j<=y+2;j++) {
+						if( j < 0 || j >= MAPY )
+							continue;
+						if( sct[i][j].owner != country)
+							continue;
+					moved=(sptr->people*attr[i][j]-sct[i][j].people*attr[x][y])/(1+5*(attr[i][j]+attr[x][y]));
+#if 0
+if( country == 18 ) {
+	printf( "moving %d people from (%d,%d) a = %d to (%d,%d) a = %d\n",
+		moved, x, y, attr[x][y], i, j, attr[i][j] );
+}
+#endif
+						if( moved <= 0 )
+							continue;
+
+						sct[i][j].people += moved;
+						sptr->people -= moved;
+					} /* for */
+				} /* for */
+			} /* for */
+		} /* for */
+	} /* while */
 
 	/* run npc nations */
 #ifdef LZARD
 	puts("updating lizards\n ");
 	country = NLIZARD;
+	execute();
 	armynum=0;
 	/*move to lizard castle*/
 	for(armynum=0;armynum<MAXARM;armynum++) if(ASTAT!=GARRISON){
-		for(i=AXLOC-1;i<=AXLOC+1;i++) for(j=AYLOC-1;j<=AYLOC+1;j++){
-			if((i>=0)&&(j>=0)&&(i<MAPX)&&(j<MAPX)&&(sct[i][j].designation==DCASTLE)){
-				AXLOC=i;
-				AYLOC=j;
+		x = AXLOC;
+		y = AYLOC;
+		for(i=x-1;i<=x+1;i++) for(j=y-1;j<=y+1;j++){
+			if((i>=0)&&(j>=0)&&(i<MAPX)&&(j<MAPY)
+			&&(sct[i][j].designation==DCASTLE)){
+				x = i;
+				y = j;
+				break;
 			}
 		}
-		for(i=AXLOC-1;i<=AXLOC+1;i++) for(j=AYLOC-1;j<=AYLOC+1;j++){
-			if((i>=0)&&(j>=0)&&(i<MAPX)&&(j<MAPX)&&(sct[i][j].altitude!=WATER)&&(sct[i][j].owner != NLIZARD)&&(rand()%2==0)){
-				AXLOC=i;
-				AYLOC=j;
+		for(i=x-1;i<=x+1;i++) for(j=y-1;j<=y+1;j++){
+			if((i>=0)&&(j>=0)&&(i<MAPX)&&(j<MAPY)
+			&&(sct[i][j].altitude!=WATER) 
+			&&(sct[i][j].altitude!=PEAK) 
+			&&(sct[i][j].owner != NLIZARD) 
+			&&(rand()%2==0)){
+				x = i;
+				y = j;
+				break;
 			}
 		}
+		AXLOC = x;
+		AYLOC = y;
 	}
 #endif
 
@@ -154,6 +209,10 @@ update()
 	monster();
 #endif
 
+	/*run random events */
+#ifdef RANEVENT
+	randomevent(); 
+#endif
 	/*run combat*/
 	combat();
 
@@ -162,21 +221,29 @@ update()
 	prep();
 	for(country=1;country<NTOTAL;country++) if(ntn[country].active!=0){
 		for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>75){
-			if(sct[AXLOC][AYLOC].owner==0){
-				sct[AXLOC][AYLOC].owner=country;
+			sptr = &sct[AXLOC][AYLOC];
+			if(sptr->owner==0){
+				sptr->owner=country;
 			}
-			else if((sct[AXLOC][AYLOC].owner!=country)&&(ntn[country].dstatus[sct[AXLOC][AYLOC].owner]>=WAR)&&(occ[AXLOC][AYLOC]==country)){
+			else if((sptr->owner!=country)
+			&&(ntn[country].dstatus[sptr->owner]>=WAR)
+			&&(occ[AXLOC][AYLOC]==country)){
 
-				if((sct[AXLOC][AYLOC].owner!=0)&&(ntn[sct[AXLOC][AYLOC].owner].race!=ntn[country].race)) flee(AXLOC,AYLOC,1);
-				fprintf(fnews,"\n3.\tarea %d,%d captured by %s from %s",AXLOC,AYLOC,ntn[country].name,ntn[sct[AXLOC][AYLOC].owner].name);
-				sct[AXLOC][AYLOC].owner=country;
+				if((sptr->owner!=0)
+				&&(ntn[sptr->owner].race!=ntn[country].race)) 
+					flee(AXLOC,AYLOC,1);
+				fprintf(fnews,"\n3.\tarea %d,%d captured by %s from %s",AXLOC,AYLOC,ntn[country].name,ntn[sptr->owner].name);
+				sptr->owner=country;
 			}
 		}
 	}
 	fprintf(fnews,"\n1\tIMPORTANT WORLD NEWS\n");
 
 	for(country=1;country<MAXNTN;country++) 
-		if((ntn[country].active>=2)&&((ntn[country].tciv==0)||(sct[ntn[country].capx][ntn[country].capy].owner!=country))) destroy();
+		if((ntn[country].active>=2)
+		&&((ntn[country].tciv==0)
+		||(sct[ntn[country].capx][ntn[country].capy].owner!=country)))
+			destroy();
 
 	/*zero out all recalculated values*/
 	for(i=0;i<MAXNTN;i++){
@@ -188,87 +255,94 @@ update()
 
 	/*for whole map, update one sector at a time, owned sectors only*/
 	printf("\nupdating all sectors\n");
-	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) if(sct[x][y].owner!=0) {
+	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {
+		sptr = &sct[x][y];
+		if(sptr->owner==0)
+			continue;
+		nptr = &ntn[ sptr->owner ];
 
 		/*check all adjacent sectors and decide if met*/
 		for(i=x-1;i<=x+1;i++) for(j=y-2;j<=y+2;j++) {
 			if(i>=0&&i<MAPX&&j>=0&&j<MAPY&&(sct[i][j].owner!=0)) {
-				if(sct[x][y].owner!=sct[i][j].owner) {
-					if(ntn[sct[x][y].owner].dstatus[sct[i][j].owner]==UNMET) newdip(sct[x][y].owner,sct[i][j].owner);
-					if(ntn[sct[i][j].owner].dstatus[sct[x][y].owner]==UNMET) newdip(sct[i][j].owner,sct[x][y].owner);
+				if(sptr->owner!=sct[i][j].owner) {
+					if(nptr->dstatus[sct[i][j].owner]==UNMET) newdip(sptr->owner,sct[i][j].owner);
+					if(ntn[sct[i][j].owner].dstatus[sptr->owner]==UNMET) newdip(sct[i][j].owner,sptr->owner);
 				}
 			}
 		}
 
 		/*update nation file for owner*/
-		ntn[sct[x][y].owner].tsctrs++;
-		ntn[sct[x][y].owner].tciv += sct[x][y].people;
+		nptr->tsctrs++;
+		nptr->tciv += sptr->people;
 
 		/*grow populations*/
-		if(sct[x][y].people<100) sct[x][y].people+=sct[x][y].people/10;
-		else sct[x][y].people+=(ntn[sct[x][y].owner].repro*sct[x][y].people)/100;
+		if(sptr->people<100) sptr->people+=sptr->people/10;
+		else sptr->people+=(nptr->repro*sptr->people)/100;
 
 		/*PRODUCE*/
 		/*increase tmin based on mined stuff...*/
-		if(sct[x][y].designation==DMINE) {
-			iron=sct[x][y].iron*sct[x][y].people;
-			if(magic(sct[x][y].owner,MINER)==1) iron*=2;
-			if(magic(sct[x][y].owner,STEEL)==1) iron*=2;
-			ntn[sct[x][y].owner].tiron += iron;
-			ntn[sct[x][y].owner].tgold += iron*TAXIRON/100;
+		if(sptr->designation==DMINE) {
+			iron=sptr->iron*sptr->people;
+			if(magic(sptr->owner,MINER)==1) iron*=2;
+			if(magic(sptr->owner,STEEL)==1) iron*=2;
+			nptr->tiron += iron;
+			nptr->tgold += iron*TAXIRON/100;
 		}
 		/*harvest food*/
-		else if(sct[x][y].designation==DFARM) {
-			food=todigit(sct[x][y].vegitation)*sct[x][y].people;
-			ntn[sct[x][y].owner].tfood += food;
-			ntn[sct[x][y].owner].tgold += food*TAXFOOD/100;
+		else if(sptr->designation==DFARM) {
+			food= todigit(sptr->vegetation)*sptr->people;
+			nptr->tfood += food;
+			nptr->tgold += food*TAXFOOD/100;
 		}
 		/*gold mines produce gold*/
-		else if(sct[x][y].designation==DGOLDMINE) {
-			if(magic(sct[x][y].owner,MINER)==1){
-				ntn[sct[x][y].owner].tgold+=  2*sct[x][y].gold * sct[x][y].people * TAXGOLD/100;
-				ntn[sct[x][y].owner].jewels+= 2*sct[x][y].gold * sct[x][y].people;
+		else if(sptr->designation==DGOLDMINE) {
+			if(magic(sptr->owner,MINER)==1){
+				nptr->tgold +=  2*sptr->gold * sptr->people * TAXGOLD/100;
+				nptr->jewels += 2*sptr->gold * sptr->people;
 			}
 			else {
-				ntn[sct[x][y].owner].tgold+= sct[x][y].gold * sct[x][y].people * TAXGOLD/100;
-				ntn[sct[x][y].owner].jewels+= sct[x][y].gold * sct[x][y].people;
+				nptr->tgold += sptr->gold * sptr->people * TAXGOLD/100;
+				nptr->jewels += sptr->gold * sptr->people;
 			}
 		}
-		else if(sct[x][y].designation==DCAPITOL) {
-			if((x!=ntn[sct[x][y].owner].capx)&&(y!=ntn[sct[x][y].owner].capy)) {
-				ntn[sct[x][y].owner].tgold+= 2*sct[x][y].people * TAXCITY/100;
-				sct[x][y].designation=DCITY;
-				if(magic(sct[x][y].owner,ARCHITECT)==1){
-					ntn[sct[x][y].owner].tgold+= 2 * sct[x][y].people * TAXCITY/100;
-				}
-				else {
-					ntn[sct[x][y].owner].tgold+= sct[x][y].people * TAXCITY/100;
-				}
+		else if(sptr->designation==DCAPITOL) {
+			if((x!=nptr->capx)&&(y!=nptr->capy)) {
+				cap_pop = 0;
+				city_pop = 3 * sptr->people;
+				sptr->designation = DCITY;
+			} else {
+				city_pop = 0;
+				cap_pop = sptr->people;
 			}
-			else if(magic(sct[x][y].owner,ARCHITECT)==1){
-				ntn[sct[x][y].owner].tgold+= 2 * sct[x][y].people * TAXCAP/100;
+
+			if( magic(sptr->owner, ARCHITECT ) ) {
+				city_pop *= 2;
+				cap_pop *= 2;
 			}
-			else 
-				ntn[sct[x][y].owner].tgold+= sct[x][y].people * TAXCAP/100;
+
+			nptr->tgold += (long) city_pop * TAXCITY / 100;
+			nptr->tgold += (long) cap_pop * TAXCAP / 100;
 		}
-		else if(sct[x][y].designation==DCITY) {
-			if(magic(sct[x][y].owner,ARCHITECT)==1){
-				ntn[sct[x][y].owner].tgold+= 2*sct[x][y].people * TAXCITY/100;
-			}
-			else {
-				ntn[sct[x][y].owner].tgold+= sct[x][y].people * TAXCITY/100;
-			}
+		else if(sptr->designation==DCITY) {
+			city_pop = sptr->people;
+			if( magic(sptr->owner, ARCHITECT ) )
+				city_pop *= 2;
+			nptr->tgold += (long) city_pop * TAXCITY / 100;
 		}
-		else if(((magic(country,DERVISH)==1)||(magic(country,DESTROYER)==1))&&((sct[x][y].vegitation==ICE)||(sct[x][y].vegitation==DESERT))&&(sct[x][y].people>0)) {
-			food=6*sct[x][y].people;
-			ntn[sct[x][y].owner].tfood += food;
-			ntn[sct[x][y].owner].tgold += food*TAXFOOD/100;
+		else if(((magic(country,DERVISH)==1)
+		||(magic(country,DESTROYER)==1))
+		&&((sptr->vegetation==ICE)
+		||(sptr->vegetation==DESERT))
+		&&(sptr->people>0)) {
+			food=6*sptr->people;
+			nptr->tfood += food;
+			nptr->tgold += food*TAXFOOD/100;
 		}
 	}
 
 	/*reset military stuff*/
 	printf("updating armies and navies\n");
-	for(country=1;country<MAXNTN;country++) if(ntn[country].active!=0){
+	for(country=1;country<NTOTAL;country++) if(ntn[country].active!=0){
 		for(armynum=0;armynum<MAXARM;armynum++){
 			if(ASOLD>0) {
 				ntn[country].tmil+=ASOLD;
@@ -297,25 +371,32 @@ update()
 		/*add to movement of fleets*/
 		for(nvynum=0;nvynum<MAXNAVY;nvynum++) {
 			/*update sea sectors*/
-			if(NMER+NWAR>0) {
+			if( NMER + NWAR > 0 ) {
 				if(sct[NXLOC][NYLOC].altitude==WATER) {
+#if 0
+/*
+ *	Storms should stay around and slowly move
+ *	around the world.
+ */
 					/*all ships sunk on 0 (d12)*/
 					/*pirates never are sunk (implicitly)*/
-					if(rand()%12==0){
+					if( country != NPIRATE && rand() % 12 == 0 ) {
+						x = NXLOC;
+						y = NYLOC;
 						fprintf(fnews,"3.\tstorm in %d,%d\n",x,y);
 						NWAR=0;
 						NMER=0;
 					}
+#endif
 				}
-				NMOVE=3*ntn[country].maxmove;
-				ntn[country].tships+=NWAR+NMER;
-				ntn[country].tgold-=(NWAR+NMER)*SHIPMAINT;
-			}
-			else {
+				NMOVE = 3 * ntn[country].maxmove;
+				ntn[country].tships += NWAR + NMER;
+				ntn[country].tgold -= (NWAR + NMER) * SHIPMAINT;
+			} else {
 				NWAR=0;
 				NMER=0;
 			}
-		}
+		} /* for */
 	}
 
 	/*commodities: feed the people, too much gold?, validate iron*/
@@ -327,22 +408,36 @@ update()
 		ntn[country].tfood-=ntn[country].tciv;
 
 		/*starve people*/
-		if(ntn[country].tfood<0) for(x=0;x<MAPX;x++) for(y=0;y<MAPX;y++) {
-			if((sct[x][y].owner==country)&&((sct[x][y].designation==DCITY)||(sct[x][y].designation==DCAPITOL))&&(ntn[country].tfood<0)){
+		if(ntn[country].tfood<0) for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {
+			sptr = &sct[x][y];
+			if((sptr->owner==country)
+			&&((sptr->designation==DCITY)
+			||(sptr->designation==DCAPITOL))
+			&&(ntn[country].tfood<0)){
 				/*lose one person in city per three food*/
 				/*maximum of 1/3 people in city lost*/
-				if(sct[x][y].people>(-1)*ntn[country].tfood){
-					sct[x][y].people+=ntn[country].tfood/3;
+				if(sptr->people < ntn[country].tfood){
+					sptr->people+=ntn[country].tfood/3;
 					ntn[country].tfood=0;
 				}
 				else {
-					ntn[country].tfood+=sct[x][y].people;
-					sct[x][y].people*=(2/3);
+					ntn[country].tfood+=sptr->people;
+					city_pop = sptr->people/3;
+					sptr->people -= city_pop;
 				}
 				fprintf(fnews,"2.\tfamine hits city at %d,%d in %s.\n",x,y,ntn[country].name);
+				sprintf(command,"%s%d",msgfile,country);
+				if(ntn[country].active==1)
+				if((fpmsg=fopen(command,"a+"))==NULL) {
+				printf("error opening %s\n",command);
+				} else {
+				fprintf(fpmsg,"%s notice from program\n%s\n",ntn[country].name,ntn[country].name);
+				fprintf(fpmsg,"%s famine hits city at %d,%d in %s.-> %d people reduced by %d\n%s\n",ntn[country].name,x,y,ntn[country].name,sptr->people,city_pop,ntn[country].name);
+				fprintf(fpmsg,"END\n");
+				fclose(fpmsg);
+				}
 			}
 		}
-
 		/*this state can occur if few people live in cities*/
 		if(ntn[country].tfood<0) {
 			ntn[country].tfood=0;
@@ -357,100 +452,103 @@ update()
 			ntn[country].jewels += x/GOLDTHRESH;
 			ntn[country].tgold  -= x;
 		}
-		else if(ntn[country].tgold<((-1)*JEWELTHRESH)*ntn[country].jewels){
+		else if(ntn[country].tgold > JEWELTHRESH * ntn[country].jewels){
 			fprintf(fnews,"3.\tTAX REVOLT IN NATION %s\n",ntn[country].name);
 		}
 	}
 
 	fclose(fnews);
 	score();
-	strcpy(command,"> ");
-	strcat(command,EXEFILE);
+
+	sprintf(command,"rm %s*",exefile);
+	printf("%s\n",command);
 	system(command);
-	strcpy(command,"/bin/sort -n -o ");
-	strcat(command,NEWSFILE);
-	strcat(command," ");
-	strcat(command,NEWSFILE);
-	printf("sort done\n");
+
+	sprintf( command, "sort -n -o %s %s", newsfile, newsfile );
+	printf("%s\n",command);
 	system(command);
+  
 }
 
 attract(x,y,race)
 {
-	int Attr=0;
+	register struct s_sector	*sptr = &sct[x][y];
+	int	Attr = 1;
 
-	if((sct[x][y].designation==DGOLDMINE)&&(sct[x][y].gold>3)){
-		if(ntn[sct[x][y].owner].jewels<=ntn[sct[x][y].owner].tgold*GOLDTHRESH) Attr+=120;
-		else if(sct[x][y].gold>5) Attr+=120;
+	if((sptr->designation==DGOLDMINE)&&(sptr->gold>3)){
+		if(ntn[sptr->owner].jewels<=ntn[sptr->owner].tgold*GOLDTHRESH) 
+			Attr+=120;
+		else if(sptr->gold>5) Attr+=120;
 		else Attr+=75;
 	}
-	else if((sct[x][y].designation==DFARM)&&(todigit(sct[x][y].vegitation)>6)){
-		if(ntn[sct[x][y].owner].tfood<=ntn[sct[x][y].owner].tciv*FOODTHRESH) Attr+=300;
-		else if(todigit(sct[x][y].vegitation)==9) Attr+=100;
+	else if((sptr->designation==DFARM)&&(todigit(sptr->vegetation)>6)){
+		if(ntn[sptr->owner].tfood<=ntn[sptr->owner].tciv*FOODTHRESH) 
+			Attr+=300;
+		else if(todigit(sptr->vegetation)==9) Attr+=100;
 		else Attr+=40;
 	}
-	else if(sct[x][y].designation==DCAPITOL) Attr+=200;
-	else if(sct[x][y].designation==DCITY) Attr+=125;
-	else if((sct[x][y].designation==DMINE)&&(sct[x][y].iron>3)) {
-		if(ntn[sct[x][y].owner].tiron<=ntn[sct[x][y].owner].tciv)
+	else if(sptr->designation==DCAPITOL) Attr+=200;
+	else if(sptr->designation==DCITY) Attr+=125;
+	else if((sptr->designation==DMINE)&&(sptr->iron>3)) {
+		if(ntn[sptr->owner].tiron<=ntn[sptr->owner].tciv)
 			Attr+=120;
-		else if(sct[x][y].iron>5) Attr+=100;
+		else if(sptr->iron>5) Attr+=100;
 		else Attr+=50;
 	}
 
 	switch(race){
 	case DWARF:
-		if((sct[x][y].designation==DGOLDMINE)&&(sct[x][y].gold>=5))
+		if((sptr->designation==DGOLDMINE)&&(sptr->gold>=5))
 			Attr+=100;
-		else if((sct[x][y].designation==DMINE)&&(sct[x][y].iron>=5))
+		else if((sptr->designation==DMINE)&&(sptr->iron>=5))
 			Attr+=100;
 
-		if(sct[x][y].altitude==MOUNTAIN) Attr+=40;
-		else if(sct[x][y].altitude==HILL) Attr+=20;
-		else if(sct[x][y].altitude==CLEAR) Attr+=0;
+		if(sptr->altitude==MOUNTAIN) Attr+=40;
+		else if(sptr->altitude==HILL) Attr+=20;
+		else if(sptr->altitude==CLEAR) Attr+=0;
 		else Attr=0;
 		break;
 	case ELF:
-		if(sct[x][y].vegitation==JUNGLE) Attr+=40;
-		else if(sct[x][y].vegitation==WOOD) Attr+=90;
-		else if(sct[x][y].vegitation==FORREST) Attr+=70;
+		if(sptr->vegetation==JUNGLE) Attr+=40;
+		else if(sptr->vegetation==WOOD) Attr+=90;
+		else if(sptr->vegetation==FORREST) Attr+=70;
 
-		if((sct[x][y].designation==DGOLDMINE)&&(sct[x][y].gold>=5))
+		if((sptr->designation==DGOLDMINE)&&(sptr->gold>=5))
 			Attr+=75;
 
-		if(sct[x][y].altitude==MOUNTAIN) Attr-=20;
-		else if(sct[x][y].altitude==HILL) Attr-=10;
-		else if(sct[x][y].altitude==CLEAR) Attr+=0;
+		if(sptr->altitude==MOUNTAIN) Attr-=20;
+		else if(sptr->altitude==HILL) Attr-=10;
+		else if(sptr->altitude==CLEAR) Attr+=0;
 		else Attr=0;
 		break;
 	case HUMAN:
-		Attr+=todigit(sct[x][y].vegitation)*4;
+		Attr+=todigit(sptr->vegetation)*4;
 
-		if((sct[x][y].designation==DGOLDMINE)&&(sct[x][y].gold>=5))
+		if((sptr->designation==DGOLDMINE)&&(sptr->gold>=5))
 			Attr+=75;
-		else if((sct[x][y].designation==DMINE)&&(sct[x][y].iron>=5))
+		else if((sptr->designation==DMINE)&&(sptr->iron>=5))
 			Attr+=75;
-		else if((sct[x][y].designation==DFARM)&&(todigit(sct[x][y].vegitation)>=6))
+		else if((sptr->designation==DFARM)&&(todigit(sptr->vegetation)>=6))
 			Attr+=55;
-		else if(sct[x][y].designation==DCAPITOL) Attr+=70;
-		else if(sct[x][y].designation==DCITY) Attr+=50;
+		else if(sptr->designation==DCAPITOL) Attr+=70;
+		else if(sptr->designation==DCITY) Attr+=50;
 
-		if(sct[x][y].altitude==MOUNTAIN) Attr-=10;
-		else if(sct[x][y].altitude==HILL) Attr+=00;
-		else if(sct[x][y].altitude==CLEAR) Attr+=10;
+		if(sptr->altitude==MOUNTAIN) Attr-=10;
+		else if(sptr->altitude==HILL) Attr+=00;
+		else if(sptr->altitude==CLEAR) Attr+=10;
 		else Attr=0;
 		break;
 	case ORC:
-		if(sct[x][y].designation==DCAPITOL) Attr+=120;
-		else if(sct[x][y].designation==DCITY) Attr+=75;
-		else if((sct[x][y].designation==DGOLDMINE)&&(sct[x][y].gold>=5))
+		if(sptr->designation==DCAPITOL) Attr+=120;
+		else if(sptr->designation==DCITY) Attr+=75;
+		else if((sptr->designation==DGOLDMINE)&&(sptr->gold>=5))
 			Attr+=75;
-		else if((sct[x][y].designation==DMINE)&&(sct[x][y].iron>=5))
+		else if((sptr->designation==DMINE)&&(sptr->iron>=5))
 			Attr+=75;
 
-		if(sct[x][y].altitude==MOUNTAIN) Attr+=20;
-		else if(sct[x][y].altitude==HILL) Attr+=10;
-		else if(sct[x][y].altitude==CLEAR) Attr+=0;
+		if(sptr->altitude==MOUNTAIN) Attr+=20;
+		else if(sptr->altitude==HILL) Attr+=10;
+		else if(sptr->altitude==CLEAR) Attr+=0;
 		else Attr=0;
 		break;
 	default:
@@ -461,48 +559,71 @@ attract(x,y,race)
 }
 
 todigit(character)
+register int	character;
 {
-	int j;
-	for(j=0;j<=9;j++) if(character==*(numbers+j)) return(j);
-	return(0);
+	if( character >= '0' && character <= '9' )
+		return( character - '0' );
+
+	return( 0 );
 }
 
 armymove(armynum)
 {
-	int sum,done,place;
-	register int x,y;
+	int		sum, place;
+	register int	x, y;
+
 	sum=0;
 	for(x=AXLOC-2;x<=AXLOC+2;x++)
 		for(y=AYLOC-2;y<=AYLOC+2;y++)
-			if(x>=0&&x<MAPX&&y>=0&&y<MAPY)
-				sum+=attr[x][y];
+			if(ONMAP) sum+=attr[x][y];
 
 	if(sum==0) {
 		AXLOC=ntn[country].capx;
 		AYLOC=ntn[country].capy;
-		sum=1;
-	}
-	else {
+	} else {
 		place=rand()%sum;
-		done=0;
 		for(x=AXLOC-2;x<=AXLOC+2;x++) for(y=AYLOC-2;y<=AYLOC+2;y++) {
-			if(x>=0&&x<MAPX&&y>=0&&y<MAPY) place-=attr[x][y];
-			if((done==0)&&(place<0)&&(movecost[x][y]>0)){
+			if( x < 0 || x >= MAPX || y < 0 || y >= MAPY )
+				continue;
+
+			place -= attr[x][y];
+			if( (place < 0 )
+			&& movecost[x][y]>=1 
+			&& movecost[x][y]<=AMOVE 
+		        &&(land_reachp(AXLOC,AYLOC,x,y,AMOVE,country))){
 				AXLOC=x;
 				AYLOC=y;
-				done=1;
 				if(sct[x][y].owner==0)
 					sct[x][y].owner=country;
-			}
-		}
-	}
+				return;
+			} /* if */
+		} /* for for */
+
+		/*do again - have this block if lots of bad terrain*/
+		/*what could happen is that it won't find a move first time*/
+		for(x=AXLOC-2;x<=AXLOC+2;x++) for(y=AYLOC-2;y<=AYLOC+2;y++) {
+			if( x < 0 || x >= MAPX || y < 0 || y >= MAPY )
+				continue;
+
+			place -= attr[x][y];
+			if( (place < 0 )
+			&& movecost[x][y]>=1 
+			&& movecost[x][y]<=AMOVE 
+		        &&(land_reachp(AXLOC,AYLOC,x,y,AMOVE,country))){
+				AXLOC=x;
+				AYLOC=y;
+				if(sct[x][y].owner==0)
+					sct[x][y].owner=country;
+				return;
+			} /* if */
+		} /* for for */
+	} /* if */
 }
 
 score()
 {
-	int x,y;
-
-	printf("\nupdating scores for all nations\n");
-	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
-		if(sct[x][y].people>0) ntn[sct[x][y].owner].score += SECTSCORE;
+  	int x;
+  	printf("\nupdating scores for all nations\n");
+  	for(x=1;x<MAXNTN;x++) if(ntn[x].active!=0) ntn[x].score += score_one(x);
 }
+

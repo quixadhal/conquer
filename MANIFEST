@@ -1,23 +1,23 @@
    File Name		Archive #	Description
 -----------------------------------------------------------
- .help                     4	
- .nations                  5	
- DIST-NOTE                 5	
  MANIFEST                  1	This shipping list
- Makefile                  4	
+ Makefile                  5	
  README                    1	
- combat.c                  2	
+ cexecute.c                2	
+ combat.c                  4	
  commands.c                3	
- execute.c                 4	
- forms.c                   5	
- header.h                  5	
- io.c                      5	
- magic.c                   2	
+ data.h                    6	
+ forms.c                   4	
+ help                      1	
+ io.c                      6	
+ magic.c                   3	
  main.c                    3	
- makeworld.c               1	
+ makeworld.c               2	
+ misc.c                    5	
  move.c                    4	
- newlogin.c                2	
- npc.c                     1	
- reports.c                 3	
+ nations                   5	
+ newlogin.c                1	
+ npc.c                     2	
+ randevent.c               5	
+ reports.c                 5	
  run                       3	
- update.c                  4	

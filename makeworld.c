@@ -1,4 +1,4 @@
-/*conquest is copyrighted 1986 by Ed Barlow.
+/*conquer is copyrighted 1986 by Ed Barlow.
  *  I spent a long time writing this code & I hope that you respect this.  
  *  I give permission to alter the code, but not to copy or redistribute
  *  it without my explicit permission.  If you alter the code, 
@@ -16,6 +16,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include "header.h"
+#include "data.h"
 
 #define HALF 2
 #define LAND 3
@@ -41,36 +42,48 @@ makeworld()
 	int nranges;
 	int rnd;
 	int tempfd;
+	char newstring[40];
 
-	/*abort if DATAFILE currently exists*/
-	if(tempfd=open(DATAFILE,0)!=-1) {
-		printf("ABORTING: File %s exists-->a game is in progress\n",DATAFILE);
-		printf("to proceed, you must remove the existing game\n");
-		printf("file. This will, of course, destroy that game\n");
-		printf("\nIf you do remove that file, be aware that you need");
-		printf("\nto also zero the .execute file");
+	/*abort if datafile currently exists*/
+	if(tempfd=open(datafile,0)!=-1) {
+		printf("ABORTING: File %s exists\n",datafile);
+		printf("\tthis means that a game is in progress. To proceed, you must remove \n");
+		printf("\tthe existing data file. This will, of course, destroy that game.\n\n");
 		exit(1);
 	}
+	printf("\n**********************WELCOME TO CONQUER**********************");
+	printf("\nThe world will now be created...Your super user login will be 'god'.");
+	printf("\nNon player countries will be read from data stored in the nations file"); 
+	printf("\n& will have the same password as god (about to be entered). Add player");
+	printf("\nnations with the command <conquer -a>.  Have fun!!!\n");
+	printf("\nRemember to check the world out before playing to make sure");
+	printf("\nno nations are in bad positions (surrounded by water... )");
+	printf("******************************************************************\n\n");
+
+	printf("First, we must zero extraneous files from prior games\n");
+	sprintf(newstring,"rm %s*\n",exefile);
+	printf("\t%s",newstring);
+	system(newstring);
+	sprintf(newstring,"rm %s*\n",msgfile);
+	printf("\t%s",newstring);
+	system(newstring);
+	sprintf(newstring,"> %s",newsfile);
+	printf("\t%s\n",newstring);
+	system(newstring);
+	printf("OK This has been done, Now to set up a new world\n\n");
 
 	printf("please enter new super user password (remember this!):");
 	scanf("%s",passwd);
 	getchar();
-	printf("\nplease reenter password:");
+	printf("please reenter password:");
 	scanf("%s",ntn[0].passwd);
 	getchar();
-	if((strlen(ntn[0].passwd)<2)||(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
+	if((strlen(ntn[0].passwd)<2)
+	||(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
 		printf("\ninvalid super user password\n");
 		exit(1);
 	}
-	else printf("super user password is %s\n",ntn[0].passwd);
 	strncpy(ntn[0].passwd,crypt(passwd,SALT),PASSLTH);
-
-	printf("\nThe world will now be created...Your super user login");
-	printf("\nwill be 'god'.  All non player countries that were");
-	printf("\ncreated when the world was created from the file .nations");
-	printf("\nwill have the same password as the one you just entered");
-	printf("\nto add player nations, use <conquest -a>");
-	printf("\nhave fun");
 
 	printf("\n\ncreating world\n");
 	/*initialize variables */
@@ -79,7 +92,7 @@ makeworld()
 		place[i][j]=0;
 		area_map[i][j]=0;
 	}
-	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++) sct[i][j].vegitation=NONE;
+	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++) sct[i][j].vegetation=NONE;
 
 	for(i=0;i<5;i++) number[i] = NUMAREAS/5;  /*areas with type=[i]*/
 	number[2]=NUMAREAS - 4*number[0]; /*correct for roundoff*/
@@ -235,7 +248,7 @@ makeworld()
 	}
 
 
-	/*Adjust world given sectors as land or sea, place vegitation, designation, 
+	/*Adjust world given sectors as land or sea, place vegetation, designation, 
  and altitude */
 
 	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++)
@@ -251,7 +264,11 @@ makeworld()
 		/*Place one range randomly*/
 		X1 = rand()%(MAPX-6);
 		Y1 = rand()%(MAPY-6);
-		if((type[X1][Y1]==LAND)&&(type[X1+1][Y1+1]==LAND)&&(type[X1+1][Y1]==LAND)&&(type[X1][Y1+1]==LAND)&&(type[X1+2][Y1+2]==LAND)) {
+		if((type[X1][Y1]==LAND)
+		&&(type[X1+1][Y1+1]==LAND)
+		&&(type[X1+1][Y1]==LAND)
+		&&(type[X1][Y1+1]==LAND)
+		&&(type[X1+2][Y1+2]==LAND)) {
 			/*place second endpoint */
 			valid = 0;
 			i=0;
@@ -269,24 +286,28 @@ makeworld()
 						if(type[x][y] == LAND)
 							if(rand()%100>80) sct[x][y].altitude=PEAK;
 							else sct[x][y].altitude=MOUNTAIN;
-						if(type[x][y+1] == LAND) {
+						if((y < MAPY - 1) 
+						&& type[x][y+1] == LAND) {
 							rnd=rand()%100+1;
 							if(rnd>90) sct[x][y+1].altitude=PEAK;
 							else if(rnd>50) sct[x][y+1].altitude=MOUNTAIN;
 							else if(rnd>20) sct[x][y+1].altitude=HILL;
 						}
-						if(type[x][y-1] == LAND ) {
+						if((y!=0)
+						&& type[x][y-1] == LAND ) {
 							rnd=rand()%100+1;
 							if(rnd>90) sct[x][y-1].altitude=PEAK;
 							else if(rnd>50) sct[x][y-1].altitude=MOUNTAIN;
 							else if(rnd>20) sct[x][y-1].altitude=HILL;
 						}
-						if(type[x][y-2] == LAND ) {
+						if((y>=2)
+						&&(type[x][y-2] == LAND )) {
 							rnd=rand()%100+1;
 							if(rnd>90) sct[x][y-2].altitude=MOUNTAIN;
 							else if(rnd>50) sct[x][y-2].altitude=HILL;
 						}
-						if(type[x][y+2] == LAND ) {
+						if((y < MAPY - 2)
+						&&(type[x][y+2] == LAND )) {
 							rnd=rand()%100+1;
 							if(rnd>90) sct[x][y+2].altitude=MOUNTAIN;
 							else if(rnd>50) sct[x][y+2].altitude=HILL;
@@ -307,13 +328,14 @@ makeworld()
 
 	/*make sure no peak or mountain is next to water*/
 	for(y=1;y<MAPY-1;y++) for(x=1;x<MAPX-1;x++)
-		if((sct[x][y].altitude==PEAK)||(sct[x][y].altitude==MOUNTAIN))
+		if((sct[x][y].altitude==PEAK)
+		||(sct[x][y].altitude==MOUNTAIN))
 			for(i=0;i<=2;i++) for(j=0;j<=2;j++)
 				if(sct[x+i-1][y+j-1].altitude==WATER)
 					sct[x][y].altitude=HILL;
 
 	/*FIGURE OUT SECTOR VEGETATION TYPE
- *use sector.altitude, and sector to determine vegitation
+ *use sector.altitude, and sector to determine vegetation
  *from water is distance from nearest water
  */
 
@@ -323,25 +345,25 @@ makeworld()
 	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
 		if(type[x][y]==LAND)
 		{
-			sct[x][y].vegitation=(*(veg+3+rand()%5));
-			/*if hill then decrement vegitation*/
+			sct[x][y].vegetation=(*(veg+3+rand()%5));
+			/*if hill then decrement vegetation*/
 			if(sct[x][y].altitude==HILL) {
 				for(n=3;n<9;n++)
-					if(sct[x][y].vegitation==(*(veg+n)))
-						sct[x][y].vegitation=(*(veg+n-1));
-				if(area_map[x/8][y/8]<=1) sct[x][y].vegitation=VOLCANO;
+					if(sct[x][y].vegetation==(*(veg+n)))
+						sct[x][y].vegetation=(*(veg+n-1));
+				if(area_map[x/8][y/8]<=1) sct[x][y].vegetation=VOLCANO;
 			}
 			else if(sct[x][y].altitude==MOUNTAIN)
 				if((rand()%6==4)&&((y>MAPY/2+8)||(y<MAPY/2-8)))
-					sct[x][y].vegitation=ICE;
-				else sct[x][y].vegitation=(*(veg+2+rand()%3));
+					sct[x][y].vegetation=ICE;
+				else sct[x][y].vegetation=(*(veg+2+rand()%3));
 			else if(sct[x][y].altitude==PEAK)
 				if((rand()%3==0)&&((y>MAPY/2+8)||(y<MAPY/2-8)))
-					sct[x][y].vegitation=ICE;
-				else sct[x][y].vegitation=VOLCANO;
+					sct[x][y].vegetation=ICE;
+				else sct[x][y].vegetation=VOLCANO;
 		}
 
-	/*REWORK POLEAR/EQUATORIAL sector.vegitation*/
+	/*REWORK POLEAR/EQUATORIAL sector.vegetation*/
 	/*Determine which areas are North Pole and Equatorial*/
 	/*char veg[]="VDW46973JSI~"*/
 	/*char veg[]="VDWBLGWFJSI~"*/
@@ -352,27 +374,30 @@ makeworld()
 	{
 		for(y=0;y<6;y++) if(type[x][y]==LAND)
 		{
-			if(rand()%4 == 0) sct[x][y].vegitation = ICE;
+			if(rand()%4 == 0) sct[x][y].vegetation = ICE;
 			else for(n=3;n<10;n++)
-				if(sct[x][y].vegitation==(*(veg+n)))
-					sct[x][y].vegitation=(*(veg+(n-1)));
+				if(sct[x][y].vegetation==(*(veg+n)))
+					sct[x][y].vegetation=(*(veg+(n-1)));
 		}
 		for(y=MAPY-7;y<MAPY;y++) if(type[x][y]==LAND)
 		{
-			if(rand()%4 == 0) sct[x][y].vegitation = ICE;
+			if(rand()%4 == 0) sct[x][y].vegetation = ICE;
 			else for(n=3;n<10;n++)
-				if(sct[x][y].vegitation==(*(veg+n)) )
-					sct[x][y].vegitation=(*(veg+(n-1)));
+				if(sct[x][y].vegetation==(*(veg+n)) )
+					sct[x][y].vegetation=(*(veg+(n-1)));
 		}
 	}
 
 	/*insert equator*/
 	for(y=(MAPY/2)-8;y<=(MAPY/2)+8;y++) for(x=0;x<MAPX;x++)
 		if(type[x][y]==LAND)
-			if(rand()%10 ==0) sct[x][y].vegitation=DESERT;
-			/*increment vegitation if between Waste and Jungle*/
+			if(rand()%10 ==0) sct[x][y].vegetation=DESERT;
+			/*increment vegetation if between Waste and Jungle*/
 			else for(n=2;n<9;n++)
-				if((sct[x][y].vegitation==(*(veg+n)))&&(sct[x][y].altitude==CLEAR)&&(rand()%4==0)) sct[x][y].vegitation=(*(veg+(n+1)));
+				if((sct[x][y].vegetation==(*(veg+n)))
+				&&(sct[x][y].altitude==CLEAR)
+				&&(rand()%4==0)) 
+				sct[x][y].vegetation=(*(veg+(n+1)));
 
 	/*char veg[]="VDW46973JSI~"*/
 	/*char veg[]="VDWBLGWFJSI~"*/
@@ -380,37 +405,37 @@ makeworld()
 
 	for(y=((MAPY/2)-2);y<=((MAPY/2)+2);y++) for(x=0;x<MAPX;x++)
 		if((type[x][y]==LAND)&&(sct[x][y].altitude==CLEAR))
-			if(rand()%10 == 0) sct[x][y].vegitation=DESERT;
-			else if(rand()%10 == 0) sct[x][y].vegitation=JUNGLE;
-			else if(rand()%10 == 0) sct[x][y].vegitation=SWAMP;
-			/*increment vegitation again, but only Waste to Light*/
+			if(rand()%10 == 0) sct[x][y].vegetation=DESERT;
+			else if(rand()%10 == 0) sct[x][y].vegetation=JUNGLE;
+			else if(rand()%10 == 0) sct[x][y].vegetation=SWAMP;
+			/*increment vegetation again, but only Waste to Light*/
 			else for(n=2;n<4;n++)
-				if(sct[x][y].vegitation==(*(veg+n)))
-					sct[x][y].vegitation=(*(veg+(n+1)));
+				if(sct[x][y].vegetation==(*(veg+n)))
+					sct[x][y].vegetation=(*(veg+(n+1)));
 
 	/*expand swamps*/
 	for(y=2;y<MAPY;y++) for(x=2;x<MAPX;x++)
-		if(sct[x][y].vegitation==SWAMP)
+		if(sct[x][y].vegetation==SWAMP)
 			for(i=0;i<2;i++) for(j=0;j<2;j++)
 				if((type[x-i][y-j]==LAND)&&((rand()%3)==0))
-					sct[x-i][y-j].vegitation=SWAMP;
+					sct[x-i][y-j].vegetation=SWAMP;
 	/*expand deserts*/
 	for(y=2;y<MAPY;y++) for(x=2;x<MAPX;x++)
-		if(sct[x][y].vegitation==DESERT)
+		if(sct[x][y].vegetation==DESERT)
 			for(i=0;i<2;i++) for(j=0;j<2;j++)
 				if((type[x-i][y-j]==LAND)&&((rand()%3)==0))
-					sct[x-i][y-j].vegitation=DESERT;
+					sct[x-i][y-j].vegetation=DESERT;
 
 	/*change all volcanos to peaks */
 	for(y=1;y<MAPY;y++) for(x=1;x<MAPX;x++)
-		if(sct[x][y].vegitation==VOLCANO) sct[x][y].altitude=PEAK;
+		if(sct[x][y].vegetation==VOLCANO) sct[x][y].altitude=PEAK;
 
 	/*make sure no desert is next to water*/
 	for(y=1;y<MAPY-1;y++) for(x=1;x<MAPX-1;x++)
-		if(sct[x][y].vegitation==DESERT)
+		if(sct[x][y].vegetation==DESERT)
 			for(i=0;i<=2;i++) for(j=0;j<=2;j++)
 				if(sct[x+i-1][y+j-1].altitude==WATER)
-					sct[x][y].vegitation=LT_VEG;
+					sct[x][y].vegetation=LT_VEG;
 
 	/*PLACE EACH SECTOR'S RAW MATERIALS */
 
@@ -428,7 +453,7 @@ makeworld()
 		else sct[x][y].iron=0;
 
 		/*default designations*/
-		sct[x][y].designation=sct[x][y].vegitation;
+		sct[x][y].designation=sct[x][y].vegetation;
 
 		/*default owner is unowned*/
 		sct[x][y].owner=0;
@@ -441,7 +466,7 @@ makeworld()
 /*fill: subroutine to fill in a square edges with land or sea*/
 fill_edge(AX,AY)
 {
-	/*      1)   water
+/*      1)   water
  *      2)   water with major islands (25% land)
  *      3)   50/50 water/land 
  *      4)   land with major water (75% Land)
@@ -463,10 +488,10 @@ fill_edge(AX,AY)
 	Y4=Y0+1;
 
 	/*NORMALIZE FOR EDGE OF WORLD*/
-	if(X0==0) X1=7;
-	if(X0==7) X2=0;
-	if(Y0==0) Y3=7;
-	if(Y0==7) Y4=0;
+  	if( X1 < 0 ) X1 = MAXX - 1;
+  	if( X2 >= MAXX ) X2 = 0;
+  	if( Y3 < 0 ) Y3 = MAXY - 1;
+  	if( Y4 >= MAXY ) Y4 = 0;
 
 	area=area_map[X0][Y0];
 	/*fill in south*/
@@ -520,7 +545,7 @@ populate()
 
 
 	/*randomly scatter lizard city (want in DESERTS/swamp/Ice) */
-	/*don't reproduce or move. Their cities are fortified and stockpiled */
+	/*don't reproduce. Their cities are fortified and stockpiled */
 #ifdef LZARD 
 	strncpy(ntn[NLIZARD].name,"lizard",10);
 	strncpy(ntn[NLIZARD].leader,"dragon",10);
@@ -543,7 +568,7 @@ populate()
 	while(armynum<MAXARM-2){
 		x = (rand()%MAPX);
 		y = (rand()%MAPY);
-		if (type[x][y] == LAND) {
+		if (is_habitable(x,y)) {
 			sct[x][y].designation = DCASTLE;
 			sct[x][y].fortress = 5+rand()%5;
 			sct[x][y].gold = 15+rand()%20;
@@ -569,8 +594,8 @@ populate()
 #endif
 
 	/* Place Brigands, Barbarians, and Nomads*/
-	armynum=0;
 #ifdef MONSTER 
+	armynum=0;
 	army2num=0;
 	strcpy(ntn[NBARBARIAN].name,"bbarian");
 	strcpy(ntn[NBARBARIAN].leader,"shaman");
@@ -587,9 +612,10 @@ populate()
 		ntn[NBARBARIAN].dstatus[i]=WAR;
 		ntn[i].dstatus[NBARBARIAN]=WAR;
 	}
+	ntn[NBARBARIAN].dstatus[NBARBARIAN]=NEUTRAL;
 
 	strcpy(ntn[NNOMAD].name,"nomad");
-	strcpy(ntn[NNOMAD].leader,"kahn");
+	strcpy(ntn[NNOMAD].leader,"khan");
 	strcpy(ntn[NNOMAD].passwd,ntn[0].passwd);
 	ntn[NNOMAD].powers=KNOWALL;
 	ntn[NNOMAD].race=NOMAD;
@@ -603,6 +629,7 @@ populate()
 		ntn[NNOMAD].dstatus[i]=WAR;
 		ntn[i].dstatus[NNOMAD]=WAR;
 	}
+	ntn[NNOMAD].dstatus[NNOMAD]=NEUTRAL;
 
 	strcpy(ntn[NPIRATE].name,"pirate");
 	strcpy(ntn[NPIRATE].leader,"captain");
@@ -619,6 +646,7 @@ populate()
 		ntn[NPIRATE].dstatus[i]=WAR;
 		ntn[i].dstatus[NPIRATE]=WAR;
 	}
+	ntn[NPIRATE].dstatus[NPIRATE]=NEUTRAL;
 
 	temp=(rand()%10+1)*(rand()%10+1);
 	for(i=0;i<temp;i++){
@@ -641,7 +669,7 @@ populate()
 		}
 
 		/* now place people*/
-		if (type[x][y]==LAND) {
+		if (is_habitable(x,y)) {
 			if(rand()%2==0) {
 				sct[x][y].owner = NBARBARIAN;
 				country=NBARBARIAN;
@@ -649,7 +677,7 @@ populate()
 				AYLOC=y;
 				ASTAT=ATTACK;
 				ASOLD=200+100*rand()%10;
-				armynum++;
+				if(armynum<MAXARM-1) armynum++;
 			}
 			else {
 				sct[x][y].owner = NNOMAD;
@@ -657,14 +685,14 @@ populate()
 				ntn[NNOMAD].arm[army2num].yloc=y;
 				ntn[NNOMAD].arm[army2num].stat=ATTACK;
 				ntn[NNOMAD].arm[army2num].sold=100+100*rand()%15;
-				army2num++;
+				if(army2num<MAXARM-1) army2num++;
 			}
 		}
-		else	{
+		else if(nvynum<MAXNAVY) {
 			country=NPIRATE;
 			NXLOC=x;
 			NYLOC=y;
-			NWAR=2*rand()%10;
+			NWAR=2*(1+rand()%10);
 			nvynum++;
 		}
 	}
@@ -681,25 +709,53 @@ populate()
 	ntn[cnum].powers=KNOWALL;
 	cnum++;
 
+	if ((fp=fopen(helpfile,"r"))==NULL) {
+		printf("\terror on read of %s file\n",helpfile);
+		printf("\tdo you wish to use default help file (y or n)?");
+		if(getchar()=='y'){
+		sprintf(line,"cp %s/%s %s",DEFAULTDIR,helpfile,helpfile);
+		printf("\n%s\n",line);
+		system(line);
+		} else {
+			printf("\nOK; no NPC nations used\n");
+			return;
+		}
+		getchar();
+	}
+
 #ifdef NPC
 
-	/*open NPCSFILE file*/
-	if ((fp=fopen(NPCSFILE,"r"))==NULL) {
-		printf("error on read of %s file",NPCSFILE);
-		return;
+	/*open npcsfile file*/
+	if ((fp=fopen(npcsfile,"r"))==NULL) {
+		printf("error on read of %s file\n",npcsfile);
+		printf("do you wish to use default NPC nations file (y or n)?");
+		if(getchar()=='y'){
+		sprintf(line,"%s/%s",DEFAULTDIR,npcsfile);
+		if ((fp=fopen(line,"r"))==NULL) {
+			printf("\nsorry; error on read of %s file\n",line);
+			return;
+		} else printf("\nOK; default nations used\n");
+		} else {
+			printf("\nOK; no NPC nations used\n");
+			return;
+		}
 	}
-	else printf("reading %s\n",NPCSFILE);
+	else printf("reading npc nation data from file: %s\n",npcsfile);
 
 	/*set up npc nation*/
 	if(fgets(line,80,fp)==NULL) done=1;
-	while(done==0) {
-		/*read and parse a new line*/
-		if(line[0]!='#') {
-			sscanf(line,"%s %s %c %c %c %hd %hd %hd %d %d %d %hd %hd",ntn[cnum].name,ntn[cnum].leader,&ntn[cnum].race,&ntn[cnum].mark,&ntn[cnum].location,&ntn[cnum].aplus,&ntn[cnum].dplus,&ntn[cnum].maxmove,&ntn[cnum].tgold,&ntn[cnum].tmil,&ntn[cnum].tciv,&ntn[cnu
-m].repro,&ntn[cnum].active);
-			ntn[cnum].active++;
-			ntn[cnum].class=0;
-			strcpy(ntn[cnum].passwd,ntn[0].passwd);
+  	while(done==0) {
+  		/*read and parse a new line*/
+  		if(line[0]!='#') {
+  			sscanf(line,"%s %s %c %c %c %hd %hd %hd %ld %ld %ld %hd %hd",
+ 			ntn[cnum].name,ntn[cnum].leader,&ntn[cnum].race,
+  			&ntn[cnum].mark,&ntn[cnum].location,&ntn[cnum].aplus,
+  			&ntn[cnum].dplus,&ntn[cnum].maxmove,&ntn[cnum].tgold,
+  			&ntn[cnum].tmil,&ntn[cnum].tciv,&ntn[cnum].repro,
+  			&ntn[cnum].active);
+  			ntn[cnum].active++;
+  			ntn[cnum].class=0;
+  			strcpy(ntn[cnum].passwd,ntn[0].passwd);
 			country=cnum;
 			if(ntn[country].race==HUMAN){
 				ntn[country].powers=WARRIOR;
@@ -717,11 +773,11 @@ m].repro,&ntn[cnum].active);
 				ntn[country].powers=MI_MONST;
 				exenewmgk(MI_MONST);
 			}
-			else ntn[country].powers=1;
-			ntn[country].tfood=24000;
-			ntn[country].tiron=10000;
-			ntn[country].jewels=10000;
-			printf("nation %d: %s",cnum,line);
+			else ntn[country].powers=WARRIOR;
+			ntn[country].tfood=24000L;
+			ntn[country].tiron=10000L;
+			ntn[country].jewels=10000L;
+			printf("\tnation %d: %s",cnum,line);
 			cnum++;
 			place();
 		}

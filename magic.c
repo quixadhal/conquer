@@ -1,4 +1,4 @@
-/*conquest is copyrighted 1986 by Ed Barlow.
+/*conquer is copyrighted 1986 by Ed Barlow.
  *  I spent a long time writing this code & I hope that you respect this.  
  *  I give permission to alter the code, but not to copy or redistribute
  *  it without my explicit permission.  If you alter the code, 
@@ -12,6 +12,7 @@
 
 /*create a new login for a new player*/
 #include "header.h"
+#include "data.h"
 #include <ctype.h>
 
 extern short country;
@@ -25,39 +26,39 @@ extern FILE *fnews;
 
 getmagic()
 {
-short newpower;
-	newpower=rand()%MAXPOWER;
+int newpower;
+  	newpower=1<<rand()%MAXPOWER;
 	switch(newpower){
 	case WARRIOR:
 	case CAPTAIN:
 	case WARLORD:
 		if(magic(country,WARRIOR)!=1){
-			ntn[country].powers*=WARRIOR;
+			ntn[country].powers|=WARRIOR;
 			return(WARRIOR);
 		}
 		else if(magic(country,CAPTAIN)!=1){
-			ntn[country].powers*=CAPTAIN;
+			ntn[country].powers|=CAPTAIN;
 			return(CAPTAIN);
 		}
 		else if(magic(country,WARLORD)!=1){
-			ntn[country].powers*=WARLORD;
+			ntn[country].powers|=WARLORD;
 			return(WARLORD);
 		}
 		break;
 	case MI_MONST:
 	case AV_MONST:
 	case MA_MONST:
-		if(ntn[country].race!=ORC) return(1);
+		if(ntn[country].race!=ORC) return(0);
 		if(magic(country,MI_MONST)!=1){
-			ntn[country].powers*=MI_MONST;
+			ntn[country].powers|=MI_MONST;
 			return(MI_MONST);
 		}
 		else if(magic(country,AV_MONST)!=1){
-			ntn[country].powers*=AV_MONST;
+			ntn[country].powers|=AV_MONST;
 			return(AV_MONST);
 		}
 		else if(magic(country,MA_MONST)==1){
-			ntn[country].powers*=MA_MONST;
+			ntn[country].powers|=MA_MONST;
 			return(MA_MONST);
 		}
 		break;
@@ -71,57 +72,57 @@ short newpower;
 	case HEALER:
 	case ARCHER:
 	case CAVALRY:
-		if(magic(country,newpower)==1) return(1);
-		ntn[country].powers*=newpower;
+		if(magic(country,newpower)==1) return(0);
+		ntn[country].powers|=newpower;
 		return(newpower);
 	case DESTROYER:
 		if((ntn[country].race!=ELF)&&(magic(country,DESTROYER)!=1)){
-			ntn[country].powers*=DESTROYER;
+			ntn[country].powers|=DESTROYER;
 			return(DESTROYER);
 		}
 		break;
 	case VAMPIRE:
 		if((ntn[country].race!=ELF)&&(magic(country,VAMPIRE)!=1)){
-			ntn[country].powers*=VAMPIRE;
+			ntn[country].powers|=VAMPIRE;
 			return(VAMPIRE);
 		}
 		break;
 	case MINER:
 		if((ntn[country].race!=ELF)&&(ntn[country].race!=DWARF)&&(magic(country,MINER)!=1)){
-			ntn[country].powers*=MINER;
+			ntn[country].powers|=MINER;
 			return(MINER);
 		}
+		break;
 	case STEEL:
-		if(magic(country,STEEL)==1) return(1);
-		if(magic(country,MINER)!=1) return(1);
-		ntn[country].powers*=STEEL;
+		if(magic(country,STEEL)==1) return(0);
+		if(magic(country,MINER)!=1) return(0);
+		ntn[country].powers|=STEEL;
 		return(STEEL);
 	case BREEDER:
-		if(magic(country,BREEDER)==1) return(1);
-		if(ntn[country].race!=ORC) return(1);
-		ntn[country].powers*=BREEDER;
+		if(magic(country,BREEDER)==1) return(0);
+		if(ntn[country].race!=ORC) return(0);
+		ntn[country].powers|=BREEDER;
 		return(BREEDER);
 	}
-	return(1);
+	return(0);
 }
 
 /*form to interactively get a magic power*/
 domagic()
 {
-	short x,count,done=0,loop=0;
+  	int x, count, done=0, loop=0, i, chance;
+	long price;
 	short isgod=0;
-	short overmax=0;
 	if(country==0) {
 		isgod=1;
 		clear();
 		mvaddstr(0,0,"WHAT NATION NUMBER:");
 		refresh();
-		echo();
-		scanw("%hd",&country);
-		noecho();
+		country = get_number();
 	}
 
 	while(done==0){
+		done=1;
 		clear();
 		count=3;
 		redraw=TRUE;
@@ -171,74 +172,86 @@ domagic()
 			mvaddstr(count++,0,"you have CAVALRY power");
 		if(magic(country,BREEDER)==1)
 			mvaddstr(count++,0,"you have BREEDER power");
+
 		standout();
-		if(count>=PCPOWERS+3){
-		mvaddstr(count++,0,"YOU HAVE THE MAXIMUM NUMBER OF POWERS");
-		mvaddstr(count++,0,"  NEW POWERS COST DOUBLE AND ARE INVALID UNLESS THEY");
-		mvaddstr(count++,0,"  AUGMENT EXISTING FIGHTER OR MONSTER POWERS (hit any char)");
-		standend();
-		overmax=1;
+			
+		if (count-3 >= MAXPOWER) {
+			mvaddstr(count++,0,"You have all the available powers");
+			refresh();
+			getch();
+		}
+		price = JWL_MGK;
+		for (i=1; i<count-3; i++) {
+			price <<= 1;
+			if (price > 500000000)
+				break;
 		}
 
-		if(ntn[country].race==ORC){
-		mvprintw(count++,0,"DO YOU WISH TO TAKE OVER A NPC NATION (enter y or n):");
-		mvaddstr(count++,0,"  Base 10 percent for 100K Jewels if Confederacy and the same race");
-		refresh();
-		if(getch()=='y'){
-		mvprintw(count++,0,"SORRY; NOT IMPLEMENTED YET");
-		}
+		if((ntn[country].race==ORC)&& ntn[country].jewels>=100000L){
+			if(magic(country,MA_MONST)==1) {
+			mvaddstr(count++,0,"  You have a 10 percent chance for 100K Jewels to take over other orcs");
+			chance=10;
+			} else if(magic(country,AV_MONST)==1) {
+			mvaddstr(count++,0,"  You have a 6 percent chance for 100K Jewels to take over other orcs");
+			chance=6;
+			} else if(magic(country,MI_MONST)==1){
+			mvaddstr(count++,0,"  You have a 3 percent chance for 100K Jewels to take over other orcs");
+			chance=3;
+			}
+			mvprintw(count++,0,"DO YOU WISH TO TAKE OVER AN ORC NPC NATION (enter y or n):");
+			refresh();
+			if(getch()=='y'){
+				done=0;
+				mvaddstr(count++,0,"  What orc nation:");
+				refresh();
+				i=get_number();
+				if(ntn[i].race==ORC){
+					ntn[country].jewels-=100000L;
+					if(i=takeover(chance,i)==1)
+		 			mvprintw(count++,0," Successful: %d",i);
+				}
+		 		else mvaddstr(count++,0,"  Wrong Race");
+			}
 		}
 
 		count++;
-		mvprintw(count++,0,"DO YOU WISH TO BUY A RANDOM NEW POWER FOR %d JEWELS (enter y or n):",JWL_MGK);
-		standend();
-		refresh();
-		if(getch()=='y'){
-			if(((ntn[country].jewels>JWL_MGK)&&(overmax==0))||(ntn[country].jewels>2*JWL_MGK)) {
-			while(loop==0) if((x=getmagic())!=1){
-				if((ntn[country].powers<=1)||(x<1)){
-				mvprintw(count++,0,"ERROR ON POWER #%d",x);
-				}
-				else if(overmax==1){
-					ntn[country].jewels-=2*JWL_MGK;
-					if(((magic(country,WARRIOR)==1)&&((x==CAPTAIN)||(x==WARLORD)))||((magic(country,MI_MONST)==1)&&((x==AV_MONST)||(x==MA_MONST)))){
-						CHGMGK;
-						exenewmgk(x);
-					}
-					else {
-					mvprintw(count++,0,"USELESS POWER (number %d)",x);
-					ntn[country].powers/=x;
-					}
-				}
-				else {
-					ntn[country].jewels-=JWL_MGK;
-					mvprintw(count++,0,"YOU NOW HAVE POWER #%d",x);
+		if(ntn[country].jewels>=price) {
+			mvprintw(count++,0,"YOU CURRENTLY HAVE %ld JEWELS IN YOUR TREASURY",ntn[country].jewels);
+			mvprintw(count++,0,"DO YOU WISH TO BUY A RANDOM NEW POWER FOR %ld JEWELS (enter y or n):",price);
+			standend();
+			refresh();
+			if(getch()=='y'){
+				done=0;
+				loop = 0;
+				while(loop++ < 500) if((x=getmagic())!=0){
+					ntn[country].jewels -= price;
 					CHGMGK;
 					exenewmgk(x);
+					refresh();
+					break;
 				}
-				refresh();
-				getch();
-				loop=1;
+				if (loop >= 500)
+					mvaddstr(count++,0,"You have too many powers!");
 			}
-			}
-			else {
-				mvaddstr(count++,0,"NOT ENOUGH JEWELS -- hit any key");
-				refresh();
-				getch();
-				done=1;
-			}
+		} else {
+			mvaddstr(count++,0,"NOT ENOUGH JEWELS TO PURCHASE NEW MAGIC -- hit any key");
+			refresh();
+			getch();
 		}
-		else done=1;
 	}
 	if(isgod==1) country=0;
 }
 
+
 /*do magic for both npcs and pcs in update*/
-/*if target is 0 then it will be picked randomly*/
+/*if target is 0 then it is update and target will be picked randomly*/
+int
 takeover(percent,target)
 {
-int loop=1,y,save;
+int loop=1,y,save,isupdate=0;
 	save=country;
+	if(target==country) return(0);
+	if(target==0) isupdate=1;
 	country=target;
 	if(rand()%100<percent){
 		loop=0;
@@ -246,17 +259,26 @@ int loop=1,y,save;
 		if (target==0) while(loop==0){
 			y++;
 			country=rand()%MAXNTN;
-			if((ntn[country].race==ntn[save].race)&&(ntn[country].active>=2)) loop=1;
+			if((ntn[country].race==ntn[save].race)
+			&&(ntn[country].active>=2)) loop=1;
 			else if(y>=500) {
 				country=save;
-				return;
+				return(0);
 			}
 		}
 		sct[ntn[country].capx][ntn[country].capy].owner=save;
+		if(isupdate==1){
+		printf("nation %s taken over by %s\n",ntn[country].name,ntn[save].name);
 		fprintf(fnews,"1.\tnation %s taken over by %s\n",ntn[country].name,ntn[save].name);
+		}
+		else DESTROY;
 		destroy();
+		y=country;
+		country=save;
+		return(y);
 	}
 	country=save;
+	return(0);
 }
 
 /*execute new magic*/
@@ -296,19 +318,24 @@ exenewmgk(newpower)
 		case DESTROYER:
 			for(x=ntn[country].capx-3;x<=ntn[country].capx+3;x++) {
 				for(y=ntn[country].capy-3;y<=ntn[country].capy+3;y++){
-					if((x>0)&&(y>0)&&(x<MAPX)&&(y<MAPY)&&(sct[x][y].altitude!=WATER)&&(isdigit(sct[x][y].vegitation)==0)){
-						sct[x][y].vegitation=DESERT;
+					if((ONMAP)
+					&&(sct[x][y].altitude!=WATER)
+					&&(isdigit(sct[x][y].vegetation)==0)){
+						sct[x][y].vegetation=DESERT;
 						sct[x][y].designation=DESERT;
 					}
 				}
 			}
+  			updmove(ntn[country].race);
 			break;
+		case DERVISH:
+  			updmove(ntn[country].race);
+  			break;
 		case MI_MONST:
 		case AV_MONST:
 		case MA_MONST:
 		case SPY:
 		case KNOWALL:
-		case DERVISH:
 		case HIDDEN:
 		case THE_VOID:
 		case ARCHITECT:

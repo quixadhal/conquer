@@ -1,4 +1,4 @@
-/*conquest is copyrighted 1986 by Ed Barlow.
+/*conquer is copyrighted 1986 by Ed Barlow.
  *  I spent a long time writing this code & I hope that you respect this.  
  *  I give permission to alter the code, but not to copy or redistribute
  *  it without my explicit permission.  If you alter the code, 
@@ -16,9 +16,11 @@
 /*include files*/
 #include <ctype.h>
 #include "header.h"
+#include "data.h"
 
 extern FILE *fexe;
 extern short country;
+extern FILE *fnews;
 
 showscore()
 {
@@ -44,7 +46,6 @@ showscore()
 		mvaddstr(10,0,"military:");
 		mvaddstr(11,0,"civilians:");
 		mvaddstr(12,0,"sectors:");
-		mvaddstr(13,0,"ships:");
 
 		count=0;
 		position=2;
@@ -62,11 +63,10 @@ showscore()
 				if(ntn[nationid].active>=2) mvprintw(7,position,"NPC");
 				else mvprintw(7,position,"%s",*(Class+ntn[nationid].class));
 				mvprintw(8,position,"%d",ntn[nationid].score);
-				mvprintw(9,position,"%d",ntn[nationid].tgold);
-				mvprintw(10,position,"%d",ntn[nationid].tmil);
-				mvprintw(11,position,"%d",ntn[nationid].tciv);
+				mvprintw(9,position,"%ld",ntn[nationid].tgold);
+				mvprintw(10,position,"%ld",ntn[nationid].tmil);
+				mvprintw(11,position,"%ld",ntn[nationid].tciv);
 				mvprintw(12,position,"%d",ntn[nationid].tsctrs);
-				mvprintw(13,position,"%d",ntn[nationid].tships);
 				count++;
 			}
 			nationid++;
@@ -84,6 +84,7 @@ diploscrn()
 {
 	int i;
 	char k;
+	char tempifile[30];
 	short nation, offset, count, olddip, oldnat, temp;
 	FILE *fp, *fopen();
 	short isgod=0;
@@ -92,9 +93,7 @@ diploscrn()
 		clear();
 		mvaddstr(0,0,"WHAT NATION NUMBER:");
 		refresh();
-		echo();
-		scanw("%hd",&country);
-		noecho();
+		country = get_number();
 	}
 	while(1){
 		count=1;
@@ -104,20 +103,26 @@ diploscrn()
 		mvaddstr(0,(COLS/2)-10,"NATION DIPLOMACY SUMMARY");
 		standend();
 		mvaddstr(2,0,"                BY YOU,        TO YOU");
-		for(i=1;i<MAXNTN+4;i++) if((ntn[i].active>0)&&(i!=country)) {
+		for(i=1;i<NTOTAL;i++) if((ntn[i].active>0)&&(i!=country)) {
 			if(count%14==0) {
 				offset+=40;
 				mvaddstr(2,40,"                BY YOU,        TO YOU");
 				count++;
 			}
 			mvprintw(count%14+2,offset, "%d. %s",i,ntn[i].name);
+			if((ntn[country].dstatus[i]==WAR)
+			||(ntn[country].dstatus[i]==JIHAD)) standout();
 			mvprintw(count%14+2,offset+14, "=> %s",*(diploname+ntn[country].dstatus[i]));
+			standend();
+			if((ntn[i].dstatus[country]==WAR)
+			||(ntn[i].dstatus[country]==JIHAD)) standout();
 			mvprintw(count%14+2,offset+28, "=> %s",*(diploname+ntn[i].dstatus[country]));
+			standend();
 			count++;
 		}
 		standout();
 		mvaddstr(17,0,"HIT RETURN KEY TO CHANGE STATUS");
-		mvprintw(18,0,"HIT 'B' KEY TO BRIBE WARING NPC NATION (%d GOLD/level)",BRIBE);
+		mvprintw(18,0,"HIT 'B' KEY TO BRIBE WARRING NPC NATION (%d GOLD/level)",BRIBE);
 		mvaddstr(19,0,"ANY OTHER KEY TO CONTINUE:");
 		standend();
 		refresh();
@@ -136,20 +141,22 @@ diploscrn()
 			mvaddstr(20,0,"BRIBES WORK 50% (only the update will show)");
 			mvaddstr(21,0,"WHAT NATION NUMBER:");
 			refresh();
-			echo();
-			scanw("%hd",&nation);
-			noecho();
+			nation = get_number();
 			if(ntn[country].active>=2){
 				mvaddstr(22,0,"NOT NON PLAYER COUNTRY");
 				refresh();
 				getch();
 				return;
 			}
+			/*use maxntn here as cant change with nomads...*/
 			if((nation<=0)||(nation>MAXNTN)){
 				if(isgod==1) country=0;
 				return;
 			}
-			if((isgod!=1)&&((ntn[nation].dstatus[country]==ALLIED)||(ntn[nation].dstatus[country]==JIHAD)||(ntn[nation].dstatus[country]==CONFEDERACY))){
+			if((isgod!=1)
+			    &&((ntn[nation].dstatus[country]==ALLIED)
+			    ||(ntn[nation].dstatus[country]==JIHAD)
+			    ||(ntn[nation].dstatus[country]==CONFEDERACY))){
 				mvaddstr(22,0,"CANT CHANGE THEIR STATUS");
 				refresh();
 				getch();
@@ -162,22 +169,23 @@ diploscrn()
 			oldnat=country;
 			country=nation;
 			nation=oldnat;
-			fprintf(fexe,"NGOLD\t%hd \t%d \t%d \t0 \t0 \t%s\n",XNAGOLD ,country,ntn[country].tgold,"null");
+			fprintf(fexe,"L_NGOLD\t%hd \t%d \t%ld \t0 \t0 \t%s\n",XNAGOLD ,country,ntn[country].tgold,"null");
 			EADJDIP;
 			country=oldnat;
 			return;
 		}
 		mvaddstr(21,0,"WHAT NATION NUMBER:");
 		refresh();
-		echo();
-		scanw("%hd",&nation);
+		nation = get_number();
+		/*use maxntn here as cant change with nomads...*/
 		if((nation<=0)||(nation>MAXNTN)){
-			noecho();
 			if(isgod==1) country=0;
 			return;
 		}
-		noecho();
-		if((isgod==0)&&(((ntn[country].dstatus[nation]==CONFEDERACY)&&(ntn[nation].dstatus[country]<WAR))||(ntn[country].dstatus[nation]==JIHAD))) {
+		if((isgod==0)
+		    &&(((ntn[country].dstatus[nation]==CONFEDERACY)
+		    &&(ntn[nation].dstatus[country]<WAR))
+		    ||(ntn[country].dstatus[nation]==JIHAD))) {
 			mvprintw(23,0,"SORRY, Can't change status on ntn %s -- hit return",ntn[nation].name);
 			refresh();
 			getch();
@@ -195,7 +203,7 @@ diploscrn()
 			mvaddstr(8,0,"7) JIHAD (irrevocable):");
 			mvaddstr(12,0,"INPUT:");
 			refresh();
-			scanw("%hd",&temp);
+			temp = get_number();
 			if((temp<1)||(temp>7)){
 				mvprintw(23,0,"SORRY, Invalid inputs -- hit return");
 				refresh();
@@ -206,7 +214,8 @@ diploscrn()
 			EADJDIP;
 
 			/*prevent ron from being sneaky*/
-			if((temp>HOSTILE)&&(ntn[nation].active>2)&&(ntn[nation].dstatus[country]<WAR)) {
+			if((temp>HOSTILE)&&(ntn[nation].active>2)
+			    &&(ntn[nation].dstatus[country]<WAR)) {
 				olddip=ntn[nation].dstatus[country];
 				oldnat=country;
 				country=nation;
@@ -218,9 +227,11 @@ diploscrn()
 				country=nation;
 				nation=oldnat;
 			}
-			else if((temp>HOSTILE)&&(ntn[nation].active==1)&&(ntn[nation].dstatus[country]<WAR)) {
-				if ((fp=fopen(MSGFILE,"a+"))==NULL) {
-					mvprintw(4,0,"error opening %s",MSGFILE);
+			else if((temp>HOSTILE)&&(ntn[nation].active==1)
+			    &&(ntn[nation].dstatus[country]<WAR)) {
+	    			sprintf(tempifile,"%s%d",msgfile,country);
+				if ((fp=fopen(tempifile,"a+"))==NULL) {
+					mvprintw(4,0,"error opening %s",tempifile);
 					refresh();
 					getch();
 					return;
@@ -236,7 +247,7 @@ diploscrn()
 change()
 {
 	char string[10];
-	int i;
+	int i, cbonus;
 	short armynum;
 	char passwd[8];
 	short isgod=0;
@@ -246,9 +257,7 @@ change()
 		clear();
 		mvaddstr(0,0,"SUPER USER; FOR WHAT NATION NUMBER:");
 		refresh();
-		echo();
-		scanw("%hd",&country);
-		noecho();
+		country = get_number();
 	}
 	clear();
 	mvaddstr(0,(COLS/2)-10,"NATION STATS SUMMARY");
@@ -282,8 +291,9 @@ change()
 	standout();
 	mvaddstr(19,(COLS/2)-9, "HIT ANY KEY TO CONTINUE");
 	mvaddstr(20,(COLS/2)-15,"HIT 1 or 2 TO CHANGE NAME or PASSWD");
-	mvaddstr(21,(COLS/2)-15,"HIT 3 TO CHANGE ADD TO COMBAT BONUS");
-	if(isgod==1) mvaddstr(21,(COLS/2)-9,"HIT 4 TO DESTROY NATION");
+	if(magic(country,VAMPIRE)!=1)
+		mvaddstr(21,(COLS/2)-14,"HIT 3 TO ADD TO YOUR COMBAT BONUS");
+	if(isgod==1) mvaddstr(22,(COLS/2)-9,"HIT 4 TO DESTROY NATION");
 
 	standend();
 	refresh();
@@ -294,8 +304,8 @@ change()
 		mvaddstr(0,0,"what name would you like:");
 		clrtoeol();
 		refresh();
-		scanw("%s",string);
-		if((strlen(string)<=1)||(strlen(string)>=10)){
+		getstr(string);
+		if((strlen(string)<=1)||(strlen(string)>NAMELTH)){
 			beep();
 			mvaddstr(2,0,"invalid name--hit return");
 			noecho();
@@ -316,6 +326,9 @@ change()
 				return;
 			}
 		}
+		mvaddstr(2,0,"new name can be used following next update--hit return");
+		refresh();
+		getch();
 		strcpy(ntn[country].name,string);
 		noecho();
 		ECHGNAME;
@@ -325,9 +338,10 @@ change()
 		if(isgod!=1){
 			mvaddstr(0,0,"what is your current password:");
 			refresh();
-			scanw("%s",string);
+			getstr(string);
 			strcpy(passwd,crypt(string,SALT));
-			if((strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)&&(strncmp(passwd,ntn[country].passwd,PASSLTH)!=0)){
+			if((strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)
+			    &&(strncmp(passwd,ntn[country].passwd,PASSLTH)!=0)){
 				beep();
 				mvaddstr(2,0,"invalid password--hit return");
 				refresh();
@@ -338,8 +352,8 @@ change()
 		}
 		mvaddstr(2,0,"what is your new password:");
 		refresh();
-		scanw("%s",string);
-		if((strlen(string)>8)||(strlen(string)<2)) {
+		getstr(string);
+		if((strlen(string)>=8)||(strlen(string)<2)) {
 			beep();
 			mvaddstr(2,0,"invalid new password--hit return");
 			refresh();
@@ -349,33 +363,63 @@ change()
 		}
 		mvaddstr(4,0,"reenter your new password:");
 		refresh();
-		scanw("%s",passwd);
+		getstr(passwd);
 		if(strcmp(passwd,string)!=0) {
 			if(isgod==1) country=0;
 			return;
 		}
+		mvaddstr(6,0,"new password can be used following next update--hit return");
+		refresh();
+		getch();
 		ECHGPAS;
 		strncpy(ntn[country].passwd,crypt(string,SALT),PASSLTH);
 		break;
 	case '3':
+		if(magic(country,VAMPIRE)==1) {
+			mvaddstr(0,0,"VAMPIRES CAN'T ADD TO COMBAT BONUS (hit return)");
+			refresh();
+			getch();
+		}
+		if(magic(country,WARLORD)==1)      cbonus=30;
+		else if(magic(country,CAPTAIN)==1) cbonus=20;
+		else if(magic(country,WARRIOR)==1) cbonus=10;
+		else cbonus=0;
+		i=0;
 		for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0) i+=ASOLD;
-		if(i<1500) i=1500;
-		mvprintw(0,0,"DO YOU WISH SPEND %d IRON ON ATTACK (enter y or n):",IRONORE*i);
+		i = max ( i, 1500);
+		armynum = max ( ntn[country].aplus-cbonus, 10 ) / 10;
+		mvprintw(0,0,"DO YOU WISH SPEND %d IRON ON ATTACK (enter y or n):",IRONORE*i*armynum*armynum);
 		refresh();
 		if(getch()=='y'){
-			if(ntn[country].tiron>IRONORE*i){
+			if(ntn[country].tiron> (long)IRONORE*i*armynum*armynum){
 				ntn[country].aplus+=1;
 				I_APLUS;
-				ntn[country].tiron-=IRONORE*i;
+				ntn[country].tiron-= (long) IRONORE*i*armynum*armynum;
+			}
+			else {
+				mvaddstr(0,0,"SORRY - hit any key");
+				clrtoeol();
+				refresh();
+				getch();
 			}
 		}
-		mvprintw(0,0,"DO YOU WISH SPEND %d IRON ON DEFENSE (enter y or n):",IRONORE*i);
+		i=0;
+		for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0) i+=ASOLD;
+		i = max ( i, 1500);
+		armynum = max ( ntn[country].dplus-cbonus, 10 ) / 10;
+		mvprintw(0,0,"DO YOU WISH SPEND %d IRON ON DEFENSE (enter y or n):",IRONORE*i*armynum*armynum);
 		refresh();
 		if(getch()=='y'){
-			if(ntn[country].tiron>IRONORE*i){
+			if(ntn[country].tiron>IRONORE*i*armynum*armynum){
 				ntn[country].dplus+=1;
 				I_DPLUS;
-				ntn[country].tiron-=IRONORE*i;
+				ntn[country].tiron-= (long) IRONORE*i*armynum*armynum;
+			}
+			else {
+				mvaddstr(0,0,"SORRY - hit any key");
+				clrtoeol();
+				refresh();
+				getch();
 			}
 		}
 		break;
@@ -384,7 +428,15 @@ change()
 			clear();
 			mvaddstr(0,0,"DO YOU WANT TO DESTROY THIS NATION (y or n)");
 			refresh();
-			if(getch()=='y') destroy();
+
+			if(getch()=='y') {
+				if ((fnews=fopen(newsfile,"w"))==NULL) {
+					printf("error opening news file\n");
+					exit(1);
+				}
+				destroy();
+				fclose(fnews);
+			}
 		}
 		break;
 	default:
@@ -392,6 +444,7 @@ change()
 		return;
 	}
 	if(isgod==1) country=0;
+	change();
 }
 
 help()
@@ -402,8 +455,8 @@ help()
 	char line[80];
 
 	/*open .help file*/
-	if ((fp=fopen(HELPFILE,"r"))==NULL) {
-		mvaddstr(0,0,"\nerror on read \n");
+	if ((fp=fopen(helpfile,"r"))==NULL) {
+		mvprintw(0,0,"\nerror on read of %s\n",helpfile);
 		refresh();
 		getch();
 		return;
@@ -423,11 +476,11 @@ help()
 				else fgets(line,80,fp);
 			}
 			standout();
-			mvaddstr(LINES-2,(COLS/2)-14,"HIT SPACE TO CONTINUE HELP SCREENS");
-			mvaddstr(LINES-1,(COLS/2)-12,"TO END HELP HIT ANY OTHER KEY");
+			mvaddstr(LINES-2,(COLS/2)-14,"HIT ANY KEY TO CONTINUE HELP SCREENS");
+			mvaddstr(LINES-1,(COLS/2)-12,"TO END HELP HIT SPACE KEY");
 			standend();
 			refresh();
-			if(getch()!=' ') done=1;
+			if(getch()==' ') done=1;
 		}
 	}
 	fclose(fp);
@@ -443,8 +496,8 @@ newspaper()
 	char title[80];
 
 	clear();
-	if ((fp=fopen(NEWSFILE,"r"))==NULL) {
-		mvaddstr(0,0,"error on read ");
+	if ((fp=fopen(newsfile,"r"))==NULL) {
+		mvprintw(0,0,"error on read of %s",newsfile);
 		refresh();
 		getch();
 		return;
@@ -460,7 +513,7 @@ newspaper()
 			lineno=5;
 			newpage=1;
 			standout();
-			mvprintw(0,20,"CONQUEST NEWS REPORT   page %d",pagenum);
+			mvprintw(0,20,"CONQUER NEWS REPORT   page %d",pagenum);
 			mvaddstr(1,23,"ALL THE NEWS THAT FITS");
 			mvprintw(3,20,"%s",title+2);
 			standend();

@@ -1,7 +1,7 @@
 /*io.c*/
 /*Print and io subroutines for game*/
 
-/*conquest is copyrighted 1986 by Ed Barlow.
+/*conquer is copyrighted 1986 by Ed Barlow.
  *  I spent a long time writing this code & I hope that you respect this.  
  *  I give permission to alter the code, but not to copy or redistribute
  *  it without my explicit permission.  If you alter the code, 
@@ -16,12 +16,11 @@
 /*include files*/
 #include <ctype.h>
 #include "header.h"
+#include "data.h"
 
 /*Declarations*/
 extern struct s_sector sct[MAPX][MAPY];
 extern struct nation ntn[NTOTAL];   /* player nation stats */
-/*is sector occupied by an army?*/
-extern short occ[MAPX][MAPY];
 
 /*offset of upper left hand corner*/
 extern short xoffset;
@@ -34,7 +33,7 @@ extern short ycurs;
 extern short redraw;
 /*display state*/
 extern short hilmode;   /*highlight modes: 0=owned sectors, 1= armies, 2=none*/
-extern short dismode;   /*display mode: 1=vegitation, 2=desig, 3=contour*/
+extern short dismode;   /*display mode: 1=vegetation, 2=desig, 3=contour*/
 /*		 4=armies/navies, 5=commodities, 6=fertility, 7=movement*/
 /* nation id of owner*/
 extern short country;
@@ -69,7 +68,7 @@ writedata()
 {
 	int fd;
 	printf("\ndoing write of data\n");
-	if((fd = creat(DATAFILE,0666))==-1) {
+	if((fd = creat(datafile,0666))==-1) {
 		printf("cant open data.  check permissions\n");
 		return;
 	}
@@ -82,32 +81,38 @@ readdata()
 {
 	int fd;
 	int n_read;
+
 	/*read in existing nation army and navy data*/
 	/*check if file openable*/
 	printf("reading data file\n");
-	fd=open(DATAFILE,0);
+	if( (fd = open(datafile,0)) < 0 ) {
+		fprintf( stderr, "can not open %s \n", datafile );
+		exit( 1 );
+	}
 	if((n_read=read(fd,sct,sizeof(sct)))==0) printf("EOF\n");
 	else if(n_read==-1) printf("error reading sector data (sct)\n");
 	if(n_read!=sizeof(sct)) {
-		printf("wrong data format\n");
+		printf( "wrong data format (%d vs. %d)\n",n_read, sizeof(sct) );
 		exit(1);
 	}
 	if((n_read=read(fd,ntn,sizeof(ntn)))==0) printf("EOF\n");
 	else if(n_read==-1) printf("error reading nation data (ntn)\n");
 	if(n_read!=sizeof(ntn)) {
-		printf("wrong data format\n");
+		printf( "wrong data format (%d vs. %d)\n",n_read, sizeof(ntn) );
 		exit(1);
 	}
 	close(fd);
-}
+	verifydata( __FILE__, __LINE__ );
+
+} /* readdata() */
 
 /*print a map subroutine*/
 printveg()
 {
 	register int X, Y;
-	printf("doing print of vegitation\n");
+	printf("doing print of vegetation\n");
 	for(Y=0;Y<MAPY;Y++) {
-		for(X=0;X<MAPX;X++) putc(sct[X][Y].vegitation,stdout);
+		for(X=0;X<MAPX;X++) putc(sct[X][Y].vegetation,stdout);
 		putc('\n',stdout);
 	}
 }
@@ -121,7 +126,7 @@ makemap()
 
 	/*can you see all?*/
 	if((magic(country,KNOWALL)==1)||(country==0)) {
-		for(x=0;x<(COLS-21)/2;x++) {
+		for(x=0;x<SCREEN_X_SIZE;x++) {
 			for(y=0;y<(LINES-4);y++) {
 				highlight(x,y);
 				see(x,y);
@@ -137,7 +142,7 @@ makemap()
 	}
 	/*see as appropriate?*/
 	else {
-		for(x=0;x<(COLS-21)/2;x++) for(y=0;y<(LINES-4);y++) {
+		for(x=0;x<SCREEN_X_SIZE;x++) for(y=0;y<(LINES-4);y++) {
 			if(sct[x+xoffset][y+yoffset].owner==country){
 				for(i=x-LANDSEE;i<=x+LANDSEE;i++){
 					for(j=y-LANDSEE;j<=y+LANDSEE;j++) {
@@ -254,22 +259,26 @@ see(x,y)
 	if((x<0)||(y<0)||(x>COLS-21)||(y>=LINES-4)) return;
 	if(((y+yoffset)<MAPY)&&((x+xoffset)<MAPX)) {
 
-		if((dismode>7)&&(country!=sct[x+xoffset][y+yoffset].owner)&&(magic(sct[x+xoffset][y+yoffset].owner,THE_VOID)==1)&&(country!=0)) {
+		if((dismode>7)&&(country!=sct[x+xoffset][y+yoffset].owner)
+		&&(magic(sct[x+xoffset][y+yoffset].owner,THE_VOID)==1)
+		&&(country!=0)) {
 			standout();
 			mvaddch(y,2*x,' ');
 			standend();
 		}
 		else {
 			switch(dismode){
-			case 1: /*vegitation*/
-				mvaddch(y,2*x,sct[x+xoffset][y+yoffset].vegitation);
+			case 1: /*vegetation*/
+				mvaddch(y,2*x,sct[x+xoffset][y+yoffset].vegetation);
 				break;
 			case 2: /*designation*/
 				if(sct[x+xoffset][y+yoffset].owner==0){
-					if(isdigit(sct[x+xoffset][y+yoffset].vegitation)!=0) mvaddch(y,2*x,sct[x+xoffset][y+yoffset].altitude);
-					else mvaddch(y,2*x,sct[x+xoffset][y+yoffset].vegitation);
+					if(isdigit(sct[x+xoffset][y+yoffset].vegetation)!=0) mvaddch(y,2*x,sct[x+xoffset][y+yoffset].altitude);
+					else mvaddch(y,2*x,sct[x+xoffset][y+yoffset].vegetation);
 				}
-				else if((country==0)||(sct[x+xoffset][y+yoffset].owner==country)) mvaddch(y,2*x,sct[x+xoffset][y+yoffset].designation);
+				else if((country==0)
+				||(sct[x+xoffset][y+yoffset].owner==country)) 
+				mvaddch(y,2*x,sct[x+xoffset][y+yoffset].designation);
 				else mvaddch(y,2*x,ntn[sct[x+xoffset][y+yoffset].owner].mark);
 				break;
 			case 3: /*contour*/
@@ -288,13 +297,13 @@ see(x,y)
 			case 7:	/*movement cost map*/
 				if(movecost[x+xoffset][y+yoffset]>=0) mvprintw(y,2*x,"%d",movecost[x+xoffset][y+yoffset]);
 				else if(sct[x+xoffset][y+yoffset].altitude==WATER)
-					mvaddch(y,2*x,'~');
+					mvaddch(y,2*x,WATER);
 				else
 					mvaddch(y,2*x,'X');
 				break;
 			case 8:   /*Defence*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
-					mvaddch(y,2*x,'~');
+					mvaddch(y,2*x,WATER);
 				else if (movecost[x+xoffset][y+yoffset]<0)
 					mvaddch(y,2*x,'*');
 				else {
@@ -306,14 +315,16 @@ see(x,y)
 					if(sct[x+xoffset][y+yoffset].altitude==MOUNTAIN) armbonus+=40;
 					else if(sct[x+xoffset][y+yoffset].altitude==HILL) armbonus+=20;
 
-					if(sct[x+xoffset][y+yoffset].vegitation==JUNGLE)
+					if(sct[x+xoffset][y+yoffset].vegetation==JUNGLE)
 						armbonus+=30;
-					else if(sct[x+xoffset][y+yoffset].vegitation==FORREST)
+					else if(sct[x+xoffset][y+yoffset].vegetation==FORREST)
 						armbonus+=20;
-					else if(sct[x+xoffset][y+yoffset].vegitation==WOOD)
+					else if(sct[x+xoffset][y+yoffset].vegetation==WOOD)
 						armbonus+=10;
 
-					if((sct[x+xoffset][y+yoffset].designation==DCASTLE)||(sct[x+xoffset][y+yoffset].designation==DCITY)||(sct[x+xoffset][y+yoffset].designation==DCAPITOL))
+			if((sct[x+xoffset][y+yoffset].designation==DCASTLE)
+			||(sct[x+xoffset][y+yoffset].designation==DCITY)
+			||(sct[x+xoffset][y+yoffset].designation==DCAPITOL))
 						armbonus+=8*sct[x+xoffset][y+yoffset].fortress;
 
 					mvprintw(y,2*x,"%d",armbonus/20);
@@ -321,7 +332,7 @@ see(x,y)
 				break;
 			case 9:   /*People*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
-					mvaddch(y,2*x,'~');
+					mvaddch(y,2*x,WATER);
 				else if (sct[x+xoffset][y+yoffset].people>=1000)
 					mvaddch(y,2*x,'+');
 				else if (sct[x+xoffset][y+yoffset].people>=450)
@@ -333,10 +344,12 @@ see(x,y)
 				break;
 			case 10:  /*Gold*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
-					mvaddch(y,2*x,'~');
-				else if(isdigit(sct[x+xoffset][y+yoffset].vegitation)==0) 
+					mvaddch(y,2*x,WATER);
+				else if(isdigit(sct[x+xoffset][y+yoffset].vegetation)==0) 
 					mvaddch(y,2*x,'X');
-				else if((sct[x+xoffset][y+yoffset].owner!=0)&&(sct[x+xoffset][y+yoffset].owner!=country))
+				else if((sct[x+xoffset][y+yoffset].owner!=0)
+				&&(country!=0)
+				&&(sct[x+xoffset][y+yoffset].owner!=country))
 					mvaddch(y,2*x,'?');
 				else if(sct[x+xoffset][y+yoffset].gold>=10)
 					mvaddch(y,2*x,'+');
@@ -345,10 +358,12 @@ see(x,y)
 				break;
 			case 11:  /*Iron*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
-					mvaddch(y,2*x,'~');
-				else if(isdigit(sct[x+xoffset][y+yoffset].vegitation)==0) 
+					mvaddch(y,2*x,WATER);
+				else if(isdigit(sct[x+xoffset][y+yoffset].vegetation)==0) 
 					mvaddch(y,2*x,'X');
-				else if((sct[x+xoffset][y+yoffset].owner!=0)&&(sct[x+xoffset][y+yoffset].owner!=country))
+				else if((sct[x+xoffset][y+yoffset].owner!=0)
+				&&(country!=0)
+				&&(sct[x+xoffset][y+yoffset].owner!=country))
 					mvaddch(y,2*x,'?');
 				else if (sct[x+xoffset][y+yoffset].iron>=10)
 					mvaddch(y,2*x,'+');
@@ -385,4 +400,106 @@ highlight(x,y)
 			break;
 		}
 	}
+}
+
+/* check if cursor is out of bounds*/
+coffmap()
+{
+	if((xcurs<1)||(ycurs<1)||(xcurs>=SCREEN_X_SIZE)
+	||((ycurs>=SCREEN_Y_SIZE))||((XREAL)>=MAPX)
+	||((YREAL)>=MAPY)) offmap();
+   
+	/*update map*/
+	if(redraw==TRUE) {
+		clear();
+		makemap(); /* update map*/
+		makebottom();
+		redraw=FALSE;
+	}
+	move(ycurs,2*xcurs);
+	makeside();  /*update side*/
+	move(ycurs,2*xcurs);
+	refresh();
+}
+
+offmap()
+{
+	redraw=FALSE;
+	/*set offset offsets can not be < 0*/
+	if(xcurs<1){
+		if(XREAL<=0) {
+			xoffset=0;
+			xcurs=0;
+		}
+		else {
+			redraw=TRUE;
+			xoffset-=15;
+			xcurs+=15;
+		}
+	}
+	else if(xcurs >= (COLS-22)/2){
+		if(XREAL<MAPX) {
+			redraw=TRUE;
+			xoffset+=15;
+			xcurs-=15;
+		}
+	}
+	if(XREAL>=MAPX) xcurs=MAPX-1-xoffset;
+	if(xoffset<0) xoffset=0;
+	if(xcurs<0) xcurs=0;
+	else if(xcurs >= (COLS-22)/2) {
+		redraw=TRUE;
+		xoffset+=15;
+		xcurs-=15;
+	}
+
+	if(ycurs<1){
+		if(YREAL<=0) {
+			yoffset=0;
+			ycurs=0;
+		}
+		else {
+			redraw=TRUE;
+			ycurs+=15;
+			yoffset-=15;
+		}
+	}
+	else if(ycurs >= SCREEN_Y_SIZE){
+		if(YREAL<MAPY) {
+			redraw=TRUE;
+			yoffset+=15;
+			ycurs-=15;
+		}
+	}
+	if(YREAL>=MAPY) ycurs=MAPY-1-yoffset;
+	if(yoffset<0) yoffset=0;
+	if(ycurs<0) ycurs=0;
+	else if(ycurs >= SCREEN_Y_SIZE) {
+		redraw=TRUE;
+		yoffset+=15;
+		ycurs-=15;
+	}
+}
+
+printscore()
+{
+ 	int i;
+ 	int nationid;    	/*current nation id */
+ 
+ 	printf("id	race	class	score	gold	militia	people	sectors	name\n");
+ 	for (nationid=1; nationid<MAXNTN; nationid++) {
+ 		if(ntn[nationid].active==0) 
+ 			continue;
+ 		printf("%d",nationid);
+ 		for(i=1;i<8;i++)
+ 			if(ntn[nationid].race==*(races+i)[0])
+ 				printf("	%s",*(races+i));
+ 		if(ntn[nationid].active>=2) printf("	NPC");
+ 		else printf("	%s",*(Class+ntn[nationid].class));
+ 		printf("	%d	%d	%d	%d	%d",
+ 			ntn[nationid].score ,ntn[nationid].tgold
+ 			,ntn[nationid].tmil ,ntn[nationid].tciv
+ 			,ntn[nationid].tsctrs );
+ 		printf("	%s\n",ntn[nationid].name);
+ 	}
 }

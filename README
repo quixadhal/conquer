@@ -1,67 +1,75 @@
 
-			NOTES TO INSTALLER OF CONQUEST
+			NOTES TO INSTALLER OF CONQUER
 
-What you have here is a copyrighted beta test version of CONQUEST.  Included
-in this file are the following:
+What you have here is a copyrighted release 2 version version of CONQUER.  
+I make no guaranties to the sanity or style of this code, but do believe
+that it should work as documented.  I have included numerous bugfixes
+from the release 1 posting, and have added numerous enhancements. 
 
-	1) A Brief Description of Conquest
+One note.  I am probably going to switch jobs soon.  My current email
+address is {ihnp4}!mhuxd!smile, but this will change.  I recommend that
+anybody interested in corresponding with me send me *their* address
+so I can inform them of my new address when I get one.  If your mail
+bounces, my home phone is 201-671-2896 and *current* work phone is
+201-949-4407.  Note that I only work on Conquer out of work hours.
+
+Included in this file are the following:
+
+	1) A Brief Description of Conquer
 	2) Installation (unpacking) Instructions
-	3) A Manifest (after you have installed it)
+	3) Configuration Instructions
 	4) Compilation Instructions
-	5) administration instructions
-	6) execution instructions (how to play)
-	7) a list of further enhancements I am planning on making
+	5) Administration instructions
+	6) Execution instructions (how to play)
+	7) A list of further enhancements I am planning on making
 	8) Bug list and unimplemented options
 
-Remember this is an BETA version, not to be redistributed, and
-probably has bugs.  Any comments and bug reports would be appreciated.
+This version should not be redistributed and probably has bugs.  
+Any comments and bug reports would be appreciated.
 
 -----------------------------------------------------------
-I   A Brief Description of Conquest
+I   A Brief Description of Conquer
 -----------------------------------------------------------
 
-READ FILE .help FOR A DESCRIPTION OF CONQUEST.  The help file can be
-read in nice format by using "conquest -h" after compilation.
+READ FILE "man.page" FOR A DESCRIPTION OF CONQUER.  A more complete
+description can be found in the file "help". The help file can be
+read in nice format by using "conquer -h" after compilation.
+Hard copy of documentation can be made by typing "make docs".
 
 -----------------------------------------------------------
 II  Installation (unpacking) Instructions
 -----------------------------------------------------------
 
-This program came in three shar scripts, which can be unpacked
+This program came in 5 shar scripts, which can be unpacked
 by using "sh filename".  If you are reading this, you know this.
 
+If you suspect missing files, please check the MANIFEST.
+
 -----------------------------------------------------------
-III A Manifest (after you have unpacked it) of Conquest Files is a follows
-	/bin/ls -aFC should look like this
+III Configuration
 -----------------------------------------------------------
 
-THE FOLLOWING 2 FILES SHOULD BE MODIFIED TO REFLECT THE TYPE OF GAME YOU WISH
+THE FOLLOWING FILES SHOULD BE MODIFIED TO REFLECT YOUR ENVIRONMENT
+AND THE TYPE OF GAME YOU WISH TO PLAY.
 
-header file: header.h   
-makefile: Makefile
+header file: header.h modify as per instructions
+             data.h   probably needs no modifications
+makefile: Makefile    modify as per instructions
+          main.c      probably needs no modifications
 
-suport files: .nations .help README 
-
-C code: 
-	combat.c      forms.c       main.c        newlogin.c    update.c
-	commands.c    io.c          makeworld.c   npc.c
-	execute.c     magic.c       move.c        reports.c
+I have tried to comment this stuff appropriately.
 
 -----------------------------------------------------------
 IV  Compilation Instructions
 -----------------------------------------------------------
 
 Browse the file header.h.  This sets up configurable parameters for the
-game.  This program should be easy to compile (although it never really is -- 
-I have tried to make it as easy as possible). If there are problems check 
-the following.
+game.  This program should be easy to compile. 
 
-1.  Sometimes termcap/termlib... are not on systems.  You will know this
+- Sometimes termcap/termlib... are not on systems.  You will know this
     is the error if all the '.c' files compile but will not compile together.
-    Unreferenced symbol errors will occur.  Try changing the name
-    of the library (or eliminating it on some systems) on the final compile 
-    and link step.
-2.  Find your nearest unix guru and ask him.
+    Unreferenced symbol errors will occur.  Try adding "-ltermcap" after
+    the "-lcurses" line in the makefile.
 
 -----------------------------------------------------------
 V   administration instructions
@@ -74,67 +82,63 @@ can add other players.
 
 You can type the following commands to help administer the game
 
-Make clobber:  clobber everything but the source (destroys executable)
-Make clean:    clean up objects (does not destroy executable)
+Make:		Compiles the code.
+Make clobber:   Clobber everything but the source (destroys executable)
+Make clean:     Clean up objects (does not destroy executable)
 Make install:	Installs executable & data in appropriate directories (header.h)
 Make docs:	Creates documentation from help file
+run:		read this file, it permits you to run the update automatically
+		run needs to be modified for time to update
 
-Make lint:	produces lint output for the game.  
-run:		read it, it permits you to run the update automatically
-
-This is the command line format for conquest:
-	Cmd line format: conquest [-maxhp]
+This is the command line format for conquer:
+	Cmd line format: conquer [-maxhp]
 		(no options) play the game
-		-m   make a world (file '.data' must not exist, must be god)
-		-a   add new player (must be god)
-		-x   execute program (must be god)
-		-h   print help text
-		-p   print a map to stdout (must be god)
+		-m  make a world ('data' file must not exist, need god password)
+		-a  add new player (must know god password)
+		-x  execute program (must know god password)
+		-p  print a map to stdout (must know god password)
+                -h  Print out help text.
+                -n  NTN Run as nation NTN.
+                -d  DIR Run on data in directory DIR.  Each game has its own 
+                    data directory.  The default is set up at compile time and 
+                    should only be used if only one game is run.
+                 -s Print out scores of all nations in the world.
 
-Again, prior to the compile, you should have browsed the header.h file.  
-Follow the comments.  
+Again, prior to the compile, you should have followed the instructions
+in the Makefile and in header.h.  
+
+First, make a directory in which to play the game.  You should then
+move the nations and help files into the target directory.
 
 Then create the world via:
-	<conquest -m>    this will make your world.  Try it.
-			 This also sets up npc nations as per the .nations file
-			 npc stats can be adjusted by editing .nations
+	<conquer -m>    this will make your world.  Try it.
+			 This also sets up npc nations as per the nations file
+			 npc stats can be adjusted by editing nations
 			 prior to making the world.  Non player nations have
 			 the same password as god.
 
 Add 0 or more players via
-	<conquest -a>    which should be self explanitory
+	<conquer -a>    which should be self explanatory
 
-Now type <conquest> and log in as <god> with the appropriate super user
-password.  
 
 Learn the commands (Type '?' to get help) & play around to get your 
 syntax right.
 
 Try logging in as either a player or non player nation (they use the super
-user passwd) and noticing any differences.
+user password) and noticing any differences.
 
 Now move around on the map and learn where the players are
 positioned.  If there is a problem (they are surrounded by water...), 
-use the redesignate command to change elvation or vegitation. 
+use the redesignate command to change elevation or vegetation. 
 In the worst case, god can destroy a nation
 with 'c', the change nation command.  Once you
 think the game will be fair, it is time to allow players to proceed.
 
 Now you are all set -- play via 
-	<conquest>
+	<conquer>
 
-and update (every midnight via at...) with
-	<conquest -x>
-an "at" script to do this is contained in the shell script "run".
-
-I have attempted to give enough aides to playing that it should
-take no longer than fifteen minutes per day to play.  If it takes
-more, something is wrong.
-
-*WARNING*  IF YOU REMOVE THE .data FILE, REMEMBER TO ZERO THE .execute
-file or the world will be screwed up when you recreate it.  This will
-cause you to spend hours browsing the source code and result in untold
-frustration (I speak from experience).
+and update with <conquer -x> via 
+an "at" script. This is contained in the shell script "run".
 
 --------------------------------------------------------------------
 VI a list of further enhancements/bug fixes I am planning on making
@@ -142,80 +146,5 @@ VI a list of further enhancements/bug fixes I am planning on making
 
 Trade is unimplemented
 Naval combat and movement has not been system tested
-Cities do not have garrison armies
-Only one type of soldier and one type of warship allowed
-Various Scoreing techniques are not implemented
-Character Classes are not fully implemented
-
----------------------------------------------------------------------------
-VII The following are future changes to myh magic system (Comments, Ideas?)
----------------------------------------------------------------------------
-
-			ADDITIONAL (UNIMPLEMENTED) MAGIC POWERS   
-
-WARLOCK      Use all level 1 Spells  (see separate)
-SORCERER     Use all level 2 Spells  (see separate)
-WYZARD       Use all level 3 Spells  (see separate)
-SEA LORD:    2x sea movement/combat, storms not sink ships, (HUMANS ONLY)
-ESKIMO:      Ice sectors = 0 move, have vegitation 9, and give +30% combat 
-DRUID:       Wood/Jungle sectors = 0 move, have vegitation 9, and +30% combat 
-TYRANT:      Costs nothing to enlist and support troops. 
-
-				MAGIC ARTIFACTS 
-
-			1)KINGS SWORD  (KNOWALL)
-			2)LONG SPEAR   (CAPTAIN)
-			3)SILVER ARMOR (CAPTAIN)
-			4)BLACK SHIELD (DEFENDER)
-			5)EVIL CLOAK   (VOID)
-			6)DEMON WAND   (MINOR MONSTER)
-			7)GREAT HELM   (HIDDEN)
-			8)DWARVEN PYRAMID (MINER)
-			9)BLACK RING   (SPY)
-			10)SEA FLASK   (SEA LORD)
-			11)GREAT HAMMER (MINER)
-			12)ELVEN BOW   (ARCHER)
-			13)DEATH SCEPTER  (VAMPIRE)
-			14)GOLD CROWN  (MINOR MONSTER,DESTROYER)
-			15)FIRE BOOTS  
-			16)GREAT THRONE (DESTROYER)
-			17)FROST BELT (ICE LORD)
-			18)WOOD STAFF (WOOD LORD)
-			19)DARK HORN 
-			20)TREE OF LIFE (URBAN)
-
-				WYZARDRY
-
-There are three spell levels: Warlock, Sorcerer, and Wizard.  Spells can
-imitate any of the powers listed above, and can do single shot impacts.
-Spells are used as follows.  First the user is asked what spell they wish
-to use.  These spells effect either the nations temporary magic level, or
-specific areas.
-
-                                                	Jewel pts:level
-Use a Magic Item                               		:Free	: none
-
-Kill 50% of civilians in non city sector 		:	:
-Kill all civilians in non city sector			:	:
-Kill 50% of civilians in city sector 			:	:
-Destroy all civilians in city sector 			:	:
-Freeze all movement by 1 npc (AMOVE=0) 			:	:
-Curse -- -2 to movement of 1 PC nations armies 		:	:
-Curse -- -2 to movement of 1 NPC nations armies		:	:
-friendly (+1) with 1 npc nation				:	:
-Build 1 point of fort walls  				:	:
-Summon dead army (VAMPIRE ONLY, 500 men)		:	:
-Summon dead legion (VAMPIRE ONLY, 1500 men)		:	:
-Friendship (+2) with 1 npc nation			:	:
-Animosity (-1) between 2 other nations     		:	:
-Hatred (-2) between 2 other nations    	 		:	:
-Warm Permanently  (+1 vegitation to sector)		:	:
-Freeze Permanently (-1 vegitation to sector)		:	:
-Breech forts walls					:	:
-Takeover NPC Nation Of Same Race 			:	:
-Teleport one army (up to 100 men)			:	:	
-Teleport one army (up to 1000 men)			:	:
-Teleport one army (any # men)				:	:
-Transmute iron to jewels 				:	:
-Cloak activity						:	:
-Cause fear (1 oposing army to home capitol)		:	:	
+Only one type of soldier and one type of warship allowed (see data.h)
+Character Classes and leaders are not fully implemented

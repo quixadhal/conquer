@@ -1,0 +1,58 @@
+# GAME MASTERS FILE ON NPC NATIONS:  COMPILE TIME ONLY
+#  comments are offset by a # sign in the first column
+#
+#  THERE IS A LIMIT OF "MAXNTN" NATIONS TOTAL; Be sure this is ok
+#
+# name 		:nations name
+#		:examples include Darboth Ummaya Rugar Jute Atlantis Iberia 
+#		:Kuybyshev Avar Grodor Bantanya Fung Codor Delph Macitania 
+# leader 	: permitted leaders are "dwarfking","elfking","elfdruid",
+#			"elfwizard","demon","dragon","wizard","priest",
+#			"shadow","king","priestking","wizard","demigod"
+# race   	:Character, ORC='O',ELF='E',DWARF='D',LZARD='L',HUMAN='H'
+#		:BRIGAND='P' BARBARIAN='B'
+# mark		:unique mark for race (ie & or ! or 1 or H...)
+# loc	 	:G,F,R  location (good,fair,random)
+# aplus 	:attack percentage plus (multiples of 10 (ie 10,20,30))
+# dplus		:defence percentage plus (multiples of 10 (ie 10,20,30))
+# maxmove 	:movement rate (4 to 8)
+# gold		:total gold at start
+# mil	 	:total military at start
+# civilians 	:total civilians at start
+# repro-rate    :reproduction rate of nation (percentage)
+# aggr		:aggressiveness (1--always peaceful) to (10 -- always hostile)
+#
+#EXAMPLE NATIONS							PTS
+#	Sporf    demon      O S R 0  0   6  1000  2500 4000 10 9 	9
+#	Athens   king       H A R 10 10  9  10000 500  5000 5 4		9
+#	Fung     king       E F F 20 30  8  20000 200  3000 3 2		6
+#	X        dwarfking  D X R 20 20  6  20000 1500 4000 4 4 	6
+#	ADD PTS IN VALUE TO THE ABOVE FORE RACIAL BASES TO GET BALANCE
+#
+#  THE NATIONS LISTED BELOW ARE CALIBRATED AS FOLLOWS
+#  ELVES: fung (27), lint (28), anorian (29), roos (22)   	=>106 points
+#  ORCS : sporf (24), etland (24), woolos (36), darboth (20)   	=>106 points
+#  HUMAN: argos(24), taelos(20), cordoba(21), zaos(21), tokus(20) =>106 pts
+#  DWARF: Goldor (22), Muldor (38), Sodor (25), Valar(20)	 =>106 points
+#
+# format:     (note that offset by a space)
+#
+# name leader race mark location aplus dplus maxmove gold mil civ repro aggr
+#########################################################################
+anorian  elfwizard  E a F 30 40  8  30000 1500 8500 8  2
+bobland  dragon     O b F 20 0   6  1000  1500 8000 10 9
+cordoba  wizard     H c R 10 10  2  10000 1500 8000 8  4
+darboth  balrog     O d R 0  0   7  30000 1500 9500 8  9
+edland   dragon     O e R 20 0   8  1000  1500 8500 10 9
+fung     elfking    E f F 10 40  8  20000 1000 9500 8  2
+gotho    warking    H g R 10 10  9  20000 1000 6150 8  4
+hargo    king       H h R 10 10  9  10000 1500 11000 7 4
+lint     elfwizard  E l F 20 30  8  20000 1500 7900 10 2
+medal    elfpriest  E m R 20 0   6  3000  2000 6500 10 9
+noria    dwarfduke  D n R 10 30  6  20000 1000 10000 8 4
+roos     dwarfduke  D r F 15 10  9  20000 1000 7900 7  8
+sodor    dwarfking  D s F 10 30  6  60000 5000 18000 7 4
+tokus    king       H t R 10 10  8  10000 1000 7500 8  4
+woooo    shadow     O w F 10 10  10 10000 3500 17000 10 9
+Valar    dwarf      D v R 10 15  8  10000 1000 7000 8  4
+zaos     king       H z R 10 15  12 10000 1000 7000 8  4

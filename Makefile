@@ -1,88 +1,93 @@
-#	MODIFICATION OF THIS FILE COMMITS THE MODIFIER TO FOLLOW THE
+#	MODIFICATION OF THIS FILE COMITS THE MODIFIER TO FOLLOW THE
 #	THE LIMITED USE CONTRACT CONTAINED IN THE FILE "header.h"
-MAKE	= $(BINROOT)/bin/make
-CC	= $(BINROOT)/bin/cc
-CURSES	= microcurses
+MAKE	= /bin/make
+CC	= /bin/cc
 CFLAGS	= -O
+#GETOPT	= getopt.o	# define this if you don't have it in your library
+
+#if the final link does not compile change to the line below
+#LIBRARIES = -lcurses -ltermcap
+LIBRARIES = -lcurses
+
 RM	= /bin/rm -f
 LD	= mld
 LDFLAGS	= $(LLDFLAGS)
-EXECUTABLE = .
-DATA = ./lib
-LIB	= /lib
-SHAREDLIB= $(LIB)/crt0s.o $(LIB)/shlib.ifile
 
-OBJ=main.o makeworld.o io.o newlogin.o forms.o commands.o update.o move.o combat.o  execute.o magic.o npc.o reports.o
-FILS=combat.c commands.c execute.c forms.c io.c main.c makeworld.c move.c newlogin.c update.c magic.c npc.c reports.c
-HEADERS=header.h
-SUPT1=.nations Makefile .help README run
-SUPT2=.execute .messages .news
-MISC= MISC/MAGIC MISC/creleader.c MISC/combat.c MISC/io.c MISC/ucommands.c MISC/rivers 
+#	This directory is where the executable should be stored
+EXECUTABLE = /d7/c7913/smile/oldgame
+
+#	This directory is where individual Conquer game data will be stored.
+#	Multiple games are now supported.  Each should have its own directory.
+DATA = /d7/c7913/smile/oldgame/game.1
+
+OBJ=combat.o commands.o cexecute.o forms.o io.o main.o makeworld.o move.o newlogin.o update.o magic.o npc.o reports.o misc.o randevent.o 
+FILS=combat.c commands.c cexecute.c forms.c io.c main.c makeworld.c move.c newlogin.c update.c magic.c npc.c reports.c misc.c randevent.c 
+HEADERS=header.h data.h
+SUPT1=nations Makefile help README run man.page
+SUPT2=execute messages news
 
 all: $(OBJ) 
-	@echo phew... it is time to link, link your hands together and pray this works
-	$(CC) $(LDFLAGS) -o $(EXECUTABLE)/conquest $(OBJ) -lcurses -ltermcap
-	@echo YAY!  make install if this is your !first! time.  this will set up
-	@echo permissions and zero appropriate initial files.  have fun
+	@echo phew... 
+	@echo if the next command does not compile you might also need -ltermcap
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(EXECUTABLE)/conquer $(OBJ) $(LIBRARIES)
+	@echo YAY!  make install if this is your !first! time.  This will set up
+	@echo permissions, zero appropriate initial files, and set up the world.
+	@echo Note that this version expects each game to have a separate data 
+	@echo directory - please see documentation. Have Fun.
 
-again: $(OBJ) 
-	$(CC) $(LDFLAGS) -o $(EXECUTABLE)/conquest $(OBJ) -lcurses -ltermcap
-	@echo ALL MADE
-	cp .help $(DATA)/.help
-	cp .nations $(DATA)/.nations
-	chmod 0600 *
-	chmod +x MISC $(EXECUTABLE) $(DATA)
+$(OBJ): data.h  
 
-$(OBJ): header.h 
-
-lint:
-	lint -u $(FILS) 
+$(OBJ): header.h  
 
 clobber:
-	$(RM) shar1 shar2 shar3 *.o conquest .data core
-	$(RM) $(DATA)/conq.* $(EXECUTABLE)/conquest 
+	$(RM) shar1 shar2 shar3 *.o conquer .data core
+	$(RM) $(DATA)/conq.* $(EXECUTABLE)/conquer 
 
 clean:
 	$(RM) shar1 shar2 shar3 *.o core
 
-flop:
-	$(RM) core
-	find . -name '*[CrpsEech]' -print | cpio -ocBv > /dev/rfp021
-
 install:
-	if test -d !$(EXECUTABLE) ; \
-	then mkdir $(EXECUTABLE) ; \
+	-if test -d $(EXECUTABLE) ; \
+	then echo "EXECUTABLE DIRECTORY OK" ; \
+	else mkdir $(EXECUTABLE) ; \
 	fi 
-	if test -d !$(DATA) ; \
-	then mkdir $(DATA) ; \
+	-if test -d $(DATA) ; \
+	then echo "DATA DIRECTORY OK" ; \
+	else mkdir $(DATA) ; \
 	fi 
-	cp .help $(DATA)/.help
-	cp .nations $(DATA)/.nations
+	cp help $(DATA)/help
+	cp nations $(DATA)/nations
 	cp run $(DATA)/run
-	> $(DATA)/.execute
-	> $(DATA)/.messages
-	> $(DATA)/.news
-	chmod 0600 *
-	chmod +x MISC $(EXECUTABLE) $(DATA) $(DATA)/run
-	chmod 0666 $(DATA)/.execute
-	chmod 0644 $(DATA)/.help $(DATA)/.news $(DATA)/.messages
+	chmod 0777 $(EXECUTABLE) $(DATA) $(EXECUTABLE)/conquer
+	conquer -d$(DATA) -m
+	chmod 0700 $(DATA)/run
+	chmod 0644 $(DATA)/help $(DATA)/news 
+
+lint:
+	lint -u $(FILS) 
 
 docs:
-	sed -e "s/^END//g" .help | pr
+	sed -e "s/^END//g" help | pr
 
-shar:
-	makeshar 1 combat.c commands.c forms.c io.c 
+cpio:
+	$(RM) core
+	find . -name '*[CrpsEech]' -print | cpio -ocBv > cpiosv
+
+shar:	$(FILS)
+	createshar 1 combat.c commands.c forms.c magic.c 
 	mv shar.out shar1 
-	makeshar 2  move.c makeworld.c main.c 
+	createshar 2  move.c makeworld.c main.c
 	mv shar.out shar2 
-	makeshar 3 $(SUPT1) $(HEADERS) 
+	createshar 3 $(SUPT1) header.h update.c
 	mv shar.out shar3
-	makeshar 4 update.c npc.c newlogin.c
+	createshar 4 npc.c newlogin.c data.h
 	mv shar.out shar4
-	makeshar 5 execute.c reports.c magic.c
+	createshar 5 cexecute.c reports.c io.c misc.c randevent.c 
 	mv shar.out shar5
 
 rmshar:
 	$(RM) shar1
 	$(RM) shar2
 	$(RM) shar3
+	$(RM) shar4
+	$(RM) shar5
