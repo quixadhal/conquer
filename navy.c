@@ -441,7 +441,7 @@ loadfleet()
 			amount=get_number();
 			if(amount > mhold*P_NPEOP) {
 				errormsg("There are not that many on board");
-			} else {
+			} else if (amount > 0) {
 				sct[XREAL][YREAL].people += amount;
 				P_NPEOP=(unsigned char)((mhold*P_NPEOP-amount)/mhold);
 				NADJHLD;
@@ -469,7 +469,9 @@ loadfleet()
 			mvaddstr(LINES-2,0,"Load what army?");
 			refresh();
 			armynum = get_number();
-			if((armynum<0)||(armynum>=MAXARM)||(P_ASOLD<=0)
+			if(armynum<0) {
+				;
+			} else if((armynum>=MAXARM)||(P_ASOLD<=0)
 			||(loadstat(P_ASTAT)==FALSE)) {
 				errormsg("Invalid Army");
 			} else if((P_AXLOC!=XREAL)||(P_AYLOC!=YREAL)) {
@@ -497,7 +499,7 @@ loadfleet()
 				errormsg("Not enough room on fleet");
 			} else if(sct[XREAL][YREAL].people < amount) {
 				errormsg("Not enough people in sector");
-			} else {
+			} else if (amount > 0) {
 				sct[XREAL][YREAL].people -= amount;
 				P_NPEOP += (unsigned char)(amount / mhold);
 				SADJCIV;

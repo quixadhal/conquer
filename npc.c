@@ -88,7 +88,7 @@ monster()
 		curntn = &ntn[country];
 		if( curntn->active==NPC_NOMAD ) do_nomad();
 		else if( curntn->active==NPC_PIRATE ) do_pirate();
-		else if( curntn->active==NPC_BARBARIAN ) do_barbarian();
+		else if( curntn->active==NPC_SAVAGE ) do_savage();
 		else if( curntn->active==NPC_LIZARD ) do_lizard(); /* update.c */
 	}
 }
@@ -155,12 +155,12 @@ do_nomad()
 }
 
 void
-do_barbarian()
+do_savage()
 {
 	short armynum;
 	int x, y;
 
-	printf("updating barbarian (nation %d)\n",country);
+	printf("updating savage (nation %d)\n",country);
 	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD>0){
 		P_ASTAT=ATTACK;
 		if(P_ATYPE<MINLEADER) {
@@ -177,8 +177,8 @@ do_barbarian()
 			/*if owned & unoccupied you take & people flee*/
 			if( ((sct[x][y].owner == 0)
 			|| (solds_in_sector( x, y, sct[x][y].owner) == 0))
-			&& (ntn[sct[x][y].owner].active != NPC_BARBARIAN)) {
-				fprintf(fnews,"3.\tbarbarians capture sector %d,%d\n",x,y);
+			&& (ntn[sct[x][y].owner].active != NPC_SAVAGE)) {
+				fprintf(fnews,"3.\tsavages capture sector %d,%d\n",x,y);
 				if(P_ATYPE<MINLEADER) {
 					if(sct[x][y].owner!=0) flee(x,y,1,FALSE);
 					sct[x][y].owner=country;
@@ -187,7 +187,7 @@ do_barbarian()
 			}
 		}
 	}
-	/* place a few new Barbarian armies */
+	/* place a few new savage armies */
 	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD<=0){
 		x=(rand()%(MAPX-8))+4;
 		y=(rand()%(MAPY-8))+4;
@@ -1125,7 +1125,11 @@ n_toofar()
 void
 n_unowned()
 {
+#ifdef XENIX
+	register int z;
+#else
 	register int x,y;
+#endif /*XENIX*/
 
 	/* around capitol */
 	for(x=(int)curntn->capx-4;x<=(int)curntn->capx+4;x++){
@@ -1152,7 +1156,16 @@ n_unowned()
 				attr[x][y]+=100;
 			}
 			attr[x][y] += 50*tofood(&sct[x][y],country); 
-			if(!is_habitable(x,y)) attr[x][y] /= 5;
+
+			if(!is_habitable(x,y)) {
+#ifdef XENIX
+				z = attr[x][y];
+				z /= 5;
+				attr[x][y] = z;
+#else
+				attr[x][y] /= 5;
+#endif /*XENIX*/
+			}
 		}
 	}
 }

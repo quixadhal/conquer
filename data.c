@@ -63,9 +63,9 @@ char *unittype[]= {
 "King","Baron","Emperor","Prince","Wizard","Mage",
 "Pope","Bishop","Admiral","Captain","Warlord","Lord",
 "Demon","Devil","Dragon","Wyrm","Shadow","Nazgul",
-"Spirit", "Assasin", "Efreet", "Gargoyle", "Wraith",
-"Hero", "Centaur", "Giant", "Superhero", "Mummy",
-"Elemental", "Minotaur", "Demon", "Balrog", "Dragon"
+"Spirit", "Assasin", "Efreet", "Gargoyl", "Wraith",
+"Hero", "Centaur", "Giant", "Suphero", "Mummy",
+"Elmentl", "Mintaur", "Demon", "Balrog", "Dragon"
 };
 
 #ifdef CONQUER
@@ -251,10 +251,10 @@ int	mailok=FALSE;
 
 #ifdef CONQUER
 #ifdef SYSMAIL
-char	sysmail[100];
+char	sysmail[FILELTH];
 int	sys_mail_status;
 #endif SYSMAIL
-char conqmail[100];
+char conqmail[FILELTH];
 int	conq_mail_status;
 #endif CONQUER
 

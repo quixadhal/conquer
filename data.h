@@ -21,10 +21,17 @@ extern	char	*strcpy(),*strncpy(),*strcat(),*strncat();
 #define	SCREEN_X_SIZE	(( COLS - 21) / 2)	/* divide by two as only 1/2 
 						   sectors will be shown */
 #define	SCREEN_Y_SIZE	( LINES - 5 )
-#define HAS_SEEN(x,y)	hasseen[(x)+((y)*((COLS-10)/2))]
-#define	PASSLTH		7	/*one less than the characters in the password*/
-#define	NAMELTH		9	/*one less than the characters in the name*/
-#define	LEADERLTH	9	/*one less than the characters in the leader*/
+#define	HAS_SEEN(x,y)	hasseen[(x)+((y)*((COLS-10)/2))]
+#define	PASSLTH		7	/* the number of characters in the passwd*/
+#define	NAMELTH		9	/* the number of characters in the name*/
+#define	LEADERLTH	9	/* the number of characters in the leader*/
+#define	FILELTH		80	/*length for filename holders*/
+#define	LINELTH		80	/*length for input string lines*/
+#define	BIGLTH		256	/*length for large storage strings*/
+#define	NUMCLASS	11	/*number of nation classes */
+
+/* environment variable strings to check */
+#define	ENVIRON_OPTS	"CONQ_OPTS"
 
 /*simple contour map definitions*/
 #define	WATER		(*(ele+0))
@@ -41,7 +48,7 @@ extern	char	*strcpy(),*strncpy(),*strcat(),*strncat();
 #define	LIZARD		'L'
 #define	HUMAN		'H'
 #define	PIRATE		'P'
-#define	BARBARIAN	'B'
+#define	SAVAGE		'S'
 #define	NOMAD		'N'
 #define	TUNKNOWN	'?'
 
@@ -236,7 +243,7 @@ struct navy
 #define NPC_PIRATE	18
 #define NPC_LIZARD	19
 #define NPC_NOMAD	20
-#define NPC_BARBARIAN	21
+#define NPC_SAVAGE	21
 
 #define	ispc(x)		(((x)==PC_GOOD)||((x)==PC_EVIL)||((x)==PC_NEUTRAL))
 #define	npctype(x)	(ispc(x) ? (x) : (x)/4)
@@ -611,7 +618,7 @@ extern int	addgships(),addmships(),addwships(),fltships();
 extern int	fltghold(),fltwhold(),fltmhold(),flthold(),compass();
 extern int	get_country(),check_lock(),doclass();
 extern unsigned short	fltspeed();
-extern void	do_pirate(), do_nomad(), do_barbarian(), do_lizard();
+extern void	do_pirate(), do_nomad(), do_savage(), do_lizard();
 extern void	getjewel(),getmetal(),loadfleet(),removemgk(),exenewmgk();
 extern struct	s_sector *rand_sector();
 extern void	subgships(),submships(),subwships(),getspace(),sackem();
@@ -622,6 +629,7 @@ extern void	combinearmies(),change_status(),reducearmy(),splitarmy();
 extern void	errormsg(), clear_bottom(), addgroup(),ext_cmd();
 extern void	randomevent(), wdisaster(), weather(), deplete();
 extern void	verify_ntn(), verify_sct(), verifydata(), prep();
+extern void	newbye(), newreset(), newmsg(), newerror(), newinit();
 extern void	destroy(), updmove(), spreadsheet(), mailopen(), mailclose();
 extern void	updexecs(), updcapture(), updsectors();
 extern void	updmil(), updcomodities(), updleader();

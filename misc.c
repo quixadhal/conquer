@@ -41,7 +41,8 @@ register char	*to;
 } /* move_file() */
 #endif CONQUER
 
-#ifdef CONQUER
+/* returns integer input greater than zero or */
+/* -1 for no input.                           */
 long
 get_number()
 {
@@ -51,7 +52,7 @@ get_number()
 	/* this routine totally redone to allow deleting */
 	while(!done) {
 		ch=getch();
-		if(isdigit(ch)) {
+		if(isdigit(ch) && count<12) {
 			/* only print numbers to the screen */
 			addch(ch);
 			refresh();
@@ -70,11 +71,12 @@ get_number()
 		} else if((ch=='\n')||(ch=='\r')) {
 			done=TRUE;
 		}
-		if( count >= 12 ) done=TRUE;
+	}
+	if (count==0) {
+		return(-1);
 	}
 	return( sum );
 }
-#endif CONQUER
 
 #define INFINITE	1000
 
@@ -935,7 +937,7 @@ int country;
 {
 	short armynum, nvynum;
 	int i, x, y;
-	char buf[20];
+	char buf[LINELTH];
 	struct s_nation	*nptr;
 
 	nptr = &ntn[country];
@@ -968,7 +970,13 @@ int country;
 		ntn[i].dstatus[country]=UNMET;
 		nptr->dstatus[i]=UNMET;
 	}
-
+#ifdef MONSTER
+	for(i=NTOTAL-4;i<NTOTAL;i++) {
+	        ntn[i].dstatus[country]=WAR;
+		nptr->dstatus[i]=WAR;
+	}
+#endif
+	
 	/*if take them you get their gold*/
 	if(country!=sct[nptr->capx][nptr->capy].owner){
 		if(nptr->tgold>0) ntn[sct[nptr->capx][nptr->capy].owner].tgold+=nptr->tgold;
@@ -1302,8 +1310,6 @@ int nation;
 	spread.gold += spread.revfood + spread.revjewels + spread.revmetal + spread.revcity + spread.revcap + spread.revothr;
 }
 
-#ifdef CONQUER
-
 /* string inputing routine to allow deleting */
 void
 get_nname(str)
@@ -1338,6 +1344,8 @@ char str[];
 	str[count] = '\0';
 }
 
+
+#ifdef CONQUER
 /* routine to find a nation number using name or number  */
 /* returns NTOTAL+1 if input is invalid; -1 for no input */
 int
@@ -1441,7 +1449,7 @@ int	class;
 void
 mailopen(to)
 {
-	char	line[20];
+	char	line[LINELTH];
 	if(mailok == TRUE) mailclose();
 
 	if (to != -2)
@@ -1474,34 +1482,53 @@ char mark;
 int prtflag;	/* if true printf reason */
 {
 	register int i;
+	char temp[LINELTH];
 
 	if((isprint(mark)==0)||(isspace(mark)!=0)) {
-		if(prtflag) printf("%c is white space\n",mark);
+		if(prtflag) {
+			sprintf(temp,"%c is white space",mark);
+			newerror(temp);
+		}
 		return(FALSE);
 	}
 
 	for(i=0;ele[i]!='0';i++) if(mark==(*(ele+i))) {
-		if(prtflag) printf("%c is elevation character\n",mark);
+		if(prtflag) {
+			sprintf(temp,"%c is an elevation character",mark);
+			newerror(temp);
+		}
 		return(FALSE);
 	}
 
 	for(i=0;veg[i]!='0';i++) if(mark==(*(veg+i))) {
-		if(prtflag) printf("%c is vegetition character\n",mark);
+		if(prtflag) {
+			sprintf(temp,"%c is a vegetation character",mark);
+			newerror(temp);
+		}
 		return(FALSE);
 	}
 
-	for(i=1;i<NTOTAL;i++) if(ntn[i].mark==mark) {
-		if(prtflag) printf("%c is already used\n",mark);
+	for(i=1;i<NTOTAL;i++) if(isactive(ntn[i].active) && ntn[i].mark==mark) {
+		if(prtflag) {
+			sprintf(temp,"%c is already used",mark);
+			newerror(temp);
+		}
 		return(FALSE);
 	}
 
 	if(mark=='*') {
-		if(prtflag) printf("%c is *\n",mark);
+		if(prtflag) {
+			sprintf(temp,"%c is used by Monsters",mark);
+			newerror(temp);
+		}
 		return(FALSE);
 	}
 
 	if(!isalpha(mark)) {
-		if(prtflag) printf("%c is not an alpha character\n",mark);
+		if(prtflag) {
+			sprintf(temp,"%c is not an alpha character",mark);
+			newerror(temp);
+		}
 		return(FALSE);
 	}
 	return(TRUE);
@@ -1624,12 +1651,12 @@ struct	s_sector	*sptr;
 	case TG_silver:
 	case TG_pearls:	break;
 	case TG_dye:
-	case TG_silk:
-	case TG_gold:	if(ntn[nation].wealth < 5) return(0); break;
-	case TG_rubys:
-	case TG_ivory:	if(ntn[nation].wealth < 10) return(0); break;
-	case TG_diamonds:
-	case TG_platinum:	if(ntn[nation].wealth < 20) return(0); break;
+	case TG_silk:	if(ntn[nation].wealth < 5) return(0); break;
+	case TG_gold:
+	case TG_rubys:	if(ntn[nation].wealth < 8) return(0); break;
+	case TG_ivory:	if(ntn[nation].wealth < 15) return(0); break;
+	case TG_diamonds:	if(ntn[nation].wealth < 20) return(0); break;
+	case TG_platinum:	if(ntn[nation].wealth < 25) return(0); break;
 	default:		break;
 	};
 

@@ -45,7 +45,7 @@ makeworld(rflag)
 int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 {
 	char passwd[PASSLTH+1],*getpass();
-	char newstring[200];
+	char newstring[BIGLTH];
 	FILE *fopen();
 
 	/*abort if datafile currently exists*/
@@ -87,6 +87,25 @@ printf("\n**********************************************************************
   	}
 
 	strncpy(ntn[0].passwd,crypt(passwd,SALT),PASSLTH);
+
+	/* finally ask for the secondary administrator */
+	printf("\nYou may now designate an alternate ruler for this world.");
+	while(TRUE) {
+		printf("\nWhat demi-god shall rule this world? ");
+		gets( newstring );
+		if (strlen(newstring)==0) {
+			printf("\nGod blesses this world with his presense!\n");
+			(void) strcpy(ntn[0].leader,LOGIN);
+			break;
+		} else if (strlen(newstring) <= LEADERLTH) {
+			/* HOW DO YOU VERIFY THAT IT IS AN ACTUAL USER? */
+			printf("\nThe demi-god %s may administrate this new world.\n",newstring);
+			(void) strncpy(ntn[0].leader,newstring,LEADERLTH);
+			break;
+		}
+		printf("\nName too long.");
+	}
+
 	while(TRUE) {
 		printf("\nplease enter the size of the world\n");
 
@@ -126,6 +145,7 @@ printf("\n**********************************************************************
 	if( rflag==FALSE ) createworld();
 	else readmap();	/* read map in from mapfiles */
 	rawmaterials();
+
 	verifydata(__FILE__,__LINE__);
 	writedata();
 
@@ -712,13 +732,12 @@ populate()
 	short	npirates=0,nbarbarians=0,nnomads=0,nlizards=0;
 
 	FILE *fp, *fopen();
-	char line[80],allign;
-	char fname[80];
+	char line[LINELTH+1],allign;
+	char fname[FILELTH];
 
-	/*set up god but dont place*/
+	/*set up god but dont place -- do not change leader name*/
 	curntn = &ntn[0];
 	strcpy(curntn->name,"unowned");
-	strcpy(curntn->leader,"god");
 	curntn->race=GOD;
 	curntn->location=GOD;
 	curntn->powers=KNOWALL;	/* so god can see the map */
@@ -757,8 +776,8 @@ populate()
 		} else if( country==NTOTAL-2 ) {
 			strcpy(curntn->name,"savages");
 			strcpy(curntn->leader,"shaman");
-			curntn->active=NPC_BARBARIAN;
-			curntn->race=BARBARIAN;
+			curntn->active=NPC_SAVAGE;
+			curntn->race=SAVAGE;
 		} else if( country==NTOTAL-3 ) {
 			strcpy(curntn->name,"nomad");
 			strcpy(curntn->leader,"khan");
@@ -800,7 +819,7 @@ populate()
 			} else	if(nnomads < MAXARM )	nnomads++;
 			break;
 	}
-	printf("placing %d lizards, %d pirates, %d barbarians, and %d nomads\n",
+	printf("placing %d lizards, %d pirates, %d savages, and %d nomads\n",
 		nlizards,npirates,nbarbarians,nnomads);
 
 	while((nlizards+npirates+nbarbarians+nnomads > 0 )&&(loopcnt++ <5000)) {
@@ -810,7 +829,7 @@ populate()
 			armynum=lizarmy;
 		} else	if( nbarbarians>0 ) {	
 			for(country=1;country<NTOTAL;country++)
-				if( ntn[country].active==NPC_BARBARIAN ) break;
+				if( ntn[country].active==NPC_SAVAGE ) break;
 			armynum=barbarmy;
 		} else	if( nnomads>0 )	 {	
 			for(country=1;country<NTOTAL;country++)
@@ -933,7 +952,7 @@ populate()
 			P_ATYPE=defaultunit(country);
 			nomadarmy++;
 			break;
-		case NPC_BARBARIAN:
+		case NPC_SAVAGE:
 			nbarbarians--;
 			P_AXLOC=x;
 			P_AYLOC=y;
@@ -947,7 +966,7 @@ populate()
 
 	/* put random monsters around the world */
 	for(country=1;country<NTOTAL;country++) {
-		if( ntn[country].active != NPC_BARBARIAN ) continue;
+		if( ntn[country].active != NPC_SAVAGE ) continue;
 		curntn = &ntn[country];
 		armynum=barbarmy;
 		while(armynum<MAXARM) {
@@ -999,10 +1018,10 @@ populate()
 		}
 	}
 	printf("reading npc nation data from file: %s\n",npcsfile);
-	printf("and adding 1 nation per %d land sectors\n",MONSTER);
+	printf("and adding 1 nation per %d land sectors\n",NPC);
 
 	cnum=1;
-	while(fgets(line,80,fp)!=NULL) {
+	while(fgets(line,LINELTH,fp)!=NULL) {
 		/*read and parse a new line*/
 		if(line[0]!='#') {
 			xloc = yloc = -1;
@@ -1015,7 +1034,7 @@ populate()
 
 			country=cnum;
 			curntn = &ntn[country];
-			if( cnum > MAPX*MAPY/MONSTER*(100-pwater)/100 ) {
+			if( cnum > MAPX*MAPY/NPC*(100-pwater)/100 ) {
 				printf("world too small to add npc nation %d %s\n",cnum,curntn->name);
 				continue;
 			} 

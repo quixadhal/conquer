@@ -44,6 +44,7 @@ main()
 	fprintf(fp,"s/XTRADEPCT/%d/g\n",TRADEPCT);
 	fprintf(fp,"s/XMAXNAVY/%d/g\n",MAXNAVY);
 	fprintf(fp,"s/XBREAKJIHAD/%ld/g\n",BREAKJIHAD);
+	fprintf(fp,"s/XCONQENV/%s/g\n",ENVIRON_OPTS);
 
 	/* check all the defined options */
 #ifdef OGOD
@@ -74,18 +75,19 @@ main()
 #endif
 #ifdef NPC
 	fprintf(fp,"s/XNPC/(True )/g\n");
+#ifdef CMOVE
+	fprintf(fp,"s/XCMOVE/(True )/g\n");
 #else
+	fprintf(fp,"s/XCMOVE/(False)/g\n");
+#endif
+#else
+	fprintf(fp,"s/XCMOVE/(False)/g\n");
 	fprintf(fp,"s/XNPC/(False)/g\n");
 #endif
 #ifdef CHEAT
 	fprintf(fp,"s/XCHEAT/(True )/g\n");
 #else
 	fprintf(fp,"s/XCHEAT/(False)/g\n");
-#endif
-#ifdef CMOVE
-	fprintf(fp,"s/XCMOVE/(True )/g\n");
-#else
-	fprintf(fp,"s/XCMOVE/(False)/g\n");
 #endif
 #ifdef RANEVENT
 	fprintf(fp,"s/XRANEVENT/(True )/g\n");

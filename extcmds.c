@@ -174,11 +174,11 @@ int armynum,new_stat;
 	}
 	/* eliminate half starting movement if start out on march */
 	if( P_ASTAT==MARCH && new_stat!=MARCH ) {
-		if(P_AMOVE<(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/5){
+		if(P_AMOVE<(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/50){
 			errormsg("That troop has gone too far to stop marching");
 			return;
 		}
-		P_AMOVE-=(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/5;
+		P_AMOVE-=(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/50;
 		AADJMOV;
 	}
 	if(new_stat == SCOUT) {
@@ -308,6 +308,9 @@ int armynum;
 	mvaddstr(LINES-2, 0, "How many men to split? ");
 	refresh();
 	men = get_number();
+	if(men <= 0) {
+		return;
+	}
 	reducearmy(armynum,men);
 }
 
@@ -357,7 +360,10 @@ int	armynum;
 	mvaddstr(LINES-4,0,"enter a valid leader unit/army group id: ");
 	refresh();
 	group = get_number();
-	if( group < 0 || group > MAXARM || curntn->arm[group].sold <=0){
+	if(group < 0) {
+		return;
+	}
+	if(group > MAXARM || curntn->arm[group].sold <=0){
 		errormsg("invalid unit number");
 		return;
 	}

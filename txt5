@@ -9,14 +9,14 @@ powers, and thus starting cost can varies.
        Sector People Troops Gold Jewels Metal Power Ship Cost  Races Powers
 king     1      1       2     3    0     0      0     0   0    HDE   None
 empire   1.5    0       0     1    1     0      0     0   0    HDE   None
-wizard   0      2       1     0    3     5      7     0   6    HE    SUMMON
-priest   1      1       0     0    3     0      3     0   3    H     RELIGION
-pirate   0      0       5     0   10    10      1     5   3    HOD   SAILOR
-trader   1      1       0     0    1     1      1     8   3    HE    URBAN
+wizard   0      2       1     0    3     5      7     0   4    HE    SUMMON
+priest   1      1       0     0    3     0      3     0   2    H     RELIGION
+pirate   0      0       5     0   10    10      1     5   2    HOD   SAILOR
+trader   1      1       0     0    1     1      1     8   2    HE    URBAN
 warlord  1      1       2     0    1     1      1     0   *    HOD   WARLORD
-demon    1      0       1     0    1     0      5     0   6    O     DESTROYER
-dragon   0      0       0    10   20     0      0     0   6    O     MA_MONST
-shadow   1      0       0     0    0     5      0     0   3    O     VOID
+demon    1      0       1     0    1     0      5     0   4    O     DESTROYER
+dragon   0      0       0    10   20     0      0     0   4    O     MA_MONST
+shadow   1      0       0     0    0     5      0     0   2    O     VOID
 NPC      1      1       0     0    1     1      1     0   0    HDEO  None
 END
                                ADDITIONAL SCORING

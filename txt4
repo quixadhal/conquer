@@ -50,8 +50,8 @@ ZBLACKSMITH   adds to nations mine ability
 ZROAD   Roads add 0.1 to communication ability.  1/2 cost to movement,
 	but they cost gold to maintain.  You may only build 2 each turn.
         You must have 100 civilians in a sector to build a road.
-ZMILL   1.2x food production in one sector range if there are
-        adequate people in the sector.
+ZMILL   1.2x food production in one sector range if there are adequate
+        people in the sector.  It does not produce food on its own.
 ZGRANARY   these "warehouses" serve as a point to store any food for the
         winter.  They decrease national spoilrate.
 ZCHURCH   add to your nations popularity and patriotism
@@ -79,23 +79,23 @@ add 30 to wealth if the nation is either a trader or empire class
 
 The maximum wealth and mine ability is 100.
 END
-                               METAL
+                                METAL
 
 Many sectors have metal ores.  Nations can use these ores if they have the
 appropriate mine ability.  The following table details the metal type, 
 required mine ability, metal production value, and percentage of the world
 metal sectors containing that type of metal.
 
-            required        metal     world
-type       mine_ability     value    percent
-copper          0            1-2       10%
-lead            8            1-4       10%
-tin            11            2-5       15%
-bronze         15            2-5       20%
-iron           25            2-8       25%
-steel          30            3-10      15%
-mithral        30            5-15       4%
-adamantine     40            8-20       1%
+                        required        metal     world
+            type       mine_ability     value    percent
+            copper          0            1-2       10%
+            lead            8            1-4       10%
+            tin            11            2-5       15%
+            bronze         15            2-5       20%
+            iron           25            2-8       25%
+            steel          30            3-10      15%
+            mithral        30            5-15       4%
+            adamantine     40            8-20       1%
 END
                             WEALTH & JEWELS
 
@@ -106,17 +106,17 @@ wealth.  The following table details the luxury good type, required wealth,
 jewel value, and percentage of the world jewel sectors containing that type 
 of good.
 
-            required        jewel     world
-type         wealth         value    percent
-spice           0            1-2       20
-silver          0            1-3       20
-pearls          0            1-3       8
-dye             5            1-5       8
-silk            5            1-5       8
-gold            5            1-6       20
-rubys           10           1-6       7
-ivory           10           2-8       5
-diamonds        20          2-12       3
-platinum        20          4-20       1
+                        required       jewel     world
+           type          wealth        value    percent
+           spice            0           1-2       20
+           silver           0           1-3       20
+           pearls           0           1-3        8
+           dye              5           1-5        8
+           silk             5           1-5        8
+           gold             8           1-6       20
+           rubys            8           1-6        7
+           ivory           15           2-8        5
+           diamonds        20          2-12        3
+           platinum        25          4-20        1
 END
 DONE

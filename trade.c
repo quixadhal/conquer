@@ -166,6 +166,7 @@ trade()
 			mvaddstr(count++,0,"What item number do you want to purchase? ");
 			refresh();
 			holdint = get_number();
+			if (holdint<0) break;
 			/* check for minor sales */
 			if (holdint==GETFOOD || holdint==GETMETAL || holdint==GETJEWL) {
 				/* strange flow but less control needed */
@@ -216,6 +217,7 @@ trade()
 			refresh();
 			holdlong2 = 0L;
 			holdlong = (long) get_number();
+			if (holdlong< 0L) break;
 			/* check for valid bid */
 			switch(type2[holdint]) {
 			case TDGOLD:
@@ -258,6 +260,7 @@ trade()
 				mvaddstr(count++,0,"What Y position? ");
 				refresh();
 				holdlong2 = (long) get_number();
+				if (holdlong2 < 0L) break;
 				if (checkland(BUY,(int)(holdlong),(int)(holdlong2))==NODEAL) {
 					buysell=NODEAL;
 				} else if (tofood( &sct[(int)holdlong][(int)holdlong2],natn[holdint]) < lvar2[holdint]) {
@@ -329,6 +332,7 @@ trade()
 			refresh();
 			/* find out how much commodities */
 			holdlong = (long) get_number();
+			if (holdlong < 0) return;
 			extint = 0;
 			if (holdint< TDLAND && holdlong==0L)
 				return;
@@ -363,6 +367,10 @@ trade()
 				mvprintw(count++,0,"What Y position? ");
 				refresh();
 				extint = get_number();
+				if (extint < 0) {
+					buysell=NODEAL;
+					break;
+				}
 				buysell = checkland(SELL,(int)holdlong,extint);
 				break;
 			case TDARMY:
@@ -409,7 +417,7 @@ trade()
 					,commodities[holdint2]);
 				refresh();
 				holdlong2 = (long) get_number();
-				if (holdlong2 == 0L) return;
+				if (holdlong2 <= 0L) return;
 			}
 
 			/* make sure what was bid is unusable */
@@ -442,6 +450,7 @@ trade()
 			mvaddstr(count++,0,"What item number to remove? ");
 			refresh();
 			holdint = get_number();
+			if (holdint < 0) return;
 			if (holdint==0 || holdint>itemnum) {
 				tradeerr("Invalid Item Number");
 				return;
@@ -572,9 +581,7 @@ int *count;
 		break;
 	case 'f':
 	case 'F':
-		/* hold=TDFOOD; */
-		/* temporarily not allow */
-		mvaddstr((*count)++,0," Food Trades Suspended");
+		hold=TDFOOD;
 		break;
 	case 'i':
 	case 'I':
@@ -594,9 +601,7 @@ int *count;
 		break;
 	case 's':
 	case 'S':
-		/* hold=TDSHIP; */
-		/* temporarily not allow */
-		mvaddstr((*count)++,0," Ship Trades Suspended");
+		hold=TDSHIP;
 		break;
 	default:
 		break;
@@ -797,7 +802,7 @@ long lvar1,lvar2,lvar3,lvar4;
 {
 	FILE *fp[2];
 	int count;
-	char cname[2][12],filename[2][80];
+	char cname[2][NAMELTH+1],filename[2][FILELTH];
 
 	sprintf(filename[0],"%s%d",msgfile,cntry1);
 	sprintf(filename[1],"%s%d",msgfile,cntry2);

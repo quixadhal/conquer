@@ -21,7 +21,7 @@
 
 extern	int armornvy;
 
-char	fison[20];
+char	fison[FILELTH];
 char	*getpass();
 struct	s_sector **sct;
 struct	s_nation ntn[NTOTAL];	/* player nation stats */
@@ -43,6 +43,7 @@ short	selector=0;	/* selector (y vbl) for which army/navy... is "picked"*/
 short	pager=0;	/* pager for selector 0,1,2,3*/
 short	country=0;	/* nation id of owner*/
 struct	s_nation	*curntn;
+short	Gaudy=FALSE;
 int	owneruid;
 
 FILE *fexe, *fopen();
@@ -56,8 +57,8 @@ int	argc;
 char	**argv;
 {
 	int geteuid(), getuid(), setuid();
-	register int i;
-	char name[NAMELTH+1],filename[80];
+	register int i,j;
+	char name[NAMELTH+1],filename[FILELTH];
 	void srand(),init_hasseen();
 	int getopt();
 	char passwd[PASSLTH+1];
@@ -66,23 +67,110 @@ char	**argv;
 #ifdef SYSMAIL
 	extern char sysmail[];
 #endif SYSMAIL
-	int sflag=FALSE;
+	int sflag=FALSE,l;
 
-	char defaultdir[256],tmppass[PASSLTH+1];
+	char defaultdir[BIGLTH],tmppass[PASSLTH+1];
+	char cq_opts[BIGLTH];
 	struct passwd *getpwnam();
+
 	owneruid=getuid();
-	strcpy(defaultdir, DEFAULTDIR);
 	srand((unsigned) time((long *) 0));
 	strcpy(name,"");
+	strcpy(cq_opts,"");
+
+	/* check conquer options */
+	if (getenv(ENVIRON_OPTS)!=NULL) {
+		strncpy(cq_opts, getenv(ENVIRON_OPTS), BIGLTH-1);
+	}
+	if (cq_opts[0] != '\0') {
+		l = strlen(cq_opts);
+		for(i=0; i<l; i++) {
+			switch(cq_opts[i]) {
+			case 'G':
+				/* set Gaudy display */
+				Gaudy = TRUE;
+				break;
+			case 'N':
+			case 'n':
+				/* check for nation name */
+				if (strncmp(cq_opts+i+1,"ation=",6)==0) {
+					i += 7;
+				} else if (strncmp(cq_opts+i+1,"ame=",4)==0) {
+					i += 5;
+				} else {
+					fprintf(stderr,"conquer: invalid environment\n");
+					fprintf(stderr,"\t%s = %s\n",ENVIRON_OPTS,cq_opts);
+					fprintf(stderr,"\texpected <nation=NAME>\n");
+					exit(FAIL);
+				}
+				if (i<l) {
+					/* grab the nation name */
+					for (j=0;j<NAMELTH&&j<l-i&&cq_opts[i+j]!=',';j++) {
+						name[j] = cq_opts[i+j];
+					}
+					name[j]='\0';
+					
+					/* end the parse properly */
+					i += j-1;
+					if (j==NAMELTH) {
+						for (;i<l && cq_opts[i]!=',';i++);
+					}
+				}
+				break;
+			case 'D':
+			case 'd':
+				/* check for data directory */
+				if (strncmp(cq_opts+i+1,"ata=",4)==0) {
+					i += 5;
+				} else if (strncmp(cq_opts+i+1,"atadir=",7)==0) {
+					i += 8;
+				} else if (strncmp(cq_opts+i+1,"irectory=",9)==0) {
+					i += 10;
+				} else if (strncmp(cq_opts+i+1,"ir=",3)==0) {
+					i += 4;
+				} else {
+					fprintf(stderr,"conquer: invalid environment\n");
+					fprintf(stderr,"\t%s = %s\n",ENVIRON_OPTS,cq_opts);
+					fprintf(stderr,"\texpected <data=NAME>\n");
+					exit(FAIL);
+				}
+				if (i<l) {
+					/* grab the data directory */
+					for (j=0; j<l-i && cq_opts[i+j]!=',';j++) {
+						defaultdir[j] = cq_opts[i+j];
+					}
+					defaultdir[j]='\0';
+					i += j-1;
+				}
+				break;
+			case ' ':
+			case ',':
+				/* ignore commas and spaces */
+				break;
+			default:
+				/* complain */
+				fprintf(stderr,"conquer: invalid environment\n");
+				fprintf(stderr,"\t%s = %s\n",ENVIRON_OPTS,cq_opts);
+				fprintf(stderr,"\tunexpected option <%c>\n",cq_opts[i]);
+				exit(FAIL);
+				break;
+			}
+	     }
+	}
+
+	/* set the default data directory */
+	if (defaultdir[0] == '\0') {
+		strcpy(defaultdir, DEFAULTDIR);
+	}
+	if (defaultdir[0] != '/') {
+		strcpy(cq_opts, defaultdir);
+		sprintf(defaultdir, "%s/%s", DEFAULTDIR, cq_opts);
+	}
 
 	/* process the command line arguments */
-	while((i=getopt(argc,argv,"hn:d:s"))!=EOF) switch(i){
+	while((i=getopt(argc,argv,"hGn:d:s"))!=EOF) switch(i){
 	/* process the command line arguments */
 	case 'h': /* execute help program*/
-		if (chdir(defaultdir)) {
-			printf("unable to change dir to %s\n",defaultdir);
-			exit(FAIL);
-		}
 		initscr();
 		savetty();
 		noecho();
@@ -93,6 +181,9 @@ char	**argv;
 		endwin();
 		putchar('\n');
 		exit(SUCCESS);
+	case 'G':
+		Gaudy = TRUE;
+		break;
 	case 'd':
 		if(optarg[0]!='/') {
 			sprintf(defaultdir, "%s/%s", DEFAULTDIR, optarg);
@@ -107,7 +198,8 @@ char	**argv;
 		sflag++;
 		break;
 	case '?': /*  print out command line arguments */
-		printf("Command line format: %s [-hs -d DIR -nNAT]\n",argv[0]);
+		printf("Command line format: %s [-Ghs -d DIR -nNAT]\n",argv[0]);
+		printf("\t-G       gaudily highlight nation in news\n");
 		printf("\t-n NAT   play as nation NAT\n");
 		printf("\t-h       print help text\n");
 		printf("\t-d DIR   to use play different game\n");
@@ -157,15 +249,20 @@ char	**argv;
 	/* get nation name from command line or by asking user.
 	*     if you fail give name of administrator of game
 	*/
-	if (strlen(name) == 0) {
+	if (name[0] == '\0') {
 		printf("what nation would you like to be: ");
 		gets(name);
 	}
 #ifdef OGOD
 	if(strcmp(name,"god")==0 || strcmp(name,"unowned")==0) {
-		if ( owneruid != (getpwnam(LOGIN))->pw_uid ){
-			printf("sorry -- you can not login as god\n");
-			printf("you need to be logged in as %s\n",LOGIN);
+		if ((owneruid != (getpwnam(LOGIN))->pw_uid ) &&
+		    (owneruid != (getpwnam(ntn[0].leader))->pw_uid )) {
+			printf("Sorry -- you can not login as god\n");
+			printf("you need to be logged in as %s",LOGIN);
+			if (strcmp(LOGIN, ntn[0].leader)!=0) {
+				printf(" or %s",ntn[0].leader);
+			}
+			printf("\n");
 			exit(FAIL);
 		}
 		strcpy(name,"unowned");
@@ -179,9 +276,14 @@ char	**argv;
 		if(strcmp(name,ntn[i].name)==0) country=i;
 
 	if(country==(-1)) {
-		printf("name not found\n");
-		printf("\nfor rules type <conquer -h>");
-		printf("\nfor more information please contact %s\n",OWNER);
+		printf("Sorry, name <%s> not found\n",name);
+		printf("\nFor rules type <conquer -h>");
+		printf("\nFor information on conquer please contact %s.",OWNER);
+		printf("\nTo enter this campaign please send mail to %s", LOGIN);
+		if (strcmp(LOGIN, ntn[0].leader)!=0) {
+			printf(" or %s",ntn[0].leader);
+		}
+		printf(".\n");
 		return;
 	} else if(country==0) {
 		sprintf(filename,"%sadd",isonfile);
@@ -203,9 +305,16 @@ char	**argv;
 		strncpy(passwd,crypt(tmppass,SALT),PASSLTH);
 		if((strncmp(passwd,curntn->passwd,PASSLTH)!=0)
 		&&(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
-			printf("\nsorry:");
-			printf("\nfor rules type <conquer -h>");
-			printf("\nfor more information on the system please contact %s\n",OWNER);
+			printf("\nSorry:");
+			printf("\nFor rules type <conquer -h>");
+			printf("\nFor information on conquer please contact %s.",
+				OWNER);
+			printf("\nTo enter this campaign please send mail to %s",
+				LOGIN);
+			if (strcmp(LOGIN, ntn[0].leader)!=0) {
+				printf(" or %s",ntn[0].leader);
+			}
+			printf(".\n");
 			exit(FAIL);
 		}
 	}
@@ -241,8 +350,15 @@ char	**argv;
 		(void) aretheyon();
 	} else {
 		if(curntn->active==INACTIVE) {
-			mvprintw(LINES-2,0,"Sorry, for some reason, your country no longer exists.");
-			mvprintw(LINES-1,0,"If there is a problem, please contact %s.",OWNER);
+			mvprintw(LINES-3,0,"Sorry, for some reason, your country no longer exists.");
+			mvprintw(LINES-2,0,"If there is a problem, please contact %s.",
+				OWNER);
+			mvprintw(LINES-1,0,"To re-enter this campaign please send mail to %s",
+				LOGIN);
+			if (strcmp(LOGIN, ntn[0].leader)!=0) {
+				printw(" or %s",ntn[0].leader);
+			}
+			printw(".");
 			beep();
 			refresh();
 			getch();
@@ -250,7 +366,7 @@ char	**argv;
 		}
 		if(aretheyon()==TRUE) {
 			mvprintw(LINES-2,0,"Sorry, country is already logged in.");
-			mvprintw(LINES-1,0,"Please try again later.    ");
+			mvprintw(LINES-1,0,"Please try again later.");
 			beep();
 			refresh();
 			getch();
@@ -374,7 +490,7 @@ makebottom()
 void
 parse()
 {
-	char	name[20];
+	char	name[LINELTH+1];
 	char	passwd[PASSLTH+1];
 	int	ocountry;
 
@@ -512,6 +628,18 @@ parse()
 		curntn->tgold -= MOVECOST;
 		newspaper();
 		break;
+	case 'o':	/*pick (crsr up)*/
+		selector-=2;
+		if(selector<0) {
+			selector=SCRARM*2-2;
+			pager--;
+		}
+		/*move to last army in current sector*/
+		if (pager<0) {
+			pager=(units_in_sector(XREAL,YREAL,country)-1)/SCRARM;
+			selector=((units_in_sector(XREAL,YREAL,country)-1)%SCRARM)*2;
+		}
+		break;
 	case 'p':	/*pick*/
 		selector+=2;
 		if(selector>=SCRARM*2) {
@@ -614,7 +742,8 @@ parse()
 		break;
 	case 'z':	/*login as new user */
 #ifdef OGOD
-		if (owneruid != (getpwnam(LOGIN))->pw_uid) break;
+		if ((owneruid != (getpwnam(LOGIN))->pw_uid ) &&
+		    (owneruid != (getpwnam(ntn[0].leader))->pw_uid )) break;
 #endif
 		clear();
 		redraw=TRUE;
@@ -665,7 +794,9 @@ parse()
 			break;
 		}
 
-		if(strcmp(fison,"START")!=0) unlink(fison);
+		/* remove old lock file -- new one already made */
+		sprintf(fison,"%s%s",isonfile,ocountry);
+		unlink(fison);
 
 		fclose(fexe);
 		/* open output for future printing*/
@@ -949,7 +1080,7 @@ int	alwayssee;	/* see even if cant really see sector */
 	}
 
 	standout();
-	if((sptr->owner==0)||(ntn[sptr->owner].active==NPC_BARBARIAN))
+	if((sptr->owner==0)||(ntn[sptr->owner].active==NPC_SAVAGE))
 		mvaddstr(LINES-12,COLS-20,"unowned");
 	else mvprintw(LINES-12,COLS-20,"owner: %s",ntn[sptr->owner].name);
 	standend();
@@ -1013,7 +1144,7 @@ copyscreen()
 {
 #ifdef TIMELOG
 	FILE *timefp, *fopen();
-	char string[80];
+	char string[LINELTH+1];
 #endif /* TIMELOG */
 
 	clear();
@@ -1082,7 +1213,7 @@ credits()
 void
 camp_info()
 {
-	int mercs=0,solds=0,armynum,nvynum;
+	int mercs=0,solds=0,armynum,nvynum,nontn=0;
 	int numarm=0,numnvy=0,numlead=0;
 
 	clear();
@@ -1107,15 +1238,19 @@ camp_info()
 	for(nvynum=0;nvynum<MAXNAVY;nvynum++) {
 		if (P_NWSHP!=0||P_NGSHP!=0||P_NMSHP!=0) numnvy++;
 	}
+	for(armynum=1;armynum<NTOTAL;armynum++) {
+		if (ismonst(ntn[armynum].active)) nontn++;
+	}
 
 	/* global information */
 	mvprintw(7,0,"World Map Size............. %dx%d", MAPX, MAPY);
 	mvprintw(8,0,"Currently Active Nations... %d", WORLDNTN);
-	mvprintw(9,0,"Maximum Active Nations..... %d", NTOTAL-1);
-	mvprintw(10,0,"Land displacement to meet.. %d", MEETNTN);
+	mvprintw(9,0,"Maximum Active Nations..... %d", NTOTAL-nontn-1);
+	mvprintw(10,0,"Number of Monster Nations.. %d", nontn);
 	mvprintw(11,0,"Maximum Number of Armies... %d", MAXARM);
 	mvprintw(12,0,"Maximum Number of Navies... %d", MAXNAVY);
-	mvprintw(13,0,"Chance of Scout Capture.... %d%%", PFINDSCOUT);
+	mvprintw(13,0,"Land displacement to meet.. %d", MEETNTN);
+	mvprintw(14,0,"Chance of Scout Capture.... %d%%", PFINDSCOUT);
 
 	/* user information */
 	mvprintw(7,COLS-40,"Number of Leaders........... %d",numlead);
@@ -1124,6 +1259,14 @@ camp_info()
 	mvprintw(10,COLS-40,"Total Soldiers in Nation.... %d",solds);
 	mvprintw(11,COLS-40,"Current Number of Armies.... %d",numarm);
 	mvprintw(12,COLS-40,"Current Number of Navies.... %d",numnvy);
+
+	/* other information */
+	mvprintw(LINES-6,0,"The Diety: %s", LOGIN);
+	if (strcmp(LOGIN,ntn[0].leader)==0) {
+		mvprintw(LINES-5,0,"The Demi-God: [none]");
+	} else {
+		mvprintw(LINES-5,0,"The Demi-God: %s", ntn[0].leader);
+	}
 
 	standout();
 	mvaddstr(LINES-2,COLS/2-13," HIT ANY KEY TO CONTINUE");

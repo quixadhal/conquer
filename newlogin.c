@@ -12,14 +12,48 @@
 
 /*create a new login for a new player*/
 #include <ctype.h>
-#include "newlogin.h"
+#include "patchlevel.h"
 #include "header.h"
 #include "data.h"
+#include "newlogin.h"
+
+/* information about national classes */
+char *Classwho[]= { "DEHO", "DEH", "DEH", "EH", "H", "DHO", "HE", "DHO",
+	"O", "O", "O" };
+char *CPowlist[]= { "None", "None", "None", "SUMMON", "RELIGION", "SAILOR",
+	"URBAN", "WARLORD", "DESTROYER", "MA_MONST", "THE_VOID"};
+int  Classcost[]= { 0, 0, 0, 4, 2, 2, 2, 6, 4, 4, 2 };
+long Classpow[]= { 0x0L, 0x0L, 0x0L, SUMMON, RELIGION, SAILOR,
+	URBAN, 0x000000007L, DESTROYER, 0x00000700L, THE_VOID };
+
+char *Mprompt[]= { "<<--", "-->>" };
+char *LType[]={ "Random", "Fair", "Great" };
+
+char *Mlabels[]= { "Population", "Treasury", "Location",
+	"Military", "Attack Bonus", "Defense Bonus", "Reproduction",
+	"Movement", "Magic Powers", "Leaders", "Raw Materials" };
+
+char *Mitems[]= { "people", "gold talons", "location", "soldiers",
+	"percent", "percent", "percent", "move points", "powers",
+	"nation leaders", "units of food" };
+
+char *Mhelp[]= { "Population: Amount of citizens in your nation",
+	"Treasury: Amount of monetary wealth in your nation",
+	"Location: Relative value of nation placement in world",
+	"Soldiers: Number of men in the national army, not counting leaders",
+	"Attack Bonus: Skill level of your troops when attacking",
+	"Defense Bonus: Skill level of your troops when defending",
+	"Reproduction: Yearly rate of civilian population increase",
+	"Movement: Number of movement points per normal army unit",
+	"Magic Powers: Randomly obtain a new magical power",
+	"Leaders: Number of leader units, including national ruler",
+	"Raw Materials: Starting values for jewels, metal, and food" };
 
 extern int pwater;		/* percent water in world (0-100) */
 extern FILE *fexe, *fopen();
 extern short country;
 int	numleaders;
+int spent[CH_NUMBER];
 
 /* Teraform the area around somebodies capitol */
 /* this gives everybody some chance of success */
@@ -109,545 +143,744 @@ char	*string;
 	}
 }
 
+/* function  to initialize the curses display */
+void
+newinit()
+{
+	initscr();
+	/* check terminal size */
+	if (COLS<80 || LINES<24) {
+		mvaddstr(LINES-2,0,"conqrun: terminal should be at least 80x24");
+		mvaddstr(LINES-1,0,"Please try again with a different setup");
+		beep();
+		getch();
+		newbye(SUCCESS);
+	}
+	crmode();
+	noecho();
+}
+
+/* function to end the curses display */
+void
+newreset()
+{
+	clear();
+	refresh();
+	nocrmode();
+	endwin();
+}
+
+/* function to leave the program completely */
+void
+newbye(status)
+	int status;
+{
+	newreset();
+	exit(status);
+}
+
+/* message without wait for keystroke */
+void
+newmsg(str)
+	char *str;
+{
+	mvaddstr(LINES-1,0,str);
+	clrtoeol();
+	refresh();
+}
+
+/* message with wait for keystroke */
+void
+newerror(str)
+	char *str;
+{
+	mvaddstr(LINES-1,0,str);
+	clrtoeol();
+	mvaddstr(LINES-1,COLS-13,"Hit Any Key");
+	beep();
+	refresh();
+	getch();
+	move(LINES-1,0);
+	clrtoeol();
+	refresh();
+}
+
+/* function to check if a character is in a character array */
+int
+in_str(ch,str)
+	char ch, *str;
+{
+	int i,l=strlen(str);
+
+	for(i=0;i<l;i++)
+		if (ch == str[i]) return(TRUE);
+	return(FALSE);
+}
+
+/* function to display the comment and error window */
+void
+errorbar(str1,str2)
+	char *str1,*str2;
+{
+	int i;
+	move(LINES-4,0);
+	standout();
+	for(i=0;i<COLS-1;i++)
+		addch(' ');
+	standend();
+	mvprintw(LINES-3,0," Conquer %s.%d: %s",VERSION,PATCHLEVEL,str1);
+	mvaddstr(LINES-3,COLS-strlen(str2)-2,str2);
+	move(LINES-2,0);
+	for(i=0;i<COLS-1;i++)
+		addch('-');
+}
+
+/* display amount string at current location */
+void
+dispitem(item, amount)
+	int item;
+	long amount;
+{
+	if (item == CH_LOCATE) {
+		printw("%s %s", LType[amount], Mitems[item]);
+	} else {
+		printw("%ld %s", amount, Mitems[item]);
+	}
+
+	if (item != CH_RAWGOODS) {
+		addch('.');
+		return;
+	}
+
+	/* now show the extras for the Raw Materials */
+	printw(", %ld jewels", amount*NLJEWELS/Mvalues[CH_RAWGOODS]);
+	printw(", and %ld metal.", amount*NLMETAL/Mvalues[CH_RAWGOODS]);
+}
+
+/* show the current amount for country item */
+void
+showitem(line,item)
+	int line, item;
+{
+	char tempc[LINELTH];
+	
+	move(line,15);
+	if (item == CH_LOCATE) {
+		sprintf(tempc,"%s %s", LType[spent[item]], Mitems[item]);
+		printw("%23s",tempc);
+	} else {
+		sprintf(tempc,"%ld %s", spent[item]*Mvalues[item], Mitems[item]);
+		printw("%23s",tempc);
+	}
+	
+	if (item != CH_RAWGOODS) return;
+	line++;
+
+	/* now show the extras for the Raw Materials */
+	if (NLJEWELS==NLMETAL) {
+		sprintf(tempc,"%ld jewels & metal",
+			   spent[CH_RAWGOODS]*NLJEWELS);
+		mvprintw(line,0,"%38s",tempc);
+		mvprintw(line,COLS/2+10,"%ld jewels & metal",NLJEWELS);
+	} else {
+		sprintf(tempc,"%ld jewels",
+			   spent[CH_RAWGOODS]*NLJEWELS);
+		mvprintw(line,0,"%38s",tempc);
+		mvprintw(line++,COLS/2+10,"%ld jewels",NLJEWELS);
+		sprintf(tempc,"%ld metal",
+			   spent[CH_RAWGOODS]*NLMETAL);
+		mvprintw(line,0,"%38s",tempc);
+		mvprintw(line,COLS/2+10,"%ld metals",NLMETAL);
+	}
+}
+
+/* convert the stored information into the nation statistics */
+void
+convert()
+{
+	int i,loop;
+	long x;
+
+	curntn->tciv = Mvalues[CH_PEOPLE] * spent[CH_PEOPLE];
+	curntn->tgold = Mvalues[CH_TREASURY] * spent[CH_TREASURY];
+	switch(spent[CH_LOCATE]) {
+	case 2:
+		curntn->location = GREAT;
+		break;
+	case 1:
+		curntn->location = FAIR;
+		break;
+	case 0:
+	default:
+		curntn->location = RANDOM;
+		break;
+	}
+	curntn->tmil = Mvalues[CH_SOLDIERS] * spent[CH_SOLDIERS];
+	curntn->aplus = (short) Mvalues[CH_ATTACK] * spent[CH_ATTACK];
+	curntn->dplus = (short) Mvalues[CH_DEFEND] * spent[CH_DEFEND];
+	curntn->repro = (char) Mvalues[CH_REPRO] * spent[CH_REPRO];
+	curntn->maxmove = (unsigned char) Mvalues[CH_MOVEMENT]
+		* spent[CH_MOVEMENT];
+	for(i = 0; i < spent[CH_MAGIC]; i++) {
+		/* purchase magic */
+		loop = TRUE;
+		while (loop == TRUE) {
+			if((x=getmagic((rand()%M_MGK+M_MIL)))!=0L){
+				CHGMGK;
+				loop = FALSE;
+			}
+		}
+	}
+	numleaders = (int) Mvalues[CH_LEADERS] * spent[CH_LEADERS];
+	curntn->tfood = Mvalues[CH_RAWGOODS] * spent[CH_RAWGOODS];
+	curntn->jewels = NLJEWELS * spent[CH_RAWGOODS];
+	curntn->metals = NLMETAL * spent[CH_RAWGOODS];
+}
+
 void
 newlogin()
 {
 	/* use points to create empire, add if late starter*/
-	int points;
-	char tempc[10];
-	int n;
+	int points, clr;
+	int choice, direct;
 	int valid=TRUE;  /*valid==FALSE means continue loop*/
-	int temp;
+	int temp,ypos,xpos;
 	int more=TRUE;	/*0 if add another player*/
-	int loop;
 	long x;
-	char tempo[8],strin[80];
-	char passwd[PASSLTH+1],*getpass();
+	char tempc[LINELTH],strin[LINELTH+1];
+	char passwd[PASSLTH+1];
 	register i;
 
-	printf("\nPreparing to add player\n");
+	/* setup curses display */
+	newinit();
+
+	/*find valid nation number type*/
+	country=0;
+	for(i=1;i<NTOTAL;i++) if(ntn[i].active==INACTIVE) {
+		country=i;
+		curntn = &ntn[country];
+		break;
+	}
 
 	while(more==TRUE) {
-		points=MAXPTS;
-		country=0;
-		/*find valid nation number type*/
-		for(i=1;i<NTOTAL;i++)
-			if(ntn[i].active==INACTIVE) {
-				country=i;
-				curntn = &ntn[country];
-				break;
-			}
-		printf("first valid nation id is %d\n",country);
+		clear();
 
+		sprintf(tempc,"Country #%d", country);
+		errorbar("Nation Builder",tempc);
 		if(country==0) {
-			beep();
-			printf("error, cant add new nation\n");
+			newerror("No more nations available");
+			newreset();
 			return;
 		}
 
 		/* open output for future printing*/
+		mvprintw(0,0,"Building Country Number %d",country);
 		sprintf(tempc,"%s%d",exefile,i);
 		if ((fexe=fopen(tempc,"w"))==NULL) {
-			beep();
-			printf("error opening %s\n",tempc);
-			exit(FAIL);
+			sprintf(tempc,"Error opening <%s>",tempc);
+			newerror(tempc);
+			newbye(FAIL);
+		}
+
+		/* begin purchasing */
+		points=MAXPTS;
+		for (i=0; i<CH_NUMBER; i++) {
+			spent[i] = 0;
 		}
 
 		valid=FALSE;
 		/*get name*/
 		while(valid==FALSE) {
 			valid=TRUE;
-			printf("\nwhat name would you like your nation to have:");
-			gets(curntn->name);
+			mvprintw(1,0,"Enter a Name for your Country: ");
+			clrtoeol();
+			refresh();
+			get_nname(tempc);
 
-			if((strlen(curntn->name)<=1)
-			 ||(strlen(curntn->name)>NAMELTH)){
-				printf("\ninvalid name");
+			if((strlen(tempc)<=1)
+			 ||(strlen(tempc)>NAMELTH)){
+				newerror("Invalid Name Length");
 				valid=FALSE;
 			}
 
 			/*check if already used*/
-			if((strcmp(curntn->name,"god")==0)
-			||(strcmp(curntn->name,"unowned")==0)){
-				printf("\nname already used");
+			if((strcmp(tempc,"god")==0)
+			||(strcmp(tempc,"unowned")==0)){
+				newerror("Name already used");
 				valid=FALSE;
 			}
 
 			for(i=1;i<NTOTAL;i++)
-				if((i!=country)&&(strcmp(ntn[i].name,curntn->name)==0)) {
-					printf("\nname already used");
-					valid=FALSE;
-				}
+			if((i!=country)&&(strcmp(ntn[i].name,tempc)==0)&&(isntn(ntn[i].active))) {
+				newerror("Name already used");
+				valid=FALSE;
+			}
 		}
-
+		strcpy(curntn->name,tempc);
+		move(0,0);
+		clrtoeol();
+		move(1,0);
+		clrtoeol();
+		standout();
+		mvprintw(0,COLS/2-15-strlen(curntn->name)/2,
+			"< Building Country %s >",curntn->name,country);
+		standend();
+		clrtoeol();
 
 		valid=FALSE;
 		while(valid==FALSE) {			/* password routine */
-			strncpy(passwd,getpass("Enter national password (remember this!):"),PASSLTH);
-			strncpy(curntn->passwd,getpass("Please reenter password:"),PASSLTH);
-			if((strlen(passwd)<2)
-			||(strncmp(curntn->passwd,passwd,PASSLTH)!=0)){
-				beep();
-				printf("\ninvalid user password\n");
+			mvprintw(2,0,"Enter National Password: ");
+			clrtoeol();
+			refresh();
+			gets(tempc);
+			if((strlen(tempc)<2)||(strlen(tempc)>PASSLTH)) {
+				newerror("Invalid Password Length");
+				continue;
+			}
+			mvprintw(2,0,"Reenter National Password: ");
+			clrtoeol();
+			refresh();
+			gets(passwd);
+
+			if((strlen(tempc)<2)||(strlen(tempc)>PASSLTH)
+			   ||(strncmp(passwd,tempc,PASSLTH)!=0)){
+				newerror("Invalid Password Match");
 			} else valid=TRUE;
 		}
-		strncpy(curntn->passwd,crypt(passwd,SALT),PASSLTH);
+		strncpy(curntn->passwd,crypt(tempc,SALT),PASSLTH);
 
 		/*get your name*/
 		valid=FALSE;
 		while(valid==FALSE) {
 			valid=TRUE;
-			printf("\nEnter the name of your country's leader (Groo, The Ed, Gandalf...)");
-			printf("\n\t(maximum %d characters):",LEADERLTH);
-			gets(tempc);
+			mvprintw(2,0,"Enter the name of your country's leader (Ex. The_Ed, Gandalf, Conan)");
+			clrtoeol();
+			mvprintw(3,0,"    [maximum %d characters]: ",LEADERLTH);
+			refresh();
+			get_nname(tempc);
 			if((strlen(tempc)>LEADERLTH)||(strlen(tempc)<2)) {
-				beep();
-				printf("\ninvalid name (too short or long)");
+				newerror("Invalid Name Length");
 				valid=FALSE;
 			}
 			else strcpy(curntn->leader,tempc);
 		}
 
+		mvprintw(2,0,"Leader Name: %s", curntn->leader);
+		clrtoeol();
+		mvprintw(3,0,"Enter your Race [ (D)warf (E)lf (H)uman (O)rc ]:");
+		clrtoeol();
+		refresh();
 		valid=FALSE;
 		while(valid==FALSE) {
 			valid=TRUE;
-			printf("\nwhat race would you like to be:");
-			printf("\n\tchoose (d)warf,(e)lf,(o)rc,(h)uman:");
-			scanf("%1s",tempo);
-			switch(tempo[0]) {
+			switch(getch()) {
+			case 'D':
 			case 'd':
-				printf("\ndwarf chosen\n");
 				/*MINER POWER INATE TO DWARVES*/
-				printf("Dwarves have MINING skills\n");
+				newerror("Dwarves have MINING skills");
+				mvprintw(3,0,"National Race: Dwarf");
+				clrtoeol();
 				curntn->powers=MINER;
 				x=MINER;
 				CHGMGK;
 				points -= getclass(DWARF);
 				curntn->race=DWARF;
-				curntn->tgold=NLDGOLD;
-				curntn->tfood=NLDFOOD;
-				curntn->jewels=NLDJEWEL;
-				curntn->metals=NLDMETAL;
-				curntn->tciv= NLDCIVIL;
-				curntn->tmil= NLDMILIT;
-				curntn->repro= NLDREPRO;
-				curntn->maxmove= NLDMMOVE;
-				curntn->aplus= NLDAPLUS;
-				curntn->dplus= NLDDPLUS;
-				curntn->location=RANDOM;
-				points-=startcost();
+				spent[CH_TREASURY]=NLDGOLD;
+				spent[CH_RAWGOODS]=NLDRAW;
+				spent[CH_PEOPLE]= NLDCIVIL;
+				spent[CH_SOLDIERS]= NLDMILIT;
+				spent[CH_REPRO]= NLDREPRO;
+				spent[CH_MOVEMENT]= NLDMMOVE;
+				spent[CH_ATTACK]= NLDAPLUS;
+				spent[CH_DEFEND]= NLDDPLUS;
+				spent[CH_LOCATE]= NLRANDOM;
+				points-=nstartcst();
 				break;
+			case 'E':
 			case 'e':
-				printf("\nelf chosen\n");
-				printf("Elves are magically cloaked (VOID power)\n");
+				newerror("Elves are magically cloaked (VOID power)");
+				mvprintw(3,0,"National Race: Elf");
+				clrtoeol();
 				curntn->powers=THE_VOID;
 				x=THE_VOID;
 				CHGMGK;
 				points -= getclass(ELF);
 				curntn->race=ELF;
-				curntn->tgold=NLEGOLD;
-				curntn->tfood=NLEFOOD;
-				curntn->jewels=NLEJEWEL;
-				curntn->metals=NLEMETAL;
-				curntn->tciv=NLECIVIL;
-				curntn->tmil=NLEMILIT;
-				curntn->repro=NLEREPRO;
-				curntn->maxmove=NLEMMOVE;
-				curntn->aplus=NLEAPLUS;
-				curntn->dplus=NLEDPLUS;
-				curntn->location=FAIR;
-				points-=startcost();
+				spent[CH_TREASURY]=NLEGOLD;
+				spent[CH_RAWGOODS]=NLERAW;
+				spent[CH_PEOPLE]= NLECIVIL;
+				spent[CH_SOLDIERS]= NLEMILIT;
+				spent[CH_REPRO]= NLEREPRO;
+				spent[CH_MOVEMENT]= NLEMMOVE;
+				spent[CH_ATTACK]= NLEAPLUS;
+				spent[CH_DEFEND]= NLEDPLUS;
+				spent[CH_LOCATE]= NLFAIR;
+				points-=nstartcst();
 				break;
+			case 'O':
 			case 'o':
-				printf("\norc chosen\n");
 				/*MINOR MONSTER POWER INATE TO ORCS*/
-				printf("your leader is a monster!\n");
+				newerror("Your leader is a Monster!");
+				mvprintw(3,0,"National Race: Orc");
+				clrtoeol();
 				curntn->powers=MI_MONST;
 				x=MI_MONST;
 				CHGMGK;
 				points -= getclass(ORC);
 				curntn->race=ORC;
-				curntn->tgold=NLOGOLD;
-				curntn->tfood=NLOFOOD;
-				curntn->jewels=NLOJEWEL;
-				curntn->metals=NLOMETAL;
-				curntn->tciv=NLOCIVIL;
-				curntn->tmil=NLOMILIT;
-				curntn->repro=NLOREPRO;
-				curntn->maxmove=NLOMMOVE;
-				curntn->aplus=NLOAPLUS;
-				curntn->dplus=NLODPLUS;
-				curntn->location=RANDOM;
-				points-=startcost();
+				spent[CH_TREASURY]=NLOGOLD;
+				spent[CH_RAWGOODS]=NLORAW;
+				spent[CH_PEOPLE]= NLOCIVIL;
+				spent[CH_SOLDIERS]= NLOMILIT;
+				spent[CH_REPRO]= NLOREPRO;
+				spent[CH_MOVEMENT]= NLOMMOVE;
+				spent[CH_ATTACK]= NLOAPLUS;
+				spent[CH_DEFEND]= NLODPLUS;
+				spent[CH_LOCATE]= NLRANDOM;
+				points-=nstartcst();
 				break;
+			case 'H':
 			case 'h':
-				printf("\nhuman chosen\n");
 				curntn->race=HUMAN;
-				printf("Humans have the combat skill of a WARRIOR\n");
+				newerror("Humans have the combat skill of a WARRIOR");
+				mvprintw(3,0,"National Race: Human");
+				clrtoeol();
 				curntn->powers = WARRIOR;
 				x=WARRIOR;
 				CHGMGK;
 				points -= getclass(HUMAN);
-				curntn->tgold=NLHGOLD;
-				curntn->tfood=NLHFOOD;
-				curntn->jewels=NLHJEWEL;
-				curntn->metals=NLHMETAL;
-				curntn->tciv=NLHCIVIL;
-				curntn->tmil=NLHMILIT;
-				curntn->repro=NLHREPRO;
-				curntn->maxmove=NLHMMOVE;
-				curntn->aplus=NLHAPLUS;
-				curntn->dplus=NLHDPLUS;
-				curntn->location=RANDOM;
-				points-=startcost();
+				spent[CH_TREASURY]=NLHGOLD;
+				spent[CH_RAWGOODS]=NLHRAW;
+				spent[CH_PEOPLE]= NLHCIVIL;
+				spent[CH_SOLDIERS]= NLHMILIT;
+				spent[CH_REPRO]= NLHREPRO;
+				spent[CH_MOVEMENT]= NLHMMOVE;
+				spent[CH_ATTACK]= NLHAPLUS;
+				spent[CH_DEFEND]= NLHDPLUS;
+				spent[CH_LOCATE]= NLRANDOM;
+				points-=nstartcst();
 				break;
 			default:
-				printf("\ninvalid race\n ");
-				valid=0;
+				valid=FALSE;
 			}
 		}
+		mvprintw(4,0,"Nation Class: %s",Class[curntn->class]);
+		clrtoeol();
 
 		valid=FALSE;
 		if( curntn->race == ORC ) {	/* orcs are always evil */
 			valid=TRUE;
 			curntn->active=PC_EVIL;
+		} else {
+			mvprintw(5,0,"Please Enter Alignment [ (G)ood, (N)eutral, (E)vil ]");
+			refresh();
 		}
-		while(valid==FALSE) {
+		while (valid==FALSE) {
 			valid=TRUE;
-			printf("\nplease enter alignment ((g)ood,(n)eutral,(e)vil): ");
-			scanf("%1s",tempo);
-			switch(tempo[0]) {
-				case 'g': curntn->active=PC_GOOD; break;
-				case 'n': curntn->active=PC_NEUTRAL; break;
-				case 'e': curntn->active=PC_EVIL; break;
-				default :
-					printf("\nsorry - please enter alignment ((g)ood,(n)eutral,(e)vil): ");
-					valid=FALSE;
-					break;
-			}
-		}
-		valid = npctype(curntn->active);
-		printf("ok... alignment is %s\n",allignment[valid]);
-
-		/* get nation mark */
-		valid=FALSE;
-		curntn->mark= (*curntn->name);
-		printf("\ntesting first letter of name (%c) for nation mark...",curntn->mark);
-		if( markok(curntn->mark, TRUE)==TRUE )
-			curntn->mark= curntn->mark;
-		else if( islower(curntn->mark) &&
-		markok( toupper(curntn->mark), TRUE )==TRUE )
-			curntn->mark= toupper(curntn->mark);
-		else if( isupper(curntn->mark) &&
-		markok( tolower(curntn->mark) , TRUE)==TRUE )
-			curntn->mark= tolower(curntn->mark);
-		else while(TRUE) {
-			printf("\nplease enter new national mark (for maps):");
-			printf("\n This can be any of the following:");
-			for (tempc[0]='!';tempc[0]<='~';tempc[0]++) {
-				if( markok( tempc[0], FALSE ) )
-					printf(" %c",tempc[0]);
-			}
-			printf("\n");
-			scanf("%1s",tempc);
-			if( markok( tempc[0], TRUE ) ){
-				curntn->mark=(*tempc);
-				printf("\nvalid...");
+			switch(getch()) {
+			case 'G':
+			case 'g':
+				curntn->active=PC_GOOD;
 				break;
-			}
-		}
-
-		printf("mark currently is %c\n",curntn->mark);
-
-		while(points>0) {
-			printf("\n\nwhat would you like to buy with your remaining %d points\n\n",points);
-			printf("\t1. population (%ld/pt):\t\tnow have %ld civilians\n",NLPOP,curntn->tciv);
-			printf("\t2. more gold talons ($%ld/pt):\tnow have %ld gold talons\n",NLGOLD,curntn->tgold);
-			printf("\t3. better location (%d pt):\t\tlocation is now is %c\n",NLLOCCOST,curntn->location);
-			printf("\t4. more soldiers (%ld/pt):\t\tnow have %ld soldiers\n",NLSOLD,curntn->tmil);
-			if( curntn->race != ORC ){
-			printf("\t5. better attack (%d%%/pt):\t\tnow is +%d\n ",NLATTACK,curntn->aplus);
-			printf("\t6. better defence (%d%%/pt):\t\tnow is +%d\n",NLDEFENCE,curntn->dplus);
-			printf("\t7. higher reproduction (+%d%%/%d pt):\trate is now %d%%/year\n",NLREPRO,NLREPCOST,curntn->repro);
-			printf("\t8. higher movement (%d/pt): \t\tnow move %d sectors\n",NLMOVE,curntn->maxmove);
-			} else {
-			printf("\t5. better attack (%d%%/pt):\t\tnow is +%d\n ",NLATTACK/2,curntn->aplus);
-			printf("\t6. better defence (%d%%/pt):\t\tnow is +%d\n",NLDEFENCE/2,curntn->dplus);
-			printf("\t7. higher reproduction (+%d%%/%d pt):\trate is now %d%%/year\n",NLREPRO_ORC,NLREPCOST,curntn->repro);
-			}
-			printf("\t9. double raw resources (%ld pts): \tfood now %ld\n",NLDBLCOST*curntn->tfood/NLHFOOD,curntn->tfood);
-			printf("\t                                \tjewels now %ld\n",curntn->jewels);
-			printf("\t                                \tmetals now %ld\n",curntn->metals);
-			printf("\t10. additional random magic power (%d pts)\n",NLMAGIC);
-			printf("\t11. additional %d leaders (%d pts)\tnation has %d %ss\n",NLEADER,NLEADPT,numleaders,unittype[getleader(curntn->class)%UTYPE]);
-
-			printf("\nWhat option to buy:");
-			if(scanf("%d",&n)==1) switch(n) {
-
-			case 1:
-				printf("additional population costs 1 pt per %d\n",NLPOP);
-				printf("how many points to spend on population:");
-				scanf("%d",&temp);
-				putchar('\n');
-				if(points <= 0) {
-					printf("Purchase aborted...");
-				} if(points >= temp) {
-					points -= temp;
-					curntn->tciv+=temp*NLPOP;
-				}
-				else printf("You dont have enough points left");
+			case 'N':
+			case 'n':
+				curntn->active=PC_NEUTRAL;
 				break;
-			case 2:
-				printf("you now have $%ld gold talons\n",curntn->tgold);
-				printf("and can buy more at $%ld per point\n",NLGOLD);
-				printf("how many points to spend on added gold talons:");
-				scanf("%d",&temp);
-				putchar('\n');
-				if(points<=0) {
-					printf("Purchase aborted....");
-				} else if(points>=temp) {
-					points-=temp;
-					curntn->tgold+=temp*NLGOLD;
-				}
-				else printf("You dont have enough points left");
-				break;
-			case 3:
-				if(curntn->location==GREAT) break;
-
-				if(points>=NLLOCCOST) {
-					points -=NLLOCCOST;
-					if(curntn->location==RANDOM){
-						curntn->location=FAIR;
-					} else if(curntn->location==FAIR){
-						curntn->location=GREAT;
-					}
-				} else {
-					printf("Too Few Points Left...");
-					break;
-				}
-				break;
-			case 4:
-				printf("you start with %ld soldiers\n",curntn->tmil);
-				printf("additional military costs 1 / %d\n",NLSOLD);
-				printf("how many points to spend?");
-				scanf("%d",&temp);
-				putchar('\n');
-				if (points <= 0) {
-					printf("Purchase aborted...");
-				} else if(points >= temp) {
-					points -= temp;
-					curntn->tmil+=temp*NLSOLD;
-				}
-				else printf("You dont have enough points left");
-				break;
-			case 5:
-				printf("now have %d percent attack bonus\n",curntn->aplus);
-				if(curntn->race == ORC ) {
-					printf("orcs cost additional for combat bonuses\n");
-					printf("an additional %d percent per point\n",NLATTACK/2);
-				} else
-				printf("an additional %d percent per point\n",NLATTACK);
-				printf("how many points do you wish to spend?");
-				scanf("%d",&temp);
-				putchar('\n');
-				if(points <= 0) {
-					printf("Purchase aborted...");
-				} else if(points >= temp) {
-					points -= temp;
-					if(curntn->race == ORC )
-					curntn->aplus+=temp*NLATTACK/2;
-					else
-					curntn->aplus+=temp*NLATTACK;
-				}
-				else printf("You dont have enough points left");
-				break;
-			case 6:
-				if(magic(country,VAMPIRE)==1) {
-				printf("you have vampire power and cant add to combat bonus\n");
-				break;
-				}
-				printf("now have %d percent defence bonus\n",curntn->dplus);
-				if(curntn->race == ORC ) {
-					printf("orcs cost additional for combat bonuses\n");
-					printf("an additional %d percent per point\n",NLDEFENCE/2);
-				} else
-				printf("an additional %d percent per point\n",NLDEFENCE);
-				printf("how many points do you wish to spend?");
-				scanf("%d",&temp);
-				putchar('\n');
-				if(points <= 0) {
-					printf("Purchase aborted...");
-				} else if(points >= temp) {
-					points -= temp;
-					if(curntn->race == ORC )
-					curntn->dplus+=temp*NLDEFENCE/2;
-					else
-					curntn->dplus+=temp*NLDEFENCE;
-				}
-				else printf("You dont have enough points left");
-				break;
-			case 7:
-				if(curntn->race==ORC)
-				printf("repro rate costs %d points per %d percent per year\n",NLREPCOST,NLREPRO_ORC);
-				else
-				printf("repro rate costs %d points per %d percent per year\n",NLREPCOST,NLREPRO);
-				printf("you now have %d percent\n",curntn->repro);
-				if((curntn->race!=ORC)
-				&&(curntn->repro>=10)){
-					printf("you have the maximum rate");
-					break;
-				}
-				else if(curntn->repro>=14){
-					printf("you have the maximum rate");
-					break;
-				}
-				printf("how many purchasing points to spend?:");
-				scanf("%d",&temp);
-				putchar('\n');
-				if(temp > points) {
-					printf("You don't have enough points left");
-				} else if (temp < 0) {
-					printf("Negative, huh?  Who you trying to kid?");
-				} else if (temp%NLREPCOST != 0) {
-					printf("You must spend in multiples of %d",NLREPCOST);
-				} else {
-					if(curntn->race != ORC) {
-						temp = temp/NLREPCOST*NLREPRO;
-						if(curntn->repro+temp > 10) {
-							printf("That exceeds the 10% limit");
-						} else {
-							points -= (temp*NLREPCOST/NLREPRO);
-							curntn->repro += temp;
-						}
-					} else {
-						temp = temp/NLREPCOST*NLREPRO_ORC;
-						if(curntn->repro+temp > 14) {
-							printf("That exceeds the 14% limit");
-						} else {
-							points -= (temp*NLREPCOST/NLREPRO_ORC);
-							curntn->repro += temp;
-						}
-					}
-				}
-				break;
-			case 8:
-				if(curntn->race == ORC ) {
-					printf("orcs cant add to movement\n");
-					break;
-				}
-				printf("additional movement costs 1 per +%d sct/turn\n",NLMOVE);
-				printf("you start with a rate of %d\n",curntn->maxmove);
-				printf("you now have a rate of %d\n",curntn->maxmove+NLMOVE);
-				putchar('\n');
-				if(points >= 1) {
-					points -= 1;
-					curntn->maxmove+=NLMOVE;
-				}
-				else printf("You dont have enough points left");
-				break;
-			case 9:
-				printf("doubling raw materials\n");
-				if((curntn->tfood<800000L)
-				&&(points >=NLDBLCOST*curntn->tfood/NLHFOOD)) {
-					points-=NLDBLCOST*curntn->tfood/NLHFOOD;
-					curntn->tfood*=2;
-					curntn->jewels*=2;
-					curntn->metals*=2;
-				}
-				else printf("sorry\n");
-				break;
-			case 10:
-				printf("choosing basic magic at %d point cost\n",NLMAGIC);
-				printf("log in and read the magic screen to be informed of your powers\n");
-				if(points >0) {
-					points-=NLMAGIC;
-					loop=0;
-					while(loop==0) if((x=getmagic((rand()%M_MGK+M_MIL)))!=0){
-						CHGMGK;
-						loop=1;
-					}
-				}
-				else printf("sorry not enough points\n");
-				break;
-			case 11:
-				/* check if not more than 1/2 armies will be leaders */
-				if( numleaders + NLEADER > MAXARM/2 ) {
-				printf("\tsorry... that would give you too many leaders\n");
-				break;
-				}
-				if( points >= NLEADPT ) {
-				printf("\tadding %d leaders for %d points\n",NLEADER,NLEADPT);
-				numleaders += NLEADER;
-				points -= NLEADPT;
-				} else printf("sorry not enough points\n");
+			case 'E':
+			case 'e':
+				curntn->active=PC_EVIL;
 				break;
 			default:
-				printf("invalid option - hit return");
-				scanf("%*s");
-			} else	scanf("%*s");
+				valid=FALSE;
+				break;
+			}
+		}
+		mvprintw(2,COLS/2,"Alignment: %s", allignment[curntn->active]);
+		clrtoeol();
+
+
+		/* get new nation mark */
+		curntn->mark = ' ';
+		while(TRUE) {
+			temp = 30;
+			mvprintw(6,0,"This can be any of the following:");
+			for (tempc[0]='!';tempc[0]<='~';tempc[0]++) {
+				if( markok( tempc[0], FALSE ) ) {
+					temp += 2;
+					if (temp>COLS-20) {
+						printw("\n    ");
+						temp = 8;
+					}
+					printw(" %c",tempc[0]);
+				}
+			}
+			mvprintw(5,0,"Enter National Mark (for maps): ");
+			clrtoeol();
+			refresh();
+			tempc[0] = getch();
+			if( markok( tempc[0], TRUE ) ){
+				curntn->mark=(*tempc);
+				break;
+			}
+		}
+
+		mvprintw(3,COLS/2,"National Mark [%c]",curntn->mark);
+		clrtoeol();
+		move(5,0);
+		clrtoeol();
+		move(6,0);
+		clrtoeol();
+		move(7,0);
+		clrtoeol();
+		refresh();
+
+		ypos = 6;
+		mvprintw(ypos,0,"  %-13s       %s", "ITEM", "CURRENTLY HAVE" );
+		mvprintw(ypos++,COLS/2+5,"%4s %s", "COST", "AMOUNT" );
+		for(i=0; i<CH_NUMBER; i++) {
+			mvprintw(ypos,0,"%-15s", Mlabels[i]);
+			showitem(ypos,i);
+			if (i==CH_LOCATE) {
+				mvprintw(ypos,COLS/2+5,"%3d  %s", Mcost[i],
+					    "Better Location");
+			} else {
+				if (curntn->race==ORC) {			
+					switch(i) {
+					case CH_MOVEMENT:
+						mvprintw(ypos++,COLS/2+5,"  -  --------");
+						continue;
+					case CH_REPRO:
+						x = 2*Munits[i]*Mvalues[i];
+						break;
+					case CH_ATTACK:
+					case CH_DEFEND:
+						x = Munits[i]*Mvalues[i]/2;
+						break;
+					default:
+						x = Munits[i]*Mvalues[i];
+						break;
+					}
+					mvprintw(ypos,COLS/2+5,"%3d ", Mcost[i]);
+					printw(" %ld %s", x, Mitems[i]);
+				} else {
+					mvprintw(ypos,COLS/2+5,"%3d ", Mcost[i]);
+					printw(" %ld %s", Munits[i]*Mvalues[i], Mitems[i]);
+				}
+			}
+			ypos++;
+		}
+
+		/* show everything before menu */
+		direct = ADDITION;
+		choice = CH_PEOPLE;
+		xpos = COLS/2;
+		ypos = 7;
+		valid = FALSE;
+		clr = 1;
+		standout();
+		mvaddstr(LINES-4,0,"  ESC: Exit  ?: Info  <,+,h: left  >,+,l: right  k: up  j: down  ' ': ADD/SUB");
+		standend();
+
+		while(valid==FALSE) {
+			if (clr==1) {
+				standout();
+				mvprintw(4,COLS/2,"Points Left: %d", points);
+				standend();
+				clrtoeol();
+				clr++;
+			} else if (clr==2) {
+				newmsg("");
+				clr = 0;
+			}
+			standout();
+			mvaddstr(ypos+choice,xpos,Mprompt[direct]);
+			standend();
+			refresh();
+			switch(getch()) {
+			case '':
+				/* redraw */
+				wrefresh(stdscr);
+				break;
+			case '?':
+				/* help on topic */
+				newerror(Mhelp[choice]);
+				break;
+			case '\033':
+				/* exit option */
+				if (points > 0) {
+					newmsg("Use remaining points for population? [ny]");
+					if (getch()!='y') {
+						newerror("All points must be spent prior to exiting");
+						break;
+					}
+					temp = points * Munits[CH_PEOPLE] / Mcost[CH_PEOPLE];
+					x = temp * Mvalues[CH_PEOPLE];
+					spent[CH_PEOPLE] += temp;
+					showitem(ypos+CH_PEOPLE,CH_PEOPLE);
+					points = 0;
+					sprintf(tempc,"Buying %ld more civilians", x);
+					newerror(tempc);
+				}
+				newmsg("Is the modification complete? (y or n)");
+				while (((temp=getch())!='y')&&(temp!='n')) ;
+				if (temp == 'y') {
+					valid = TRUE;
+				}
+				clr = 1;
+				break;
+			case '-':
+			case '>':
+			case 'l':
+			case 'L':
+				/* subtraction */
+				direct = SUBTRACTION;
+				break;
+			case '+':
+			case '<':
+			case 'h':
+			case 'H':
+				/* addition */
+				direct = ADDITION;
+				break;
+			case '\b':
+			case '\177':
+				/* decrease choice -- with wrap */
+				mvaddstr(ypos+choice,xpos,"    ");
+				if (choice==CH_PEOPLE) {
+					choice = CH_RAWGOODS;
+				} else {
+					choice--;
+					if (choice==CH_MOVEMENT && curntn->race==ORC) {
+						choice--;
+					}
+				}
+				break;
+			case 'k':
+			case 'K':
+				/* move choice up one */
+				if (choice > CH_PEOPLE) {
+					mvaddstr(ypos+choice,xpos,"    ");
+					choice--;
+					if (choice==CH_MOVEMENT && curntn->race==ORC) {
+						choice--;
+					}
+				}
+				break;
+			case '\r':
+			case '\n':
+				/* increase choice -- with wrap */
+				mvaddstr(ypos+choice,xpos,"    ");
+				if (choice==CH_RAWGOODS) {
+					choice = CH_PEOPLE;
+				} else {
+					choice++;
+					if (choice==CH_MOVEMENT && curntn->race==ORC) {
+						choice++;
+					}
+				}
+				break;
+			case 'j':
+			case 'J':
+				/* move choice down one */
+				if (choice < CH_RAWGOODS) {
+					mvaddstr(ypos+choice,xpos,"    ");
+					choice++;
+					if (choice==CH_MOVEMENT && curntn->race==ORC) {
+						choice++;
+					}
+				}
+				break;
+			case ' ':
+			case '.':
+				/* make the selection */
+				if (curntn->race == ORC) {
+					switch(choice) {
+					case CH_REPRO:
+						temp = 2*Munits[choice];
+						break;
+					case CH_ATTACK:
+					case CH_DEFEND:
+						temp = Munits[choice]/2;
+						break;
+					default:
+						temp = Munits[choice];
+						break;
+					}
+				} else temp = Munits[choice];
+				if (direct == ADDITION) {
+					if (Mcost[choice] > points) {
+						sprintf(tempc, "You do not have %d points to spend",
+							Mcost[choice]);
+						newerror(tempc);
+					} else if ((choice == CH_REPRO)&&(curntn->race==ORC)
+						&&(spent[choice] + temp > 12)) {
+						newerror("You may not purchase any more of that item");
+					} else if ((spent[choice] + temp > Maxvalues[choice])
+						&&((curntn->race!=ORC)||(choice!=CH_REPRO))) {
+						newerror("You may not purchase any more of that item");
+					} else {
+						spent[choice] += temp;
+						newmsg("You now have ");
+						dispitem(choice,spent[choice]*Mvalues[choice]);
+						showitem(ypos+choice,choice);
+						points -= Mcost[choice];
+						clr = 1;
+					}
+				} else if (direct == SUBTRACTION) {
+					if (spent[choice] - temp < Minvalues[choice]) {
+						newerror("You may not sell back any more of that item");
+					} else {
+						spent[choice] -= temp;
+						newmsg("You now have ");
+						dispitem(choice,spent[choice]*Mvalues[choice]);
+						showitem(ypos+choice,choice);
+						points += Mcost[choice];
+						clr = 1;
+					}
+				}
+				break;
+			default:
+				break;
+			}
 		}
 		check();
 
-		printnat();
-		printf("\nhit 'y' if OK?");
-		getchar();
-		if(getchar()!='y'){
+		/* check for save */
+		newmsg("Save this nation? [ny]");
+		if(getch()!='y'){
 			curntn->active=INACTIVE;
-			getchar();
 			curntn->powers=0;
-			printf("\n OK, nation deleted\n");
-			printf("\nhit return to add another nation");
-			printf("\nhit any other key to continue?");
-			if(getchar()=='\n') more=TRUE;
-			else more=FALSE;
-			putchar('\n');
+			newerror("Ok, Nation Deleted");
 			fclose(fexe);
-		}
-		else {
+		} else {
+			convert();
 			place(-1,-1);
-			getchar();
-			printf("\nNation is now added to world");
-			printf("\nhit return to add another nation");
-			printf("\nhit any other key to continue?");
-			if(getchar()=='\n') more=TRUE;
-			else more=FALSE;
-			putchar('\n');
+			newerror("Ok, Your Nation has been Added to the World");
 			att_setup(country);	/* setup values ntn attributes */
 			fclose(fexe);
-			sprintf(strin,"NOTICE: Nation %s added to world on turn %d\n",curntn->name,TURN);
-			mailtopc(strin);
+			sprintf(tempc,"NOTICE: Nation %s added to world on turn %d\n",curntn->name,TURN);
+			mailtopc(tempc);
 			/* cannot clear until after placement and initializing */
 			curntn->powers=0;
 		}
+		country=0;
+		for(i=1;i<NTOTAL;i++) if (ntn[i].active==INACTIVE) {
+			country = i;
+			curntn = &ntn[country];
+			break;
+		}
+		if (country!=0) {
+			newmsg("Do you wish to Add another Nation? [ny]");
+			if (getch()!='y') more = FALSE;
+			else more = TRUE;
+		} else {
+			more = FALSE;
+			newerror("No More Available Nations");
+		}
 	}
+	newreset();
 	att_base();	/* calculate base nation attributes */
 	writedata();
-}
-
-void
-printnat()
-{
-	int i;
-	i=country;
-	printf("about to print stats for nation %d\n\n",i);
-	printf("name is .........%s\n",ntn[i].name);
-	printf("leader is .......%s\n",ntn[i].leader);
-	printf("total sctrs .....%d\n",ntn[i].tsctrs);
-	printf("class is ........%s\n",*(Class+ntn[i].class));
-	printf("mark is .........%c\n",ntn[i].mark);
-	printf("race is .........%c\n",ntn[i].race);
-	printf("attack plus is ..+%d\n",ntn[i].aplus);
-	printf("defence plus is .+%d\n",ntn[i].dplus);
-	printf("gold talons......%ld\n",ntn[i].tgold);
-	printf("maxmove is ......%d sctrs\n",ntn[i].maxmove);
-	printf("jewels is .......%ld\n",ntn[i].jewels);
-	printf("# military ......%ld\n",ntn[i].tmil);
-	printf("# civilians .....%ld\n",ntn[i].tciv);
-	printf("repro is ........%d percent\n",ntn[i].repro);
-	printf("total metal .....%ld\n",ntn[i].metals);
-	printf("total food ......%ld\n",ntn[i].tfood);
-	printf("total ships .....%d\n",ntn[i].tships);
-	printf("total leaders ...%d\n",numleaders);
 }
 
 /*****************************************************************/
@@ -660,6 +893,7 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 	int	placed=0,armysize=100;
 	short	armynum=0;
 	long	people;
+	char tempo[LINELTH+1];
 	int	x,y,i,j,temp,t;
 	int	n=0, leadtype;
 	long	soldsleft;	/* soldiers left to place */
@@ -729,9 +963,12 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 			if(ispc(curntn->active)){
 				if(MAPX>24) {
 					x = rand()%(MAPX-24)+12;
-					y = rand()%(MAPY-24)+12;
 				} else {
 					x = rand()%(MAPX-14)+7;
+				}
+				if(MAPY>24) {
+					y = rand()%(MAPY-24)+12;
+				} else {
 					y = rand()%(MAPY-14)+7;
 				}
 			} else {
@@ -779,9 +1016,12 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 			if(ispc(curntn->active)){
 				if (MAPX>40){
 					x = rand()%(MAPX-40)+20;
-					y = rand()%(MAPY-40)+20;
 				}else{
 					x = rand()%(MAPX-18)+9;
+				}
+				if (MAPY>40){
+					y = rand()%(MAPY-40)+20;
+				}else{
 					y = rand()%(MAPY-18)+9;
 				}
 
@@ -792,11 +1032,14 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 				&&( sct[i][j].owner!=0)) placed=0;
 				}
 			} else {
-				if(MAPX>24 && MAPY>24){
+				if(MAPX>24){
 					x = rand()%(MAPX-24)+12;
-					y = rand()%(MAPY-24)+12;
 				}else {
 					x = rand()%(MAPX-12)+6;
+				}
+				if(MAPY>24){
+					y = rand()%(MAPY-24)+12;
+				}else {
 					y = rand()%(MAPY-12)+6;
 				}
 				if(is_habitable(x,y)) placed=1;
@@ -899,17 +1142,19 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 		}
 
 		/* give you some terain to start with: pc nations get more*/
-		if ((isnotpc(curntn->active))&&(curntn->location==GREAT)) t=1;
-		else if (isnotpc(curntn->active)) t=1;
+		if (isnotpc(curntn->active)) t=1;
 		else if (curntn->location==OOPS) t=0;
 		else if (curntn->location==RANDOM) t=0;
 		else if (curntn->location==FAIR) t=1;
 		else if (curntn->location==GREAT) t=2;
-		else printf("error");
+		else {
+			newerror("Error in finding placement");
+			t=0;
+		}
 		if( t==1 )
 			people = sct[x][y].people / 12;
 		else if( t==2 )
-			people = sct[x][y].people / 18;
+			people = sct[x][y].people / 30;
 
 		curntn->tsctrs=1;
 		for(i=x-t;i<=x+t;i++) for(j=y-t;j<=y+t;j++)
@@ -925,23 +1170,25 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 			}
 	}
 	else {
-		if(curntn->location==OOPS) printf("ERROR\n");
+		if(curntn->location==OOPS) newerror("MAJOR ERROR IN PLACEMENT");
 		else if(curntn->location==RANDOM) {
-			printf("RANDOM PLACE FAILED, TRYING TO PLACE AGAIN\n");
+			newerror("Random Place Failed, trying to place again");
 			curntn->location=OOPS;
 			place(-1,-1);
-		}
-		else if(curntn->location==FAIR) {
-			printf("FAIR PLACE FAILED, TRYING AGAIN - adding %d people to nation\n",NLPOP);
+		} else if(curntn->location==FAIR) {
+			sprintf(tempo,"Fair Place Failed, trying again - Adding %ld people to nation",Munits[CH_PEOPLE]*Mvalues[CH_PEOPLE]/Mcost[CH_PEOPLE]);
+			newerror(tempo);
 			/*give back one point -> NLPOP people*/
-			curntn->tciv+=NLPOP;
+			curntn->tciv += Munits[CH_PEOPLE] * Mvalues[CH_PEOPLE]
+				/ Mcost[CH_PEOPLE];
 			curntn->location=RANDOM;
 			place(-1,-1);
-		}
-		else if(curntn->location==GREAT) {
-			printf("GOOD PLACE FAILED, TRYING AGAIN - adding %d people to nation\n",NLPOP);
+		} else if(curntn->location==GREAT) {
+			sprintf(tempo,"Great Place Failed, trying again - Adding %ld people to nation",Munits[CH_PEOPLE]*Mvalues[CH_PEOPLE]/Mcost[CH_PEOPLE]);
+			newerror(tempo);
 			/*give back one point -> NLPOP people*/
-			curntn->tciv+=NLPOP;
+			curntn->tciv+= Munits[CH_PEOPLE] * Mvalues[CH_PEOPLE]
+				/ Mcost[CH_PEOPLE];
 			curntn->location=FAIR;
 			place(-1,-1);
 		}
@@ -952,65 +1199,54 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 /* return the number of points needed */
 int
 getclass(race)
+	int race;
 {
 	short chk=FALSE;
 	short tmp;
+	short ypos=4;
+	int i,j;
+	
+	mvprintw(ypos,0,"The List of Possible Nation Classes:");
+	ypos+=2;
+	mvprintw(ypos++,0,"     %-8s %4s   %15s %8s %4s", "class", "who",
+		"", "magic", "cost");
+	mvprintw(ypos++,0,"     %-8s %4s   %15s %8s %4s", "--------", "----",
+		"", "-------", "----");
+	for(i=1;i<NUMCLASS;i++) {
+		if (in_str(race,Classwho[i])==TRUE) {
+			mvprintw(ypos++,0," %2d) %-8s %4s %15s", i, Class[i],
+				Classwho[i], "...............");
+			tmp = strlen(CPowlist[i]);
+			for(j=0; j < 10-tmp ; j++) {
+				addch('.');
+			}
+			printw(" %s", CPowlist[i]);
+			if (i == C_WARLORD && race == HUMAN)
+				printw(" %4d", Classcost[i]*2/3);
+			else printw(" %4d", Classcost[i]);
+		}
+	}
+	ypos++;
 	while(chk==FALSE){
-		printf("what type of nation would you like to be\n");
-		if(race!=ORC){
-			printf("1. king      (Humans, Dwarves, and Elves)\n");
-			printf("2. emperor   (Humans, Dwarves, and Elves)\n");
-		}
-		if((race!=ORC)&&(race!=DWARF)){
-			printf("3. wizard    (Humans and Elves)..................Cost = %d Points\n",2*NLMAGIC);
-			printf("\tWizards have WYZARD and SUMMON powers. \n");
-		}
-		if(race==HUMAN){
-			printf("4. theocracy (Humans Only).......................Cost = %d Points\n",NLMAGIC);
-			printf("\tTheocracies have RELIGION power. \n");
-		}
-		if((race==HUMAN)||(race==ORC)||(race==DWARF)){
-			printf("5. pirate    (No Elves)..........................Cost = %d Points\n",NLMAGIC);
-			printf("\tPirates have SAILOR power\n");
-		}
-		if((race==ELF)||(race==HUMAN)){
-			printf("6. trader    (Humans & Elves Only)...............Cost = %d Points\n",NLMAGIC);
-			printf("\tTraders have URBAN power\n");
-		}
-		if(race==HUMAN) {
-			printf("7. warlord   (No Elves)..........................Cost = %d Point\n",((int)(2*NLMAGIC*8/10)));
-			printf("\tHuman Warlords get CAPTAIN, and WARLORD powers\n");
-		} else if((race==ORC)||(race==DWARF)) {
-			printf("7. warlord   (No Elves)..........................Cost = %d Points\n",((int)(3*NLMAGIC*8/10)));
-			printf("\tWarlords get WARRIOR, CAPTAIN, and WARLORD powers\n");
-		}
-		if( race==ORC) {
-			printf("8. demon     (Orcs Only).........................Cost = %d Points\n",4*NLMAGIC/3);
-			printf("\tDemons have DESTROYER power\n");
-			printf("9. dragon    (Orcs Only).........................Cost = %d Points\n",((int)(3*NLMAGIC*7/10)));
-			printf("\tDragons have MINOR, AVERAGE, and MAJOR MONSTER powers\n");
-			printf("10. shadow    (Orcs Only)........................Cost = %d Points\n",NLMAGIC);
-			printf("\tShadows have VOID power\n");
-		}
-		printf("\tinput:");
-		scanf("%hd",&tmp);
-		if((tmp>C_NPC)&&(tmp<=C_END)) {
-			if((race==HUMAN)&&((tmp<=C_WARLORD)))
-				chk=TRUE;
-			else if((race==DWARF)&&((tmp<C_WIZARD)||(tmp==C_PIRATE)||(tmp==C_WARLORD)))
-				chk=TRUE;
-			else if((race==ELF)&&((tmp==C_TRADER)||(tmp<=C_WIZARD)))
-				chk=TRUE;
-			else if((race==ORC)&&((tmp==C_PIRATE)||(tmp>=C_WARLORD)))
-				chk=TRUE;
-			else printf("bad input \n\n\n");
+		mvprintw(ypos,0,"Enter the number of your choice: ");
+		clrtoeol();
+		refresh();
+		tmp = get_number();
+		if (tmp < 1 || tmp > NUMCLASS) {
+			newerror("Invalid Choice");
+		} else if (in_str(race,Classwho[tmp])==TRUE) {
+			chk = TRUE;
 		} else {
-			printf("\tinvalid input\n\n\n");
-			getchar();
+			newerror("That Class is Invalid for your Race");
 		}
 	}
 	curntn->class=tmp;
-	return( doclass( tmp, TRUE ) );
+	for(tmp=ypos; tmp>4; tmp--) {
+		move(tmp,0);
+		clrtoeol();
+	}
+	
+	return( doclass( curntn->class, TRUE ) );
 }
 
 int
@@ -1018,83 +1254,51 @@ doclass( tmp, isupd )
 short	tmp;
 int	isupd;	/* true if update, false if interactive */
 {
-	short i;
+	int cost;
 	long x;
 
 	/* determine number of leaders you want */
 	if((tmp == C_TRADER) || (tmp <= C_WIZARD))
-		numleaders = 5;
-	else	numleaders = 7;
+		spent[CH_LEADERS] = 5;
+	else	spent[CH_LEADERS] = 7;
 
-	switch(tmp){
-	case C_WIZARD:
-		curntn->powers |= SUMMON;
-		x=SUMMON;
-		if( isupd ) CHGMGK;
-		curntn->powers |= WYZARD;
-		x=WYZARD;
-		if( isupd ) CHGMGK;
-		return(2*NLMAGIC);
-	case C_PRIEST:
-		curntn->powers|=RELIGION;
-		x=RELIGION;
-		if( isupd ) CHGMGK;
-		return(NLMAGIC);
-	case C_PIRATE:
-		curntn->powers|=SAILOR;
-		x=SAILOR;
-		if( isupd ) CHGMGK;
-		return(NLMAGIC);
-	case C_TRADER:
-		curntn->powers|=URBAN;
-		x=URBAN;
-		if( isupd ) CHGMGK;
-		return(NLMAGIC);
-	case C_WARLORD:
-		i=0;
-		if(magic(country,WARRIOR)!=TRUE){
-			curntn->powers|=WARRIOR;
-			x=WARRIOR;
-			if( isupd ) CHGMGK;
-			i++;
-		}
-		if(magic(country,CAPTAIN)!=TRUE){
-			curntn->powers|=CAPTAIN;
-			x=CAPTAIN;
-			if( isupd ) CHGMGK;
-			i++;
-		}
-		if(magic(country,WARLORD)!=TRUE){
-			curntn->powers|=WARLORD;
-			x=WARLORD;
-			if( isupd ) CHGMGK;
-			i++;
-		}
-		return((int)(i*NLMAGIC*8/10)); /* 20% discount applied */
-	case C_DEMON:
-		curntn->powers|=DESTROYER;
-		x=DESTROYER;
-		if( isupd ) CHGMGK;
-		return((int)(4*NLMAGIC/3));
-	case C_DRAGON:
-		curntn->powers|=MI_MONST;
-		x=MI_MONST;
-		if( isupd ) CHGMGK;
-		curntn->powers|=AV_MONST;
-		x=AV_MONST;
-		if( isupd ) CHGMGK;
-		curntn->powers|=MA_MONST;
-		x=MA_MONST;
-		if( isupd ) CHGMGK;
-		return((int)(3*NLMAGIC*7/10));	/* 30% discount applied */
-	case C_SHADOW:
-		curntn->powers|=THE_VOID;
-		x=THE_VOID;
-		if( isupd ) CHGMGK;
-		return(NLMAGIC);
-	default:
-		return(0);
+	/* assign the powers */
+	x=Classpow[tmp];
+
+	/* check for special case */
+	if (tmp==C_WARLORD && curntn->race==HUMAN) {
+		x ^= WARRIOR;
+		cost = Classcost[tmp]*2/3;
+	} else {
+		cost = Classcost[tmp];
 	}
+	curntn->powers |= x;
+
+	if ( isupd ) CHGMGK;
+	return(cost);
+}
+
+int
+nstartcst()	/* to be used for new method */
+{
+	float points=0.0;
+	char temp[LINELTH];
+	int i;
+
+	/* calculate cost for all so far */
+	for (i=0; i<CH_NUMBER; i++) {
+		points += Mcost[i] * (float) spent[i] / Munits[i];
+	}
+
+	/* extra points for starting late */
+	points -= (float) (TURN-1) / LATESTART;
+	if( (TURN-1)/LATESTART > 0.0 ) {
+		sprintf(temp,"%.1f points added for starting late",
+			   (float) (TURN-1) / LATESTART);
+		newerror(temp);
+	}
+	points += 1.0;	/* round up */	
+	return((int)points);
 }
 
 int
@@ -1102,24 +1306,24 @@ startcost()	/* cant be used for npc nations yet!!! see below */
 {
 	float	points;	/* points */
 
-	points = ((float)curntn->tciv)/NLPOP;
-	points += ((float)curntn->tgold)/NLGOLD;
-	points += ((float)curntn->tmil)/NLSOLD;
+	points = ((float)curntn->tciv)/ONLPOP;
+	points += ((float)curntn->tgold)/ONLGOLD;
+	points += ((float)curntn->tmil)/ONLSOLD;
 	if(curntn->race==ORC) {
-		points += ((float)curntn->repro)*NLREPCOST/(NLREPRO_ORC);
-		points += ((float)curntn->aplus*2)/NLATTACK;
-		points += ((float)curntn->dplus*2)/NLDEFENCE;
+		points += ((float)curntn->repro)*ONLREPCOST/(ONLREPRO_ORC);
+		points += ((float)curntn->aplus*2)/ONLATTACK;
+		points += ((float)curntn->dplus*2)/ONLDEFENCE;
 	} else {
-		points += ((float)curntn->aplus)/NLATTACK;
-		points += ((float)curntn->dplus)/NLDEFENCE;
-		points += ((float)curntn->repro)*NLREPCOST/NLREPRO;
+		points += ((float)curntn->aplus)/ONLATTACK;
+		points += ((float)curntn->dplus)/ONLDEFENCE;
+		points += ((float)curntn->repro)*ONLREPCOST/ONLREPRO;
 	}
-	points += ((float)curntn->maxmove)/NLMOVE;
+	points += ((float)curntn->maxmove)/ONLMOVE;
 	if(curntn->location==FAIR)
-		points += NLLOCCOST;
+		points += ONLLOCCOST;
 	else if(curntn->location==GREAT)
-		points += 2*NLLOCCOST;
-	/* points+=NLDBLCOST*curntn->tfood/NLHFOOD; */
+		points += 2*ONLLOCCOST;
+	/* points+=ONLDBLCOST*curntn->tfood/ONLHFOOD; */
 	points -= (TURN-1) / LATESTART;	/* extra points if you start late */
 	if( TURN > 1 )
 	printf("point cost for nation %d is %.2f (bonus for latestart is %f)\n",country,points,(float) (TURN-1)/LATESTART);

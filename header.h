@@ -42,13 +42,15 @@
 #define SYSV		/* uncomment this line on a UNIX SYSV machine	*/
 /* #define BSD		/* uncomment this line on a BSD machine		*/
 /* #define HPUX		/* uncomment for HP-UNIX			*/
+/*#define XENIX               /* this plus SYSV for XENIX machines, untested  */
 /* #define SYSMAIL	/* if your system supports mail			*/
 			/* conquer will notify you about system mail	*/
 
-/* -------------------MODIFICATION IS OPTIONAL ON THE FOLLOWING-------------	*/
+/* -------------------MODIFICATION IS OPTIONAL ON THE FOLLOWING-----------*/
 #define SPOOLDIR "/usr/spool/mail"	/* location of mail spool	*/
 /* #define FILELOCK	/* if your system supports BSD flock()		*/
 			/* other file locking is not well implemented	*/
+/*#define LOCKF               /* in addition to FILELOCK if you have lockf    */
 #define TIMELOG	/* if your system has the date command		*/
 
 #define NTOTAL 25	/* max # of nations ( player + npc + monster )	*/
@@ -66,14 +68,15 @@
 #define JEWELPCT 33	/* percent of tradegoods that are luxury items	*/
 #define HIDELOC		/* defined if news is not to report sectors	*/
 
-#define OGOD		/* defined if you wish to enhance god powers.  This
-			   should not be defined on the pc as there is no
-			   /etc/passwd file to read info from		*/
+#define OGOD		/* defined if you wish to enhance god powers.   */
 
 #define DERVDESG	/* allow DERVISH to redesignate in a DESERT/ICE	*/
-#define MONSTER	45	/* defined if pirates/barbarians/nomads/lzard exist.
+#define MONSTER	45	/* defined if pirates/savages/nomads/lzard exist.
 			   represents # of sectors of land that need to be
-			   in world per pirate/barbarian/nomad nation	*/
+			   in world per pirate/savage/nomad nation	*/
+#define NPC	45	/* defined if NPC nations should exist. The numeric
+			   represents # of sectors of land that need to be
+			   in world per non-player character nation	*/
 #define CHEAT		/* npcs will cheat to keep up - this is a very weak
 			   form of cheating.  I use good npc algorithms 
 			   (i think... comments)			*/
@@ -87,8 +90,7 @@
 #define PMOUNT 40	/* % of land that is mountains			*/
 #define PSTORM 3	/* % chance that a storm will strike a fleet	*/
 			/* unless it is in harbor			*/
-#define NPC		/* defined if non player country exists at start*/
-#define CMOVE		/* Defined if you wish the computer to move
+#define CMOVE		/* #ifdef NPC; defined for the computer to move
 			   for Player nations if they forget to move	*/
 #define BEEP		/* defined if you wish terminal to beep		*/
 #define HILIGHT		/* defined if terminals support inverse video	*/
@@ -100,7 +102,7 @@
 			/* a turn is 1 season and 25% is a large value	*/
 #define	SPEW		/* spew random messages from npcs 		*/
 
-/* ---BELOW THIS POINT ARE PARAMETERS YOU MIGHT OPTIONALLY WISH TO CHANGE---	*/
+/* -BELOW THIS POINT ARE PARAMETERS YOU MIGHT OPTIONALLY WISH TO CHANGE-*/
 
 /* making these numbers large takes more CPU time			*/
 #define LANDSEE 2	/* how far you can see from your land		*/

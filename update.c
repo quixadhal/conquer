@@ -26,7 +26,7 @@ int	**attr;			/* sector attractiveness */
 void
 update()
 {
-	char command[80],filename[80];
+	char command[BIGLTH],filename[FILELTH];
 
 	sprintf(filename,"%s%d",newsfile,TURN);
 	if ((fnews=fopen(filename,"w"))==NULL) {
@@ -217,7 +217,6 @@ attract(x,y,race)
 	if((designation==DDEVASTATED)||(Attr<0)||(movecost[x][y]<0)) Attr=0;
 	return(Attr);
 }
-
 /****************************************************************/
 /*	ARMYMOVE() 						*/
 /* armymove moves an army... and returns the # of sectors taken	*/
@@ -227,6 +226,9 @@ armymove(armynum)
 int armynum;
 {
 	long		sum, where;
+#ifdef XENIX
+	register int z;
+#endif /*XENIX*/
 	register int	x, y;
 	int	i;
 	long	menok;			/* enough men in the army? */
@@ -336,13 +338,25 @@ int armynum;
 				if((sct[x][y].designation != DCITY)
 				&&(sct[x][y].designation != DCAPITOL)
 				&&(sct[x][y].designation != DTOWN)
-				&&(sct[x][y].owner==country))
+				&&(sct[x][y].owner==country)) {
+#ifdef XENIX
+					z = attr[x][y];
+					z /= 8;
+					attr[x][y] = z;
+#else
 					attr[x][y] /= 8;
-
+#endif /*XENIX*/
+				}
 				if(sct[x][y].owner==0){
 					sct[x][y].owner=country;
 					curntn->popularity++;
+#ifdef XENIX
+					z = attr[x][y];
+					z /= 8;
+					attr[x][y] = z;
+#else
 					attr[x][y]/=8;
+#endif /*XENIX*/
 					takesctr++;
 				}
 		
@@ -476,6 +490,7 @@ cheat()
 }
 #endif CHEAT
 
+
 /****************************************************************/
 /*	UPDEXECS() 						*/
 /* update all nations in a random order				*/
@@ -485,8 +500,10 @@ void
 updexecs()
 {
 	register struct s_sector	*sptr;
-	register int i, j;
-	register int x,y;
+	register int i, j, x, y;
+#ifdef XENIX
+	register int z;
+#endif /*XENIX*/
 	int	armynum;
 	int moved,done,loop=0,number=0;
 
@@ -530,23 +547,23 @@ updexecs()
 		/*if execute is 0 and PC nation then they did not move*/
 		if((execute(TRUE)==0)&&(ispc(curntn->active))){
 			printf("\tnation %s did not move\n",curntn->name);
+#ifdef NPC
 #ifdef CMOVE
 			printf("\tthe computer will move for %s\n",curntn->name);
 			fprintf(fnews,"1.\tthe computer will move for %s\n",curntn->name);
 			mailopen( country );
 			fprintf(fm,"the computer moved for you (%s) in %s of Year %d\n",curntn->name,PSEASON(TURN),YEAR(TURN));
 			mailclose();
-	check();
+			check();
 			nationrun();
-	check();
-#endif CMOVE
+			check();
+#endif /*CMOVE*/
 		}
-#ifdef NPC
-	check();
 		/* run npc nations */
 		if(isnpc(curntn->active)) {
+			check();
 			nationrun();
-	check();
+			check();
 #ifdef ORCTAKE
 			/*do npc nation magic*/
 			if(magic(country,MA_MONST)==TRUE) {
@@ -560,8 +577,8 @@ updexecs()
 				printf("SUCCESSFUL TAKEOVER OF %d by %s",x,curntn->name);
 			}
 #endif ORCTAKE
+#endif /*NPC*/
 		}
-#endif NPC
 
 		/* is leader killed - put nation into dissarray */
 		x = getleader((int)curntn->class) - 1;
@@ -642,7 +659,8 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 			if(ONMAP(i,j)){
 				if( sct[i][j].owner != country)
 					continue;
-				moved=(sptr->people*attr[i][j]-sct[i][j].people*attr[x][y])/(1+5*(attr[i][j]+attr[x][y]));
+				moved=(sptr->people*attr[i][j]-sct[i][j].people*attr[x][y]);
+				moved /= (1+5*(attr[i][j]+attr[x][y]));
 				if( moved <= 0 ) continue;
 
 				sct[i][j].people += moved;
@@ -655,7 +673,13 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 	for(country=1;country<NTOTAL;country++) if(isntn(ntn[country].active)){
 		ntn[country].tships=0;
 		ntn[country].tmil=0;
+#ifdef XENIX
+		z = ntn[country].spellpts;
+		z /= 2;
+		ntn[country].spellpts = z;
+#else
 		if(rand()%4==0) ntn[country].spellpts/=2;
+#endif /*XENIX*/
 		if(magic(country,SUMMON)==TRUE) {
 			ntn[country].spellpts+=4;
 			if(magic(country,WYZARD)==TRUE)
@@ -678,6 +702,9 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 void
 do_lizard()
 {
+#ifdef XENIX
+	register int x;
+#endif /*XENIX*/
 	register int i, j;
 	int armynum;
 
@@ -686,8 +713,15 @@ do_lizard()
 	for(armynum=0;armynum<MAXARM;armynum++)
 	if((P_ASOLD>0)) {
 		P_AMOVE =20;	/* just in case god wants to move them */
-		P_ASOLD*=102;	/* increase population */
+		/* increase population */
+#ifdef XENIX
+		x = P_ASOLD * 102;
+		x /= 100;
+		P_ASOLD = x;
+#else
+		P_ASOLD*=102;
 		P_ASOLD/=100;
+#endif /*XENIX*/
 		if(armynum%2==0) {
 			if(P_ASTAT!=SIEGED) P_ASTAT=GARRISON;
 		} else {
@@ -1333,8 +1367,15 @@ updcomodities()
 		}
 		/*this state can occur if few people live in cities*/
 		if(curntn->tfood<0) curntn->tfood=0L;
+#ifdef XENIX
+		xx = curntn->tfood;
+		xx *= (100-curntn->spoilrate);
+		xx /= 100;
+		curntn->tfood = xx;
+#else
 		curntn->tfood *= (100-curntn->spoilrate);
 		curntn->tfood /= 100;
+#endif /*XENIX*/
 
 		if(curntn->tgold>GOLDTHRESH*curntn->jewels){
 			/* buy jewels off commodities board */

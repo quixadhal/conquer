@@ -53,7 +53,7 @@ desg_ok(prtflag, desg, sptr)
 	&&((desg!=DCAPITOL && sptr->designation==DCITY)
 	||sptr->designation==DCAPITOL)) {
 		if(prtflag) {
-			char buf[80];
+			char buf[LINELTH+1];
 			sprintf(buf,"Must first burn down city/capitol (designate as '%c')",DRUIN);
 			errormsg(buf);
 		}
@@ -189,8 +189,9 @@ redesignate()
 				return;
 			}
 			sptr->vegetation=newdes;
-			if(tofood(sptr,0)!=0)
-				sptr->designation=newdes;
+			if( tofood(sptr,0) < DESFOOD )
+				sptr->designation=DNODESIG;
+			else sptr->designation=newdes;
 			reset_god();
 			return;
 		case 'o':
@@ -445,7 +446,6 @@ construct()
 
 			if (P_NCREW==SHIPCREW) {
 				errormsg("You may only &^#$! repair damaged fleets!!!");
-				if(isgod==TRUE) reset_god();
 				return;
 			}
 			clear_bottom(0);
@@ -458,6 +458,11 @@ construct()
 			clrtoeol();
 			refresh();
 			amount = (short) get_number();
+			if (amount<0) {
+				if(isgod==TRUE) reset_god();
+				return;
+			}
+				    
 
 			/* find cost of repairs on all ships */
 			cost = 0;
@@ -600,7 +605,7 @@ construct()
 
 		/*sanity checks*/
 		if((amount>N_MASK)) amount=0;
-		if (amount==0)
+		if (amount<=0)
 		{
 			if(isgod==TRUE) reset_god();
 			return;
@@ -1023,10 +1028,10 @@ rmessage()
 	int count,msglen;
 	int contd;
 	int done=FALSE;
-	char tempfile[ 30 ];
-	char mesgfile[ 30 ];
-	char line[80], inpch;
-	char save[50][80];
+	char tempfile[FILELTH];
+	char mesgfile[FILELTH];
+	char line[LINELTH+1], inpch;
+	char save[LINELTH][LINELTH+1];
 
 	/*open file*/
 	sprintf(tempfile,"%s%hd.tmp",msgfile,country);
@@ -1050,7 +1055,7 @@ rmessage()
 	}
 
 	/*read in file a line at at time*/
-	if(fgets(line,80,mesgfp)==NULL) {
+	if(fgets(line,LINELTH,mesgfp)==NULL) {
 		done=TRUE;
 		redraw=FALSE;
 		clear_bottom(0);
@@ -1066,7 +1071,7 @@ rmessage()
 		standout();
 		/*print to end of message*/
 		while(contd==FALSE) {
-			if(msglen<50) strcpy(save[msglen],line);
+			if(msglen<LINELTH) strcpy(save[msglen],line);
 			if(count==LINES-3) {
 				standout();
 				mvaddstr(LINES-3,(COLS/2)-8,"--- more ---");
@@ -1080,7 +1085,7 @@ rmessage()
 			standend();
 			count++;
 			msglen++;
-			if(fgets(line,80,mesgfp)==NULL) contd=TRUE;
+			if(fgets(line,LINELTH,mesgfp)==NULL) contd=TRUE;
 			if(strncmp(line,"END",3)==0) contd=TRUE;
 		}
 		standout();
@@ -1094,7 +1099,7 @@ rmessage()
 			strcpy(line,"END\n");
 			fputs(line,fptemp);
 		}
-		if(fgets(line,80,mesgfp)==NULL) done=TRUE;
+		if(fgets(line,LINELTH,mesgfp)==NULL) done=TRUE;
 	}
 	fclose(mesgfp);
 	fclose(fptemp);
@@ -1116,7 +1121,7 @@ wmessage()
 	char name[NAMELTH+1];
 	int temp=(-1);
 	int linedone;
-	char line[100];
+	char line[BIGLTH];
 
 	/*what nation to send to*/
 	clear();
@@ -1184,7 +1189,7 @@ wmessage()
 				refresh();
 				ch=getch();
 			} else if (ch=='') {
-				refresh();
+				wrefresh(stdscr);
 				ch=getch();
 			} else	ch=getch();
 		}
@@ -1236,8 +1241,10 @@ moveciv()
 	clrtoeol();
 	refresh();
 	people = get_number();
-	if((people<0)
-	||(people>sct[XREAL][YREAL].people)
+	if (people <= 0) {
+		return;
+	}
+	if((people>sct[XREAL][YREAL].people)
 	||(people*50>curntn->tgold)){
 		errormsg("Sorry...Input error or you do not have the gold talons");
 		makebottom();
@@ -1250,6 +1257,9 @@ moveciv()
 	clrtoeol();
 	refresh();
 	i = get_number();
+	if (i < 0) {
+		return;
+	}
 
 	if((i-(XREAL))>2||(i-(XREAL))<-2) {
 		errormsg("sorry, can only move two sectors");
@@ -1261,6 +1271,9 @@ moveciv()
 	clrtoeol();
 	refresh();
 	j = get_number();
+	if (j < 0) {
+		return;
+	}
 	if((j-(YREAL)>2)||((YREAL)-j>2)) {
 		errormsg("sorry, can only move two sectors");
 	}

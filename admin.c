@@ -46,8 +46,8 @@ main(argc,argv)
 int argc;
 char **argv;
 {
-	int geteuid(), getuid(), setuid();
-	register int i;
+	int geteuid(), getuid(), setuid(), realuser, l;
+	register int i,j;
 	char *name;
 	void srand();
 	int getopt();
@@ -55,16 +55,78 @@ char **argv;
 	/* mflag = makeworld, a=add player, x=execute, p=print */
 	/* rflag = make world from read in files */
 	int mflag, aflag, xflag, pflag, rflag;
-	char string[80];
+	char string[FILELTH];
 	extern char *optarg;
-	char defaultdir[256];
+	char defaultdir[BIGLTH],cq_opts[BIGLTH];
 	struct passwd *getpwnam();
 
 	mflag = aflag = xflag = pflag = rflag = 0;
 	srand((unsigned) time((long *) 0));
-	strcpy(defaultdir, DEFAULTDIR);
+	strcpy(cq_opts,"");
 	name = string;
 	*name = 0;
+
+	/* check conquer options */
+	if (getenv(ENVIRON_OPTS)!=NULL) {
+		strncpy(cq_opts, getenv(ENVIRON_OPTS), BIGLTH-1);
+	}
+	if (cq_opts[0] != '\0') {
+		l = strlen(cq_opts);
+		for(i=0; i<l; i++) {
+			switch(cq_opts[i]) {
+			case 'G':
+				/* ignore Gaudy display */
+				break;
+			case 'N':
+			case 'n':
+				/* ignore nation name */
+				for (;i<l && cq_opts[i]!=',';i++);
+				break;
+			case 'D':
+			case 'd':
+				/* check for data directory */
+				if (strncmp(cq_opts+i+1,"ata=",4)==0) {
+					i += 5;
+				} else if (strncmp(cq_opts+i+1,"atadir=",7)==0) {
+					i += 8;
+				} else if (strncmp(cq_opts+i+1,"irectory=",9)==0) {
+					i += 10;
+				} else if (strncmp(cq_opts+i+1,"ir=",3)==0) {
+					i += 4;
+				} else {
+					fprintf(stderr,"conquer: invalid environment\n");
+					fprintf(stderr,"\t%s = %s\n",ENVIRON_OPTS,cq_opts);
+					fprintf(stderr,"\texpected <data=NAME>\n");
+					exit(FAIL);
+				}
+				if (i<l) {
+					/* grab the data directory */
+					for (j=0; j<l-i && cq_opts[i+j]!=',';j++) {
+						defaultdir[j] = cq_opts[i+j];
+					}
+					defaultdir[j]='\0';
+					i += j-1;
+				}
+				break;
+			case ' ':
+			case ',':
+				/* ignore commas and spaces */
+				break;
+			default:
+				/* complain */
+				fprintf(stderr,"conquer: invalid environment\n");
+				fprintf(stderr,"\t%s = %s\n",ENVIRON_OPTS,cq_opts);
+				fprintf(stderr,"\tunexpected option <%c>\n",cq_opts[i]);
+				exit(FAIL);
+				break;
+			}
+	     }
+	}
+
+	/* set the default data directory */
+	if (defaultdir[0] == '\0') {
+		strcpy(defaultdir, DEFAULTDIR);
+	}
 
 	/* process the command line arguments */
 	while((i=getopt(argc,argv,"maxpr:d:"))!=EOF) switch(i){
@@ -90,11 +152,7 @@ char **argv;
 		strcpy(scenario, optarg);
 		break;
 	case 'd':
-		if(optarg[0]!='/') {
-			sprintf(defaultdir, "%s/%s", DEFAULTDIR, optarg);
-		} else {
-			strcpy(defaultdir, optarg);
-		}
+		strcpy(defaultdir, optarg);
 		break;
 	case '?': /*  print out command line arguments */
 		printf("Command line format: %s [-maxp -dDIR -rSCENARIO]\n",argv[0]);
@@ -107,16 +165,15 @@ char **argv;
 		exit(SUCCESS);
 	};
 
-#ifdef OGOD
-	if(((getuid())!=(getpwnam(LOGIN)->pw_uid))&&(!aflag))
-	{
-	     printf("Sorry -- you can not administrate conquer\n");
-	     printf("you need to be logged in as %s\n",LOGIN);
-	     exit(FAIL);
-	}
+	realuser = getuid();
 	/* may now replace user identity */
 	(void) setuid (geteuid ()) ;
-#endif OGOD
+
+	/* set proper defaultdir */
+	if (defaultdir[0] != '/') {
+		strcpy(cq_opts, defaultdir);
+		sprintf(defaultdir, "%s/%s", DEFAULTDIR, cq_opts);
+	}
 
 	/* now that we have parsed the args, we can got to the
 	 * dir where the files are kept and do some work.
@@ -126,6 +183,14 @@ char **argv;
 		exit(FAIL);
 	}
 	if((mflag)||(rflag)) {
+		if(realuser!=(getpwnam(LOGIN)->pw_uid)) {
+			printf("Sorry -- you can not create a world\n");
+			printf("you need to be logged in as %s",LOGIN);
+			if (strcmp(LOGIN, ntn[0].leader)!=0) {
+				printf(" or %s",ntn[0].leader);
+			}
+			printf("\n");
+		}
 		sprintf(string,"%sup",isonfile);
 		unlink(string);
 		makeworld(rflag);
@@ -177,24 +242,50 @@ char **argv;
 		newlogin();
 		unlink(string);
 		exit(SUCCESS);
-	} else if (pflag) {	/* print a map of the game */
+	}
+
+#ifdef OGOD
+	if((realuser!=(getpwnam(LOGIN)->pw_uid))&&
+	   (realuser!=(getpwnam(ntn[0].leader)->pw_uid))) {
+		printf("Sorry -- you can not administrate conquer\n");
+		printf("you need to be logged in as %s",LOGIN);
+		if (strcmp(LOGIN, ntn[0].leader)!=0) {
+			printf(" or %s",ntn[0].leader);
+		}
+		printf("\n");
+		exit(FAIL);
+	}
+#endif OGOD
+
+	if (pflag) {	/* print a map of the game */
 		fprintf(stderr,"\nFor convenience, this output is to stderr,\n");
 		fprintf(stderr,"while the maps will be sent to stdout.\n\n");
 		fprintf(stderr,"\tThe valid options are,\n");
 		fprintf(stderr,"\t\t1) altitudes\n\t\t2) vegetations\n");
-		fprintf(stderr,"\t\t3) nations\n\n");
+		fprintf(stderr,"\t\t3) nations\n");
+		fprintf(stderr,"\t\t4) designations\n\n");
 		fprintf(stderr,"\tWhat type of map? ");
 		scanf("%hd", &dismode);
 		fprintf(stderr,"\n");
 		if(dismode==1) printele();
 		else if(dismode==2) printveg();
-		else pr_ntns();
+		else if(dismode==3) pr_ntns();
+		else if(dismode==4) pr_desg();
+		else {
+		     fprintf(stderr,"must be 1-4\n");
+		     exit(FAIL);
+		}
 		exit(SUCCESS);
 	} else if (xflag) {	/* update the game */
 #ifndef OGOD
-		if ( getuid() != (getpwnam(LOGIN))->pw_uid ){
+		if((realuser!=(getpwnam(LOGIN)->pw_uid))&&
+		   (realuser!=(getpwnam(ntn[0].leader)->pw_uid))) {
 			printf("sorry -- your uid is invalid for updating\n");
-			printf("you need to be logged in as %s\n",LOGIN);
+			printf("you need to be logged in as %s",LOGIN);
+			if (strcmp(LOGIN, ntn[0].leader)!=0) {
+				printf(" or %s",ntn[0].leader);
+			}
+			printf("\n");
 			exit(FAIL);
 		}
 #endif OGOD

@@ -185,7 +185,7 @@ int type;
 void
 domagic()
 {
-	int count, done=FALSE, loop=0, i,type;
+	int county, countx, done=FALSE, loop=0, i,type;
 	long price,x;
 	short isgod=0;
 	if(country==0) {
@@ -196,15 +196,16 @@ domagic()
 	while(done==FALSE){
 		done=TRUE;
 		clear();
-		count=3;
+		county=3;
+		countx=0;
 		redraw=TRUE;
 		standout();
 		mvprintw(0,(COLS/2)-15,"MAGIC POWERS FOR %s",curntn->name);
-		mvprintw(count++,30,"1) %d military powers: %ld jewels",
+		mvprintw(county++,30,"1) %d military powers: %ld jewels",
 			num_powers(country,M_MIL) ,getmgkcost(M_MIL,country));
-		mvprintw(count++,30,"2) %d civilian powers: %ld jewels",
+		mvprintw(county++,30,"2) %d civilian powers: %ld jewels",
 			num_powers(country,M_CIV) ,getmgkcost(M_CIV,country));
-		mvprintw(count++,30,"3) %d magic powers:    %ld jewels",
+		mvprintw(county++,30,"3) %d magic powers:    %ld jewels",
 			num_powers(country,M_MGK),getmgkcost(M_MGK,country));
 
 		price =  getmgkcost(M_MIL,country);
@@ -217,27 +218,31 @@ domagic()
 #endif OGOD
 
 		standend();
-		count=3;
+		county=3;
 		/*print the powers that you have*/
 		i=0;
 		while( powers[i] != 0 ){
 			if(magic(country,powers[i])==TRUE)
-			mvprintw(count++,0,"you have power %s",*(pwrname+i));
+			mvprintw(county++,countx,"you have power %s",*(pwrname+i));
 			i++;
+			if (county > 18) {
+				county=7;
+				countx=40;
+			}
 		}
 
-		if(count<=7) count=8;
-		else count++;
+		if(county<=7) county=8;
+		else if(countx == 40) county = 20;
+		else county++;
 		standout();
-		mvprintw(count++,0,"YOU HAVE %ld JEWELS IN YOUR TREASURY",curntn->jewels);
+		mvprintw(county++,0,"YOU HAVE %ld JEWELS IN YOUR TREASURY",curntn->jewels);
 		if(price < curntn->jewels){
-		mvaddstr(count++,0,"DO YOU WISH TO BUY A RANDOM NEW POWER (enter y or n):");
+		mvaddstr(county++,0,"DO YOU WISH TO BUY A RANDOM NEW POWER (enter y or n):");
 		standend();
 		refresh();
-		count++;
 		if(getch()=='y'){
 			done=FALSE;
-			mvprintw(count++,0,"ENTER SELECTION (1,2,3):");
+			mvprintw(county++,0,"ENTER SELECTION (1,2,3):");
 			refresh();
 			type = getch() - '0';
 			if(type==M_MIL || type==M_CIV || type==M_MGK){
@@ -270,11 +275,11 @@ domagic()
 		}
 #ifdef ORCTAKE
 		if((curntn->race==ORC)&&(curntn->jewels>=ORCTAKE)&&(curntn->spellpts>=TAKEPOINTS))
-			done |= orctake(&count);
+			done |= orctake(&county);
 #endif ORCTAKE
 #ifdef OGOD
 		if (isgod==TRUE) {
-			mvaddstr(count++,0,"GOD: REMOVE A MAGIC POWER? (y or n)");
+			mvaddstr(county++,0,"GOD: REMOVE A MAGIC POWER? (y or n)");
 			refresh();
 			if (getch()=='y') killmagk();
 		}
@@ -492,7 +497,7 @@ dosummon()
 	int x,count,i,armynum;
 	long e_cost;
 	int newtype,s_cost;
-	char line[80],ch;
+	char line[LINELTH+1],ch;
 
 	x=0;
 	count=LINES-4;
@@ -809,29 +814,37 @@ long oldpower;
 /* killmagk: this routine removes a magic power */
 killmagk()
 {
-	int count,choice,i;
+	int county,countx,choice,i;
 
 	clear();
-	count=3;
+	county=3;
+	countx=0;
 	standout();
 	mvprintw(0,(COLS/2)-15,"MAGIC POWERS FOR %s",curntn->name);
 	standend();
 	i=0;
 	while( powers[i] != 0 ){
 		if(magic(country,powers[i])==TRUE) {
-			mvprintw(count,0,"%d: power %s",i+1,*(pwrname+i));
-			count++;
+			mvprintw(county,countx,"%d: power %s",i+1,*(pwrname+i));
+			county++;
 		}
 		i++;
+		if (county > 18) {
+			county = 3;
+			countx = 40;
+		}
 	}
-	count++;
+	if (countx == 40) {
+	  county = 20;
+	}
+	else county++;
 	standout();
-	mvaddstr(count++,5," Which power to remove? ");
+	mvaddstr(county++,5," Which power to remove? ");
 	standend();
 	refresh();
 	choice=get_number();
-	if(choice!=0) {
-		mvprintw(count++,0," Remove magic #%d? (y or [n])",choice);
+	if(choice > 0) {
+		mvprintw(county++,0," Remove magic #%d? (y or [n])",choice);
 		refresh();
 		if (getch()=='y') {
 			if(magic(country,powers[choice-1])) {
@@ -855,7 +868,7 @@ void
 wizardry()
 {
 	int i,xspt,yspt,choice,armynum,s_cost;
-	char line[80];
+	char line[LINELTH+1];
 	void dosummon();
 
 	clear_bottom(0);

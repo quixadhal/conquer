@@ -1,10 +1,10 @@
 ------------------------------------------------------------------------------
 | THIS FILE CONTAINS RELEASE NOTES FOR CONQUER V4.0 			     |
 | It is broken into 3 sections.  Section 3 reflects changes from v3.5 to v4. |
-| Section 1 reflects bugs in v4.0.  Section 2 reflects. Future ideas.        |
+| Section 1 reflects bugs in v4.0.  Section 2 reflects future ideas.         |
 ------------------------------------------------------------------------------
 -------------------------------------------------------------------------
-| == Bugs Fixed From Conquer Version 4.0 ============================== |
+| 1.0 == Bugs Fixed From Conquer Version 4.0 ========================== |
 -------------------------------------------------------------------------
   1. increased newstring[] array from 40 to 100 in makeworl.c.
   2. corrected a mispelling of irrigation.
@@ -40,9 +40,71 @@
  27. added more names to rebel name list.
  28. worked on Makefile.  [made sure of parallelism; ready to distribute]
  29. reworded treasury display on budget screen for clarity.
+===4.0 patch number two released => 4.2 ==========================
+ 30. worked more on Makefile.  trying to fix others problems with .SUFFIXES.
+ 31. line 142 of commands.c:  fixed bug with assignment of designation.
+ 32. main.c: added environment variable CONQ_NATION.  overridden by '-n'.
+ 33. main.c: added environment variable CONQ_DATA. overridden by '-d'.
+ 34. patch to magic.c to extend printable user magics.  [Bob Earl].
+ 35. added BIGLTH, and FILELTH character string size constants.
+ 36. made NPC a number as with MONSTER.
+ 37. added new option '-G' for gaudy news country highlights.  [T. Kivinen].
+ 38. fixed bug with clearing WAR declarations in destroy. [T. Kivinen].
+ 39. Added a CONQ_OPTS environment variable... can contain many options.
+	Format:   setenv CONQ_OPTS "G,nation=foo,data=1"
+	so far only G (Gaudy News), nation, and data supported, may now
+	remove the redundant CONQ_NATION, CONQ_DATA.
+ 40. patched newlogin.c to fix check of new nation name [Bob Earl].
+ 41. added LOCKF portion to FILELOCK for NFS systems [Richard Caley].
+ 42. added routine to print designations with '-p' [Richard Caley].
+ 43. added variations on 'data' or 'nation' to CONQ_OPTS (ex. 'name').
+ 44. NEAT NEW FEATURE!  DEMI-GOD! Now, ntn[0].leader holds the login name
+	of a user who has update and god priveledge on that data file.
+	It is set during world creation and changable from the 'c' command
+	during the game.  ['c' for nation '0' to view name].
+	This allows people to run their own games without owning conquer.
+ 45. Neatened the nation mark selection display in newlogin.c.
+ 46. Decided to remove default setting of nation mark.... always ask now.
+ 47. Fixed bugs in newlogin: 'points <= 0' where it should be 'temp <= 0'.
+ 48. Shortened name of monsters to 7 characters to prevent screen wrap.
+ 49. newlogin.c (916): decreased amount allocated for population dispersal.
+ 50. added command to select prior unit ['o'] like 'p' [Kianush Sayah-Karadji].
+ 51. extcmds.c (174,178) fix to allow switching out of march.  [Kevin Murray].
+ 52. added a #define XENIX for some XENIX 386 specific bugs. [Jonathan Bayer].
+ 53. reworked the make new_game in the Makefile.
+ 54. fixed the calculation of available nations in the campaign info screen.
+ 55. made slight adjustment to required wealth for gold mines.
+ 56. big redo on the Makefile.  hopefully this is now static.
+ 57. completed change of Barbarians to Savages.  Only makeworl.c vars now.
+ 58. removed the CONQ_DATA and CONQ_NATION environment variables since
+	the CONQ_OPTS covers them and can even be expanded more later.
+ 59. big revamp of the helpfiles.  caught a few errors.
+ 60. added ntn[0].leader to the 'please contact' messages in admin and main.
+ 61. added monsters and peasants to the '-s' display.  [Doesn't show size].
+ 62. changed get_number() to return -1 for no input... fixed all occurances.
+ 63. reinstated ship and food trading.  NOTE!!! Nothing has really been
+	done to fix it... use at own risk.  Perhaps someone will find the
+	bugs and fix them. [these trading routines are only temp anyway.]
+ 64. added CONQ_OPTS to admin.c, ignore everything but "datadir=".
+ 65. spent ENTIRE weekend and rewrote newlogin.c.  NEW NEWLOGIN HAS:
+	- curses screen interface.
+	- entire input is character by character.
+	- nice sliding arrow menu selection for final menu.
+	- may add or subtract from final menu.
+	- information on each selection is available via '?'.
+	- move up and down via 'hjkl', 'DEL', or 'RET'.
+	- in order to weaken orc population a little, set max repro.
+	  during nation build to 12.  [May still reach 14 through magic].
+	- almost all selections are handled in the same manor, this.
+	  allows for easier debugging and better code.
+	- the following routines will be available for a future makeworld.
+	  interface:  newinit(), newbye(), newmsg(), newerror(), newreset().
+ 66. rewrote all routines that were called during a newlogin so that print
+	statments use the newerror() or newmsg() interface.
+===4.0 patch number three released => 4.3 ==========================
 
 -------------------------------------------------------------------------
-| 1.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V4		|
+| 2.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V4             |
 -------------------------------------------------------------------------
 o make land capture only occur during update.
 o make the create world routine interactive with curses display.
@@ -66,7 +128,7 @@ o implement new method for detection of captured lands.  if any allies of
 o provide a way for displaying monster nations properly... must also assure
 	accurate information in tmil and tciv.
 --------------------------------------------------------------------------
-| 2) The Following are Good Ideas, But are not going to be done soon	 |
+| 2.5 The Following are Good Ideas, But are not going to be done soon	 |
 --------------------------------------------------------------------------
 o Ruling leaders can ruthlesly supress revolts... 
 
@@ -180,7 +242,7 @@ o Change trading to have an open market for prices (ie. Market price
 	percent less).  
 
 -----------------------------------------------------------------
-| 3) Release notes for V4.0.  Changes from v3.5			|
+| 3.0 Release notes for V4.0.  Changes from v3.5		|
 -----------------------------------------------------------------
 1) gave god NINJA power to see troops on the map
 2) fixed message bug (printed blanks).

@@ -73,6 +73,24 @@ pr_ntns()
 	}
 }
 #endif ADMIN
+#ifdef ADMIN
+/************************************************************************/
+/*	PR_DESG() - print designations					*/
+/************************************************************************/
+void
+pr_desg()
+{
+	register int X, Y;
+	fprintf(stderr,"doing print of designations\n");
+	for(Y=0;Y<MAPY;Y++) {
+		for(X=0;X<MAPX;X++) {
+		    putc(sct[X][Y].designation,stdout);
+			
+		}
+		putc('\n',stdout);
+	}
+}
+#endif ADMIN
 
 /************************************************************************/
 /*	WRITEDATA() - write data to datafile 				*/
@@ -270,7 +288,7 @@ printscore()
 	int nationid; 	/*current nation id */
 #ifdef TIMELOG
 	FILE *timefp, *fopen();
-	char timestr[80];
+	char timestr[LINELTH+1];
 #endif /* TIMELOG */
 
 	printf("Conquer %s.%d: %s of Year %d, Turn %d\n",VERSION,PATCHLEVEL,
@@ -284,18 +302,35 @@ printscore()
 #endif /* TIMELOG */
 	printf("id      name   race    class    align  score    talons military  civilians sect\n");
 	for (nationid=1; nationid<NTOTAL; nationid++) {
-		if(!isntn(ntn[nationid].active)) continue;
+		if(!isactive(ntn[nationid].active)) continue;
 		printf("%2d ",nationid);
 		printf("%9s ",ntn[nationid].name);
-		for(i=1;i<8;i++)
-			if(ntn[nationid].race==*(races+i)[0])
-				printf("%6s ",*(races+i));
-		printf("%8s ",*(Class+ntn[nationid].class));
- 		printf(" %7s ",allignment[npctype(ntn[nationid].active)]);
-   		printf("%6ld  %8ld %8ld   %8ld %4d\n",
-			ntn[nationid].score ,ntn[nationid].tgold
-			,ntn[nationid].tmil ,ntn[nationid].tciv
-			,ntn[nationid].tsctrs );
+		/* this check for old 'B' for barbarians; removed eventually */
+		if (ntn[nationid].race=='B') {
+			printf("%6s ", "SAVAGE");
+		} else {
+			for(i=1;(*(races+i)[0])!='U';i++)
+				if(ntn[nationid].race==*(races+i)[0])
+					printf("%6s ",*(races+i));
+		}
+
+		if (isntn(ntn[nationid].active)) {
+			printf("%8s ",*(Class+ntn[nationid].class));
+			printf(" %7s ",allignment[npctype(ntn[nationid].active)]);
+			printf("%6ld  %8ld %8ld   %8ld %4d\n",
+				  ntn[nationid].score ,ntn[nationid].tgold
+				  ,ntn[nationid].tmil ,ntn[nationid].tciv
+				  ,ntn[nationid].tsctrs );
+		} else {
+			if (ispeasant(ntn[nationid].active)) {
+				printf("%8s  %7s ","Peasant","Neutral");
+				/* info not kept track of yet */
+			} else {
+				printf("%8s  %7s ","Monster","Other");
+			}
+			printf("%6s  %8s %8s   %8s %4s\n",
+				  "---","-----","----","-----","--");
+		}
 	}
 }
 #endif CONQUER
@@ -386,7 +421,7 @@ int
 readmap()
 {
 	FILE	*mapfile;
-	char	line[128];
+	char	line[BIGLTH+1];
 	register int x,y;
 
 	/* read in ele.map */
@@ -415,7 +450,7 @@ readmap()
 	} else fprintf(stderr,"reading vegetation map file from %s\n",line );
 	y=0;
 	while( TRUE ) {
-		if(fgets( line, 128, mapfile )==NULL) break;
+		if(fgets( line, BIGLTH, mapfile )==NULL) break;
 		for(x=0;x<MAPX;x++) sct[x][y].vegetation = line[x];
 		y++;
 		if(y>=MAPY) break;

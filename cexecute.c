@@ -29,14 +29,14 @@ int	isupdate;	/* 0 if not update, 1 if update */
 {
 	FILE *fp, *fopen();
 	int cmd,savectry;
-	char comment[20];
-	char temp[10];
+	char comment[LINELTH];
+	char temp[LINELTH];
 	long longvar,long2var;
 	int armynum;
 	short int x,y;
 	int execed=0;
 	int done=FALSE;
-	char line[80];
+	char line[BIGLTH];
 
 	/* initialize startgold */
 	if( isupdate==0) startgold = curntn->tgold;

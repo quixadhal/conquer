@@ -9,12 +9,12 @@ from previous releases posting, and have added numerous enhancements.
 The file notes.v4 details changes between v3.5 and v4, bugs and other things.  
 
 I have no current email address... Too bad.  I will post a patch to THIS FILE
-when i get a new email address. The hazards of switching jobs.   Adam Bryant
-has volunteered to take mail for the summer of 1989 at
-"arpa!bucsf.bu.edu!adb".  He is the co-author of the game... so send comments
-to him. We like feedback on the game.  Comments and feature requests are
-very useful to me as they are my primary method of deciding what to next
-add to the code.  Your interest is appreciated.
+when i get a new email address. The hazards of switching jobs.  Adam Bryant
+has volunteered to take mail for the summer of 1989 at "arpa!bu-cs.bu.edu!adb"
+or "adb@bu-cs.bu.edu".  He is the co-author of the game... so send comments to
+him.  We like feedback on the game.  Comments and feature requests are very
+useful to me as they are my primary method of deciding what to next add to the
+code.  Your interest is appreciated.
 
 Included in this file are the following:
 	1) A Brief Description of Conquer
@@ -24,20 +24,22 @@ Included in this file are the following:
 	5) Administration instructions
 	6) Changes in this version
 
-This version should not be redistributed ( please read the copyright note in
-header.h ).	Any comments and bug reports would be appreciated.
+This version should not be redistributed without the permission of Edward
+Barlow or Adam Bryant ( please read the copyright note in header.h ).
+
+Again, any comments or bug reports would be greatly appreciated.
 
 -----------------------------------------------------------
 I   A Brief Description of Conquer
 -----------------------------------------------------------
-A complete description of Conquer v4 is contained in "man.page" and 
-"conquer.docs".  "conquer.docs" is created from the files txt[0-5] which
-are customized from data in the header files.  These txt[] files are
-then converted int help[0-5] files, which contain configuration data.
-"make docs" will create this file from current data.  Note conquer.doc IS 
-CREATED WHEN THE PROGRAM IS COMPILED.  I have tried to make the documentation 
-as good as possible, but I guarantee that I have missed a lot.    Consider
-this a feature and enjoy any (hopefully pleasant) suprises you get.
+A complete description of Conquer v4 is contained in "man.page" and
+"conquer.docs".  "conquer.docs" is created from the files txt[0-5] which are
+customized from data in the header files.  These txt[] files are then
+converted int help[0-5] files, which contain configuration data.  "make docs"
+will create this file from current data.  Note conquer.doc IS NOT created
+program is compiled.  I have tried to make the documentation as good as
+possible, but I guarantee that I have missed a lot.  Consider this a feature
+and enjoy any (hopefully pleasant) suprises you get.
 -----------------------------------------------------------
 II  Installation (unpacking) Instructions
 -----------------------------------------------------------
@@ -71,7 +73,9 @@ then calls on the subclasses to construct sentences.
 -----------------------------------------------------------
 IV  Compilation Instructions
 -----------------------------------------------------------
-This program should be easy to compile.  Just type make.
+This program should be easy to compile.  After header.h and Makefile have
+been edited properly, you may type 'make' to compile conquer, and
+'make new_game' to build and install a new game.
 
 Note: Sometimes curses does not include termcap or termlib.  If all the
 	'.c' files get compiled, but do not link together,  and 
@@ -97,8 +101,21 @@ The command line format for the administration commands is
 		-r SCENARIO read map while making a new world
 			    uses SCENARIO.ele, SCENARIO.veg, &  SCENARIO.nat
 
-The conqrun executable is for the game super user only (game password is
-checked)
+Also, some useful god functions are provided through the conquer program
+through logging in as 'god' with 'conquer -n god'.
+
+Conquer now supports two layers of game administration:  the god of
+conquer, as defined by the LOGIN define in header.h, may allow each
+world to have an administrator or demi-god.  This demi-god will be able
+to perform updates and other god functions for this world only.  This
+feature allows for multiple worlds, each governed by a different god.
+During the creation of a world, god will be prompted for the name of the
+demi-god for the new world.  Just hitting return will mean that god will
+himself act as the demi-god for this world.
+
+Unlike godship, the demi-god for a world may be changed during the
+running of a game, without recompilation of conquer.  This is done using
+the 'c'hange menu when logged in as god.
 
 In addition the the conqrun command, the makefile helps you as follows:
 
@@ -125,7 +142,7 @@ You can administrate world either via "make new_game" or via:
 			npc stats can be adjusted by editing nations
 			prior to making the world.  Non player nations have
 			the same password as god.
-or	 <conqrun -rSCENARIO>    this will make your world by using scenarios.
+or	<conqrun -rSCENARIO>    this will make your world by using scenarios.
 			Basically, the scenarios include a nation file and
 			three map files (elevation, vegetation, and nation
 			setup). Look at the rome scenario included in the game.
@@ -154,12 +171,12 @@ change nation command and create a new one), or modify the surrounding
 terain appropriately (god can use the redesignate command to change
 elevation and vegetation).
 
-Now move around on the map and learn where the players are
-positioned.  If there is a problem (they are surrounded by water...), 
-use the redesignate command to change elevation or vegetation. 
-In the worst case, god can destroy a nation
-with 'c', the change nation command.  Once you
-think the game will be fair, it is time to allow players to proceed.
+Now move around on the map and learn where the players are positioned.
+If there is a problem (they are surrounded by water...), use the
+redesignate command to change elevation or vegetation.  In the worst
+case, god can destroy a nation with 'c', the change nation command.
+Once you think the game will be fair, it is time to allow players to
+proceed.
 
 Now you are all set -- play via 
 	<conquer>

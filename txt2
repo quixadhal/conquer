@@ -81,8 +81,8 @@ SIEGE_ENGINES add +1%/20 men *TO WHOLE COMBAT* attacking fortress (max +30%)
 CATAPULTS    add +1%/40 men *TO WHOLE COMBAT* in normal combat (max +10%)
              add +1%/20 men *TO WHOLE COMBAT* when defending castle (max +10%)
              catapults can damage any fortifications they attack.
-PHALANX &    Phalanx and Legionaries get an additional +10 if in 500+ men units
-LEGIONARY       and get an additional +20 combat bonus if in 1000+ men units
+PHALANX &    Phalanx and Legionaries get an additional +10 combat bonus if in
+LEGIONARY       500+ men units +20 combat bonus if in 1000+ men units
 ROC/GRIFFON  units have the ability of flight.
 NINJA        units ignore enemy zones of control
 SAILOR       units may disembark from ships into unowned sectors.

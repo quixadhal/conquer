@@ -19,6 +19,7 @@
 extern FILE	*fexe, *fnews;
 extern short	country,redraw;
 extern long	startgold;
+extern short	Gaudy;
 
 static char helplist[MAXHELP][20]={"Commands", "General Info",
 	"Military","Magic","Designations","Other"};
@@ -119,7 +120,7 @@ void
 diploscrn()
 {
 	int i,j;
-	char k,name[20];
+	char k,name[LINELTH];
 	short nation, offset, count, count2, temp;
 	short isgod=FALSE;
 	long	bribecost;
@@ -283,9 +284,13 @@ diploscrn()
 			mvaddstr(j++,0,"INPUT:");
 			refresh();
 			temp = get_number();
+			if(temp<0) {
+				if(isgod==TRUE) reset_god();
+				return;
+			}
 			if((temp<=UNMET)||(temp>JIHAD)
 			||((isgod==FALSE)&&(temp==UNMET))){
-				mvprintw(23,0,"SORRY, Invalid inputs -- hit return");
+				mvprintw(LINES-1,0,"SORRY, Invalid inputs -- hit return");
 				refresh();
 				getch();
 				if(isgod==TRUE) reset_god();
@@ -345,7 +350,7 @@ void
 change()
 {
 	float temp;
-	char string[10], command[80];
+	char string[LINELTH], command[BIGLTH];
 	int i, intval;
 	long	cost,men;
 	short armynum;
@@ -355,7 +360,7 @@ change()
 #ifdef OGOD
 	FILE *ftmp;
 #endif OGOD
-	char filename[80];
+	char filename[FILELTH];
 
 	if(country==0) {
 		isgod=TRUE;
@@ -381,7 +386,6 @@ change()
 	standend();
 	mvprintw(10,0,"capitol loc: x is %d",curntn->capx);
 	mvprintw(11,0,"             y is %d",curntn->capy);
-	mvprintw(12,0,"leader is %s",curntn->leader);
 	mvprintw(13,0,"class is %s",*(Class+curntn->class));
 	if(ispc( curntn->active ) )
 		addstr(" (PC)");
@@ -426,11 +430,13 @@ change()
 	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 
 	if (country!=0) {
+		mvprintw(12,0,"leader is %s",curntn->leader);
 		mvprintw(16,0,"score currently...%ld",curntn->score);
 		mvprintw(3,COLS-30, "attack bonus.........%+4d%%",curntn->aplus);
 		mvprintw(4,COLS-30, "defense bonus........%+4d%%",curntn->dplus);
 		mvprintw(12,COLS-30,"total soldiers....%8ld",curntn->tmil);
 	} else {
+		mvprintw(12,0,"demigod is %s",curntn->leader);
 		mvprintw(16,0,"turn currently....%ld",TURN);
 		mvprintw(3,COLS-30, "mercs attack bonus....+%2d%%",MERCATT);
 		mvprintw(4,COLS-30, "mercs defense bonus...+%2d%%",MERCDEF);
@@ -463,9 +469,9 @@ change()
 	addstr(" 7) TOGGLE PC <-> NPC");
 
 #ifdef OGOD
- 	if(isgod==TRUE) mvaddstr(LINES-3,COLS/2-24,"HIT 8 TO DESTROY NATION OR 9 TO CHANGE COMMODITY");
+	if(isgod==TRUE) mvaddstr(LINES-3,COLS/2-33,"HIT 8 TO DESTROY, 9 TO CHANGE COMMODITY OR '0' TO CHANGE DEMI-GOD");
 #else OGOD
-  	if(isgod==TRUE) mvaddstr(LINES-3,COLS/2-11,"HIT 8 TO DESTROY NATION");
+	if(isgod==TRUE) mvaddstr(LINES-3,COLS/2-24,"HIT 8 TO DESTROY NATION, OR '0' TO CHANGE DEMI-GOD");
 #endif OGOD
 	else mvaddstr(LINES-3,COLS/2-14,"HIT ANY OTHER KEY TO CONTINUE");
 	standend();
@@ -534,7 +540,7 @@ change()
 		refresh();
 		intval = get_number();
 		if( intval < 0 )
-			errormsg("ERROR - negative tax rate");
+			break;
 		else if( intval > 20 )
 			errormsg("NO WAY! the peasants will revolt!!!");
 		else if( intval > 10 && (curntn->tsctrs<20 || curntn->score<20) )
@@ -550,7 +556,9 @@ change()
 		standend();
 		refresh();
 		intval = get_number();
-		if(( intval < 0 ) ||( intval > 100 ))
+		if (intval < 0) {
+			break;
+		} else if( intval > 100 )
 			errormsg("ERROR - invalid charity rate");
 		/* this will protect from both underflow and overflow */
 		else if((int)curntn->popularity + 2*(intval - (int)curntn->charity)>100)
@@ -571,7 +579,7 @@ change()
 		refresh();
 		intval = get_number();
 		if( intval < 0 )
-			errormsg("ERROR - negative input");
+			break;
 		else if( intval+curntn->terror > 100 )
 			errormsg("Cant go over 100 terror!!!");
 		else if((intval > curntn->popularity )
@@ -683,24 +691,28 @@ change()
 				mvaddstr(LINES-1,0,"WHAT IS NEW VALUE FOR TREASURY? ");
 				refresh();
 				curntn->tgold = (long) get_number();
+				if (curntn->tgold < 0L) curntn->tgold=0L;
 				fprintf(ftmp,"L_NGOLD\t%d \t%d \t%ld \t0 \t0 \t%s\n", XNAGOLD ,country,curntn->tgold,"null");
 				break;
 			case '2':
 				mvaddstr(LINES-1,0,"WHAT IS NEW AMOUNT OF JEWELS? ");
 				refresh();
 				curntn->jewels = (long) get_number();
+				if (curntn->jewels < 0L) curntn->jewels=0L;
 				fprintf(ftmp,"L_NJWLS\t%d \t%d \t%ld \t0 \t0 \t%s\n", XNARGOLD ,country,curntn->jewels,"null");
 				break;
 			case '3':
 				mvaddstr(LINES-1,0,"WHAT IS NEW AMOUNT OF METAL? ");
 				refresh();
 				curntn->metals = (long) get_number();
+				if (curntn->metals < 0L) curntn->metals=0L;
 				fprintf(ftmp,"L_NMETAL\t%d \t%d \t%ld \t0 \t0 \t%s\n", XNAMETAL ,country,curntn->metals,"null");
 				break;
 			case '4':
 				mvaddstr(LINES-1,0,"WHAT IS NEW AMOUNT OF FOOD? ");
 				refresh();
 				curntn->tfood = (long) get_number();
+				if (curntn->tfood < 0L) curntn->tfood = 0L;
 				break;
 			default:
 				break;
@@ -709,6 +721,21 @@ change()
 		}
 		break;
 #endif OGOD
+	case '0':
+		if(isgod==TRUE) {
+			mvaddstr(LINES-2,0,"ENTER CONQUER SUPER-USER PASSWORD:");
+			refresh();
+			getstr(string);
+			strcpy(passwd,crypt(string,SALT));
+			if(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0) break;
+			mvaddstr(LINES-1,0,"PROMOTE WHAT USER TO DEMI-GOD? ");
+			refresh();
+			get_nname(string);
+			if (strlen(string)!=0) {
+				strncpy(ntn[0].leader,string,LEADERLTH);
+			}
+		}
+		break;
 	case 'p':
 	case 'P': produce(); fclose(fp); return;
 	case 'b':
@@ -729,7 +756,7 @@ help()
 	int lineno;
 	FILE *fp, *fopen();
 	int i,xcnt,ycnt,done=FALSE;
-	char line[80],fname[80];
+	char line[LINELTH],fname[FILELTH];
 
 	/*find out which helpfile to read in */
 	clear_bottom(0);
@@ -798,6 +825,28 @@ help()
 	fclose(fp);
 }
 
+/* routine to highlight a line for news display */
+/* if country name is mentioned.  By T. Kivinen */
+mvaddstrnahil(li,col,p)
+     int li;
+     int col;
+     char *p;
+{
+	int i,j;
+	move(li,col);
+	for (i=0;p[i];i++) {
+		for (j=0;p[i+j]==ntn[country].name[j];j++);
+		if (ntn[country].name[j]==0 && p[i+j]!='-') {
+			standout();
+			addstr(ntn[country].name);
+			standend();
+			i+=j-1;
+		}
+		else
+			addch(p[i]);
+	}
+}
+
 void
 newspaper()
 {
@@ -806,7 +855,7 @@ newspaper()
 	int newpage,choice,done=FALSE;
 	short pagenum=1;
 	int i,ydist,xdist;
-	char line[80],name[80];
+	char line[LINELTH],name[FILELTH];
 
 	/* check to make sure that there are newspapers */
 	if (TURN==0) {
@@ -874,8 +923,10 @@ newspaper()
 			mvprintw(3,37-strlen(name)/2,"%s",name+2);
 			standend();
 			/* display any pending non-blank lines */
-			if(strcmp(line,name)!=0 && strlen(line)>2)
-				mvaddstr(lineno++,0,line+2);
+			if(strcmp(line,name)!=0 && strlen(line)>2) {
+				if (Gaudy) mvaddstrnahil(lineno++,0,line+2);
+				else mvaddstr(lineno++,0,line+2);
+			}
 		} else if(fgets(line,80,fp)==NULL) done=TRUE;
 		else {
 			if(line[1]!='.') {
@@ -888,7 +939,10 @@ newspaper()
 					pagenum=todigit(line[0]);
 				}
 				else if(lineno>LINES-4) newpage=FALSE;
-				else if(strlen(line)>2) mvaddstr(lineno++,0,line+2);
+				else if(strlen(line)>2) {
+					if (Gaudy) mvaddstrnahil(lineno++,0,line+2);
+					else mvaddstr(lineno++,0,line+2);
+				}
 			}
 		}
 		if(newpage==FALSE||done==TRUE){

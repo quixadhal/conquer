@@ -147,7 +147,13 @@ char	*file;
 
 #include <fcntl.h>
 #ifdef FILELOCK
-#include <sys/file.h>
+#ifdef LOCKF
+#    include <unistd.h>
+#    define do_lock(fd) lockf(fd,F_TLOCK,0)
+#else
+#    include <sys/file.h>
+#    define do_lock(fd) flock(fd,LOCK_EX|LOCK_NB)
+#endif
 #endif FILELOCK
 
 /*
@@ -165,8 +171,8 @@ check_lock(filename,keeplock)
 #ifdef FILELOCK
 	int fd;
 
-	if ((fd=open(filename,O_CREAT,0600))!=(-1)) {
-		if(flock(fd, LOCK_EX|LOCK_NB)==(-1)) {
+	if ((fd=open(filename,O_WRONLY|O_CREAT,0600))!=(-1)) {
+		if(do_lock(fd)==(-1)) {
 			hold=TRUE;
 		}
 		/* remove lock after checking */

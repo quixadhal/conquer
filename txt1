@@ -3,7 +3,7 @@
 The Conquer world is very bloody, and a player needs skills at war gaming,
 diplomacy, and building an economy to succeed.  Rival races are constantly
 at war, and the world starts filled with player nations, random peoples
-(lizard men in their cities of gold, barbarians, nomads, pirates, brigands),
+(lizard men in their cities of gold, savages, nomads, pirates, brigands),
 and both hostile and friendly computer controlled non player countries.
 Conquer can be played solitaire.  The computer uses a highly intelligent
 movement algorithm to run the armies and navies of these non player
@@ -48,7 +48,7 @@ HUMAN     'H'   Humans start average at everything -- with reasonable numbers,
 LIZARD    'L'   (NPC only)  An ancient race bound to their cities of gold
 PIRATE    'P'   (NPC only)  Wandering pirates/brigands intent on plunder
 NOMAD     'N'   (NPC only)  Will the wandering nomads tribes leave you alone?
-BARBARIAN 'B'   (NPC only)  Indigenous natives and monsters
+SAVAGES   'S'   (NPC only)  Indigenous natives and monsters
 END
                           ORC NATIONS IN CONQUER
 
@@ -176,6 +176,7 @@ itself, these are indicated by the nation name of "Conquer".
 During every update, bids will be resolved and the highest bid for a
 product will receive the product.  There is a 20% administration fee
 for a trade (i.e. 20% of the traded goods on each side disappear)
+NOTE: the trading code is buggy and trading should be used with caution.
 END
                          DIPLOMACY IN CONQUER
 
@@ -191,25 +192,25 @@ nations who ATTACK your ally - but not on nations whom they attack.
 Diplomacy with non player nations is important as it determines if you get
 attacked or not.
 END
-                        BRIBING NPC NATIONS
+                           BRIBING NPC NATIONS
 
 Conquer allows you a chance to bribe non player nations for the paltry sum
 of XBRIBE per 1000 troops in the bribee's nation.  A nation with 10000 troops
 can be bribed for only 10xXBRIBE gold talons (a bargain). This has a 
 percentage chance of working, but you wont know if it worked until the update.
 
-same allignment:                50%
-1 level allignment difference:  30%
-2 level allignment difference:  20%
-They are isolationist:          15%
-same race:                      +20%
+                 same allignment:                50%
+                 1 level allignment difference:  30%
+                 2 level allignment difference:  20%
+                 They are isolationist:          15%
+                 same race:                     +20%
 
 Bribing NPCs is a good way to get some breathing room.
 You waste your money if you are at war with them that turn.
-You can not bribe player nations, barbarians, nomads, lizards, or pirates.
+You can not bribe player nations, savages, nomads, lizards, or pirates.
 END
-                            SEASONS
-                   (not fully implemented yet)
+                              SEASONS
+                (only food production is implemented)
 
 winter: army units must end turn in town or suffer 10% attrition.
         farms produce no food.  movement is at half ability.
@@ -252,8 +253,8 @@ If you have too many people in a given non Town, non capitol sector,
 reproduction and production is halved for them.  If you have a large
 number of people in a sector, they will not reproduce.
 
-WARNING: The Naval Code has been known to be buggy.  Please pay attention
-and send the author notes on discrepancies in the code.
+WARNING: The Naval and Trade Code has been known to be buggy.  Please
+pay attention and send the author notes on discrepancies in the code.
 END
                         OPTIONS OF YOUR VERSION
 

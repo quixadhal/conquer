@@ -171,7 +171,7 @@ armyrpt(repnum)
 				mvaddstr(ypos++,0,"TO WHAT ARMY: ");
 				refresh();
 				armynum = get_number();
-
+				if (armynum < 0) break;
 				combinearmies(armynum,oldarmy);
 				break;
 			case '5':
@@ -270,8 +270,10 @@ armyrpt(repnum)
 					mvaddstr(ypos++,0,"What is the New Total Soldiers: ");
 					refresh();
 					men = get_number();
-					P_ASOLD=men;
-					AADJMEN;
+					if (men>0) {
+						P_ASOLD=men;
+						AADJMEN;
+					}
 				}
 				break;
 #endif OGOD
@@ -569,6 +571,7 @@ fleetrpt()
 			clrtoeol();
 			refresh();
 			nvynum = get_number();
+			if(nvynum<0) break;
 #ifdef TRADE
 			if (curntn->nvy[nvynum].commodity==TRADED) {
 				errormsg("Sorry - That Navy is up for trade");
@@ -593,7 +596,8 @@ fleetrpt()
 				clrtoeol();
 				refresh();
 				newnavy = get_number();
-				if(newnavy<0 || newnavy>=MAXNAVY) {
+				if(newnavy < 0) break;
+				if(newnavy >= MAXNAVY) {
 					errormsg("Sorry - Invalid Navy unit");
 					break;
 				}
@@ -700,7 +704,7 @@ fleetrpt()
 					clrtoeol();
 					refresh();
 					newnavy = get_number();
-					if(newnavy>P_NWAR(shipsize)) newnavy=0;
+					if(newnavy>P_NWAR(shipsize)||newnavy<0) newnavy=0;
 					NSUB_WAR(newnavy);
 					(void) addwships(navy,shipsize,newnavy);
 				}
@@ -709,7 +713,7 @@ fleetrpt()
 					clrtoeol();
 					refresh();
 					newnavy = get_number();
-					if(newnavy>P_NMER(shipsize)) newnavy=0;
+					if(newnavy>P_NMER(shipsize)||newnavy<0) newnavy=0;
 					NSUB_MER(newnavy);
 					(void) addmships(navy,shipsize,newnavy);
 				}
@@ -718,7 +722,7 @@ fleetrpt()
 					clrtoeol();
 					refresh();
 					newnavy = get_number();
-					if(newnavy>P_NGAL(shipsize)) newnavy=0;
+					if(newnavy>P_NGAL(shipsize)||newnavy<0) newnavy=0;
 					NSUB_GAL(newnavy);
 					(void) addgships(navy,shipsize,newnavy);
 				}
@@ -779,7 +783,7 @@ fleetrpt()
 						clrtoeol();
 						refresh();
 						newnavy = get_number();
-						if(newnavy>N_MASK) newnavy=0;
+						if(newnavy>N_MASK||newnavy<0) newnavy=0;
 						(void) NADD_WAR(newnavy);
 					}
 					for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
@@ -787,7 +791,7 @@ fleetrpt()
 						clrtoeol();
 						refresh();
 						newnavy = get_number();
-						if(newnavy>N_MASK) newnavy=0;
+						if(newnavy>N_MASK||newnavy<0) newnavy=0;
 						(void) NADD_MER(newnavy);
 					}
 					for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
@@ -795,7 +799,7 @@ fleetrpt()
 						clrtoeol();
 						refresh();
 						newnavy = get_number();
-						if(newnavy>N_MASK) newnavy=0;
+						if(newnavy>N_MASK||newnavy<0) newnavy=0;
 						(void) NADD_GAL(newnavy);
 					}
 					NADJWAR;
@@ -827,9 +831,10 @@ fleetrpt()
 					mvaddstr(ypos,0,"What value for crew/ship unit: ");
 					refresh();
 					crew = get_number();
-					if (crew>=0 && crew<=SHIPCREW)
+					if (crew>=0 && crew<=SHIPCREW) {
 						P_NCREW = crew;
-					NADJCRW;
+						NADJCRW;
+					}
 				}
 				break;
 #endif OGOD

@@ -14,7 +14,7 @@ char	*names[] = {		/* must end in single character name */
 extern FILE *fnews;
 extern short country;
 
-char eventstr[80];
+char eventstr[LINELTH+1];
 int xpos,ypos;		/* saved x and y position */
 
 char *randevents[] = {
@@ -47,7 +47,7 @@ char *randevents[] = {
 /* 26 */ "fire ravishes town",
 /* 27 */ "black plague rages",
 /* 28 */ "pirates raid",
-/* 29 */ "barbarian raid",
+/* 29 */ "savages raid",
 /* 30 */ "wizard grants power",
 /* 31 */ "magic item grants magic power",
 /* 32 */ "ores in one mine run out",
@@ -645,7 +645,7 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 		case 28: /*pirate raid on harbor*/
 			done=FALSE;
 			break;
-		case 29: /*barbarian raid*/
+		case 29: /*savages raid*/
 			done=FALSE;
 			break;
 		case 30: /*new magician + RANDOM POWER*/
