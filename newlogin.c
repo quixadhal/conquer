@@ -126,10 +126,10 @@ newlogin()
 	register i;
 
 	printf("\nPreparing to add player\n");
-	printf("break at any time to abort\n");
 
 	while(more==TRUE) {
 		points=MAXPTS;
+		country=0;
 		/*find valid nation number type*/
 		for(i=1;i<NTOTAL;i++)
 			if(ntn[i].active==INACTIVE) {
@@ -139,7 +139,7 @@ newlogin()
 			}
 		printf("first valid nation id is %d\n",country);
 
-		if(i==NTOTAL) {
+		if(country==0) {
 			beep();
 			printf("error, cant add new nation\n");
 			return;
@@ -389,7 +389,9 @@ newlogin()
 				printf("how many points to spend on population:");
 				scanf("%d",&temp);
 				putchar('\n');
-				if(points >= temp) {
+				if(points <= 0) {
+					printf("Purchase aborted...");
+				} if(points >= temp) {
 					points -= temp;
 					curntn->tciv+=temp*NLPOP;
 				}
@@ -401,8 +403,9 @@ newlogin()
 				printf("how many points to spend on added gold talons:");
 				scanf("%d",&temp);
 				putchar('\n');
-				if(points>=temp)
-				{
+				if(points<=0) {
+					printf("Purchase aborted....");
+				} else if(points>=temp) {
 					points-=temp;
 					curntn->tgold+=temp*NLGOLD;
 				}
@@ -429,7 +432,9 @@ newlogin()
 				printf("how many points to spend?");
 				scanf("%d",&temp);
 				putchar('\n');
-				if(points >= temp) {
+				if (points <= 0) {
+					printf("Purchase aborted...");
+				} else if(points >= temp) {
 					points -= temp;
 					curntn->tmil+=temp*NLSOLD;
 				}
@@ -445,7 +450,9 @@ newlogin()
 				printf("how many points do you wish to spend?");
 				scanf("%d",&temp);
 				putchar('\n');
-				if(points >= temp) {
+				if(points <= 0) {
+					printf("Purchase aborted...");
+				} else if(points >= temp) {
 					points -= temp;
 					if(curntn->race == ORC )
 					curntn->aplus+=temp*NLATTACK/2;
@@ -468,7 +475,9 @@ newlogin()
 				printf("how many points do you wish to spend?");
 				scanf("%d",&temp);
 				putchar('\n');
-				if(points >= temp) {
+				if(points <= 0) {
+					printf("Purchase aborted...");
+				} else if(points >= temp) {
 					points -= temp;
 					if(curntn->race == ORC )
 					curntn->dplus+=temp*NLDEFENCE/2;
@@ -492,30 +501,34 @@ newlogin()
 					printf("you have the maximum rate");
 					break;
 				}
-				printf("how many percentage points to add?:");
+				printf("how many purchasing points to spend?:");
 				scanf("%d",&temp);
 				putchar('\n');
-				if((points >= (temp*NLREPCOST))
-				||((curntn->race==ORC)
-					&&(points >= (temp*NLREPCOST/2)))) {
-					if((curntn->race!=ORC)
-					&&(curntn->repro+NLREPRO*temp>10)){
-					printf("that exceeds the 10%% limit");
-					}
-					else if((curntn->race==ORC)
-					&&(curntn->repro>14-NLREPRO_ORC*temp)){
-					printf("that exceeds the 14%% limit");
-					}
-					else {
-					if(curntn->race==ORC)
-						points -= (temp*NLREPCOST/2);
-					else	points -= temp*NLREPCOST;
-					if(curntn->race==ORC)
-						curntn->repro+=NLREPRO_ORC*temp;
-					else	curntn->repro+=NLREPRO*temp;
+				if(temp < points) {
+					printf("You don't have enough points left");
+				} else if (temp < 0) {
+					printf("Negative, huh?  Who you trying to kid?");
+				} else if (temp%NLREPCOST != 0) {
+					printf("You must spend in multiples of %d",NLREPCOST);
+				} else {
+					if(curntn->race != ORC) {
+						temp = temp/NLREPCOST*NLREPRO;
+						if(curntn->repro+temp > 10) {
+							printf("That exceeds the 10% limit");
+						} else {
+							points -= (temp*NLREPCOST/NLREPRO);
+							curntn->repro += temp;
+						}
+					} else {
+						temp = temp/NLREPCOST*NLREPRO_ORC;
+						if(curntn->repro+temp > 14) {
+							printf("That exceeds the 14% limit");
+						} else {
+							points -= (temp*NLREPCOST/NLREPRO_ORC);
+							curntn->repro += temp;
+						}
 					}
 				}
-				else printf("You dont have enough points left");
 				break;
 			case 8:
 				if(curntn->race == ORC ) {

@@ -45,7 +45,7 @@ makeworld(rflag)
 int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 {
 	char passwd[PASSLTH+1],*getpass();
-	char newstring[40];
+	char newstring[100];
 	FILE *fopen();
 
 	/*abort if datafile currently exists*/
@@ -711,7 +711,6 @@ populate()
 	short	npirates=0,nbarbarians=0,nnomads=0,nlizards=0;
 
 	FILE *fp, *fopen();
-	int done=FALSE;
 	char line[80],allign;
 	char fname[80];
 
@@ -739,8 +738,8 @@ populate()
 		curntn->mark='-';
 	}
 
-	for( country=1; country<NTOTAL; country++ ) {
-		for(i=country+1;i<NTOTAL;i++) {
+	for( country=0; country<NTOTAL; country++ ) {
+		for(i=country;i<NTOTAL;i++) {
 			ntn[country].dstatus[i]=UNMET;
 			ntn[i].dstatus[country]=UNMET;
 		}
@@ -828,6 +827,7 @@ populate()
 		if((rand()%2==0)&&(curntn->active!=NPC_LIZARD)){
 			if(rand()%2==0) {
 				x=(rand()%20);
+				y=(rand()%20);
 			} else {
 				x=(MAPX-(rand()%20)-1);
 				y=(MAPY-(rand()%20)-1);
@@ -949,7 +949,7 @@ populate()
 		if( ntn[country].active != NPC_BARBARIAN ) continue;
 		curntn = &ntn[country];
 		armynum=barbarmy;
-		if( country!=NTOTAL ) while(armynum<MAXARM) {
+		while(armynum<MAXARM) {
 			x = rand()%MAPX;
 			y = rand()%MAPY;
 			if (is_habitable(x,y)&&sct[x][y].owner==0) {
@@ -979,17 +979,19 @@ populate()
 	}
 
 #ifdef NPC
-	printf("\nDo you want NPC nations in this campaign?");
-	if( getchar()!='y' ) return;
+	printf("\nDo you want NPC nations in this campaign? (y or n)");
+	while( ((i=getchar()) != 'y')&&(i != 'n') ) ;
+	if( i!='y' ) return;
 	if((fp=fopen(npcsfile,"r"))==NULL) {
 		printf("error on read of %s file\n",npcsfile);
 		printf("Do you wish to use default NPC nations file (y or n)?");
-		if(getchar()=='y'){
-		sprintf(line,"%s/%s",DEFAULTDIR,npcsfile);
-		if ((fp=fopen(line,"r"))==NULL) {
-			printf("\nsorry; error on read of %s file\n",line);
-			return;
-		} else printf("\nOK; default nations used\n");
+		while( ((i=getchar()) != 'y')&&(i != 'n') ) ;
+		if( i=='y'){
+			sprintf(line,"%s/%s",DEFAULTDIR,npcsfile);
+			if ((fp=fopen(line,"r"))==NULL) {
+				printf("\nsorry; error on read of %s file\n",line);
+				return;
+			} else printf("\nOK; default nations used\n");
 		} else {
 			printf("\nOK; no NPC nations used\n");
 			return;
@@ -1072,7 +1074,7 @@ populate()
 			curntn->tfood= curntn->tciv * 3;
 			curntn->metals=10000L;
 			curntn->jewels=10000L;
-			cnum++;
+			if (cnum < NTOTAL) cnum++;
 			place(xloc,yloc);
 			att_setup(country);	/* nation attributes */
 		}

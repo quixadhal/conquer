@@ -757,7 +757,7 @@ deplete(country)
 int country;
 {
 	struct s_nation *saventn=curntn;
-	int i,j,x,y,armynum,nation;
+	int i,j,x,y,armynum;
 
 	x = ntn[country].capx;
 	y = ntn[country].capy;
@@ -940,6 +940,7 @@ int country;
 
 	nptr = &ntn[country];
 	if( ismonst(nptr->active) ) return;
+	if( !isactive(nptr->active) ) return;
 	fprintf(fnews,"1.\tNation %s was destroyed ",nptr->name);
 	if(country!=sct[nptr->capx][nptr->capy].owner){
 		fprintf(fnews,"(their capitol is now owned by %s)\n",ntn[sct[nptr->capx][nptr->capy].owner].name);

@@ -179,10 +179,10 @@ struct	s_world
 
 struct s_sector
 {
-	char	designation;		/* designation of sector	*/
-	char	altitude;		/* sector altitude		*/
-	char	vegetation;		/* sector vegetation		*/
-	char	owner;			/* nation id of owner		*/
+	unsigned char	designation;	/* designation of sector	*/
+	unsigned char	altitude;	/* sector altitude		*/
+	unsigned char	vegetation;	/* sector vegetation		*/
+	unsigned char	owner;		/* nation id of owner		*/
 	long	people;			/* civilians in sector		*/
 	short	i_people;		/* initial civilians in sector	*/
 	unsigned char	jewels;		/* jewel production ability	*/
@@ -200,13 +200,13 @@ struct navy
 	unsigned short warships;
 	unsigned short merchant;
 	unsigned short galleys;
-	char xloc;
-	char yloc;
-	char smove;			/* movement ability of ship */
+	unsigned char xloc;
+	unsigned char yloc;
+	unsigned char smove;		/* movement ability of ship */
 	unsigned char crew;		/* crew on ship */
 	unsigned char people;		/* people carried */
 	unsigned char commodity;	/* future commodities */
-	char armynum;			/* army carried */
+	unsigned char armynum;		/* army carried */
 };
 
 
@@ -342,11 +342,11 @@ struct navy
 struct army
 {
 	unsigned char unittyp;
-	char xloc;
-	char yloc;
-	char smove;
+	unsigned char xloc;
+	unsigned char yloc;
+	unsigned char smove;
 	long sold;
-	char stat;
+	unsigned char stat;
 };
 
 struct	s_nation		/* player nation stats	*/
@@ -357,10 +357,10 @@ struct	s_nation		/* player nation stats	*/
 	char	race;		/* national race (integer--see header.h)*/
 	char	location;	/* location variable (gfr)	*/
 	char	mark;		/* unique mark for nation	*/
-	char	capx;		/* Capitol x coordinate		*/
-	char	capy;		/* Capitol y coordinate		*/
-	char	active;		/* nation type and strategy	*/
-	char	maxmove;	/* maximum movement of soldiers */
+	unsigned char	capx;	/* Capitol x coordinate		*/
+	unsigned char	capy;	/* Capitol y coordinate		*/
+	unsigned char	active;	/* nation type and strategy	*/
+	unsigned char	maxmove;/* maximum movement of soldiers */
 	char	repro;		/* reproduction rate of nation	*/
 	long	score;		/* score			*/
 	long	tgold;		/* gold in treasury		*/
@@ -384,17 +384,17 @@ struct	s_nation		/* player nation stats	*/
 	unsigned char	tax_rate;	/* taxrate populace	*/
 	unsigned char	prestige;	/* nations prestige	*/
 	unsigned char	popularity;	/* governments popularity	*/
-	unsigned char	power;			/* nation power	*/
-	unsigned char	communications;		/* leader communication	*/
-	unsigned char	wealth;			/* per capita income	*/
-	unsigned char	eatrate;		/* food eaten / 10 people*/
-	unsigned char	spoilrate;		/* food spoilage rate	*/
-	unsigned char	knowledge;		/* general knowledge	*/
-	unsigned char	farm_ability;		/* farming ability	*/
-	unsigned char	mine_ability;		/* mine ability		*/
-	unsigned char	poverty;		/* % poor people	*/
-	unsigned char	terror;			/* peoples terror of you*/
-	unsigned char	reputation;		/* reputation of nation	*/
+	unsigned char	power;		/* nation power		*/
+	unsigned char	communications;	/* leader communication	*/
+	unsigned char	wealth;		/* per capita income	*/
+	unsigned char	eatrate;	/* food eaten / 10 people*/
+	unsigned char	spoilrate;	/* food spoilage rate	*/
+	unsigned char	knowledge;	/* general knowledge	*/
+	unsigned char	farm_ability;	/* farming ability	*/
+	unsigned char	mine_ability;	/* mine ability		*/
+	unsigned char	poverty;	/* % poor people	*/
+	unsigned char	terror;		/* peoples terror of you*/
+	unsigned char	reputation;	/* reputation of nation	*/
 };
 #define	P_NTNCOM	((((float) curntn->communications)/ 50.0 ))
 #define	P_EATRATE	((((float) curntn->eatrate) / 25.0 ))
@@ -623,7 +623,7 @@ extern void	errormsg(), clear_bottom(), addgroup(),ext_cmd();
 extern void	randomevent(), wdisaster(), weather(), deplete();
 extern void	verify_ntn(), verify_sct(), verifydata(), prep();
 extern void	destroy(), updmove(), spreadsheet(), mailopen(), mailclose();
-extern void	updexecs(), updlizards(), updcapture(), updsectors();
+extern void	updexecs(), updcapture(), updsectors();
 extern void	updmil(), updcomodities(), updleader();
 extern void	nationrun(), n_atpeace(), n_trespass(), n_people();
 extern void	n_toofar(), n_unowned(), pceattr(), checkout();
@@ -935,7 +935,7 @@ extern	char	*tradefile;
 #define GODJEWL		3000L		/* " */
 #define GODPRICE	25000L
 
-#ifdef 0
+#ifdef XYZ
 /* THE FOLLOWING DEFINES ARE NOT IMPLEMENTED YET		*/
 /* THEY DEFINE THE ATTRIBUTES OF A (TO BE IMPLEMENTED) REGION	*/
 

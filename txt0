@@ -46,7 +46,7 @@ their nation special powers (magic, combat factor, location, speed...)
 and resources (civilians, troops, metal, gold...).  Play involves building,
 moving, and controlling armies and navies, diplomacy with other players,
 and adjusting economic activity, which is primarily geared to the production
-of gold for your treasury.  Metals are needed, however to build ships & armies,
+of gold for your treasury.  Also, metals are needed to build ships & armies,
 and food is needed to prevent revolts and keep people alive.
 
 Command line format: conquer [-hs -nNAT -dDIR]

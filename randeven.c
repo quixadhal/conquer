@@ -70,7 +70,7 @@ int
 findnew()
 {
 	int newntn=0,nationis;
-	for ( nationis=NTOTAL; nationis >= 1; nationis--)
+	for ( nationis=NTOTAL-1; nationis >= 1; nationis--)
 		if(ntn[nationis].active == INACTIVE) newntn=nationis;
 	if (newntn == 0) return (0);
 	strcpy(ntn[newntn].leader,"rebel");
@@ -1089,13 +1089,14 @@ struct s_sector
 *rand_sector()
 {
 	int count=0;
-	for(xpos=0;xpos<MAPX;xpos++) for(ypos=0;ypos<MAPX;ypos++)
+	for(xpos=0;xpos<MAPX;xpos++) for(ypos=0;ypos<MAPY;ypos++)
 		if(sct[xpos][ypos].owner == country) count++;
 	count = rand()%count;
-	for(xpos=0;xpos<MAPX;xpos++) for(ypos=0;ypos<MAPX;ypos++){
+	for(xpos=0;xpos<MAPX;xpos++) for(ypos=0;ypos<MAPY;ypos++){
 		if(sct[xpos][ypos].owner == country) count--;
 		if(count==0) return(&sct[xpos][ypos]);
 	}
+	fprintf(stderr,"could find no location for country %d\n",country);
 	abrt();
 	return(NULL);	/* stop lint from complaining */
 }

@@ -68,7 +68,7 @@ char	**argv;
 #endif SYSMAIL
 	int sflag=FALSE;
 
-	char defaultdir[256];
+	char defaultdir[256],tmppass[PASSLTH+1];
 	struct passwd *getpwnam();
 	owneruid=getuid();
 	strcpy(defaultdir, DEFAULTDIR);
@@ -94,7 +94,11 @@ char	**argv;
 		putchar('\n');
 		exit(SUCCESS);
 	case 'd':
-		strcpy(defaultdir, optarg);
+		if(optarg[0]!='/') {
+			sprintf(defaultdir, "%s/%s", DEFAULTDIR, optarg);
+		} else {
+			strcpy(defaultdir, optarg);
+		}
 		break;
 	case 'n':
 		strcpy(name, optarg);
@@ -191,10 +195,12 @@ char	**argv;
 	curntn = &ntn[country];
 
 	/*get encrypted password*/
-	strncpy(passwd,crypt(getpass("\nwhat is your nation's password:"),SALT),PASSLTH);
+	strncpy(tmppass,getpass("\nwhat is your nation's password:"),PASSLTH);
+	strncpy(passwd,crypt(tmppass,SALT),PASSLTH);
 	if((strncmp(passwd,curntn->passwd,PASSLTH)!=0)
 	&&(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
-		strncpy(passwd,crypt(getpass("\nerror: reenter your nation's password:"),SALT),PASSLTH);
+		strncpy(tmppass,getpass("\nerror: reenter your nation's password:"),PASSLTH);
+		strncpy(passwd,crypt(tmppass,SALT),PASSLTH);
 		if((strncmp(passwd,curntn->passwd,PASSLTH)!=0)
 		&&(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
 			printf("\nsorry:");
@@ -1013,10 +1019,10 @@ copyscreen()
 	mvaddstr(10,19, "Copyright (c) 1988 by Edward M Barlow");
 	mvaddstr(11,18,"Written Edward M Barlow and Adam Bryant");
 	mvaddstr(12,26,"All Rights Reserved");
-	mvaddstr(LINES-7,21,"This version is for personal use only");
-	mvaddstr(LINES-5,12,"It is expressly forbidden port this software to any form of");
-	mvaddstr(LINES-4,12,"Personal Computer or to redistribute this software without");
-	mvaddstr(LINES-3,18,"the permission of Edward Barlow or Adam Bryant");
+	mvaddstr(LINES-7,19,"This version is for personal use only");
+	mvaddstr(LINES-5,8,"It is expressly forbidden port this software to any form of");
+	mvaddstr(LINES-4,8,"Personal Computer or to redistribute this software without");
+	mvaddstr(LINES-3,14,"the permission of Edward Barlow or Adam Bryant");
 	mvprintw(LINES-1, 60, "PRESS ANY KEY");
 	refresh();
 }

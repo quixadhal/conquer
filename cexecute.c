@@ -210,10 +210,10 @@ int	isupdate;	/* 0 if not update, 1 if update */
 			/* if not own it, and if people there, problem */
 			if((sct[x][y].owner!=country)
 			&&( country!=0)
-			&&( sct[x][y].owner>0 )
+			&&( sct[x][y].owner!=0 )
 			&&( sct[x][y].people>0 )
 			&&( magic(country,SLAVER)==FALSE )
-			&&( ntn[sct[x][y].owner].race!=curntn->race)){
+			&&( ntn[sct[x][y].owner].race != curntn->race)){
 				sct[ntn[sct[x][y].owner].capx][ntn[sct[x][y].owner].capy].people+= sct[x][y].people;
 				sct[x][y].people=0;
 				fprintf(stderr,"ERROR: <%s> taking sector %d %d but civilians exist of other race - puting them in their capitol\n",curntn->name,x,y);

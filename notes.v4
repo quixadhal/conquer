@@ -1,8 +1,23 @@
 ------------------------------------------------------------------------------
 | THIS FILE CONTAINS RELEASE NOTES FOR CONQUER V4.0 			     |
-| It is broken into 3 sections.  Section 1 reflects changes from v3.5 to v4. |
-| Section 2 reflects bugs in v4.0.  Section 3 reflects. Future ideas.        |
+| It is broken into 3 sections.  Section 3 reflects changes from v3.5 to v4. |
+| Section 1 reflects bugs in v4.0.  Section 2 reflects. Future ideas.        |
 ------------------------------------------------------------------------------
+-------------------------------------------------------------------------
+| == Bugs Fixed From Conquer Version 4.0 ============================== |
+-------------------------------------------------------------------------
+  1. increased newstring[] array from 40 to 100 in makeworl.c.
+  2. corrected a mispelling of irrigation.
+  3. line 830 of makeworl.c, added a y=(rand()%20); statement.
+  4. corrected some bugs in newlogin() routine.  Fixed orc repro buying.
+  5. made the -d flag be a subdirectory of DEFAULTDIR if not beginning
+	with a '/'.
+  6. fixed overruns of NTOTAL throughout the game.
+  7. new function to decrease size of a test statement in extcmds.c.
+  8. changed newlogin routine for detection of available countries.
+  9. merged do_lizard() and updlizard().  [used name do_lizard()].
+ 10. fixed bug with getchar querys in makeworl.c.
+ 11. fixed bug with y < MAPX mistype in randeven.c.
 
 -------------------------------------------------------------------------
 | 1.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V4		|

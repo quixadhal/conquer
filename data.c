@@ -271,7 +271,7 @@ char	*tg_name[] = {
 "rice", "wheat", "dairy", "peas", "bread", "cereal",
 "pottery", "salt", "timber", "granite", "pine", "oak", "nails",
 "papyrus","math","library","drama","paper","literature","law","philosophy",
-"irregation", "oxen", "plows",
+"irrigation", "oxen", "plows",
 "stones",
 "herbs", "medicine",
 "torture", "prison",

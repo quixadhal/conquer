@@ -84,27 +84,42 @@ int	armie;
 	refresh();
 }
 
+/* returns TRUE if uncombinable FALSE if combinable */
+int
+nocomb_stat(astat)
+	unsigned char astat;
+{
+	int hold;
+
+	switch(astat) {
+#ifdef TRADE
+	case TRADED:
+#endif TRADE
+	case FLIGHT:
+	case MAGATT:
+	case MAGDEF:
+	case SCOUT:
+	case ONBOARD:
+		hold = TRUE;
+		break;
+	default:
+		hold = FALSE;
+		break;
+	}
+	return(hold);
+}
+
 void
 combinearmies(armynum,army2)
 int armynum, army2;
 {
+	int nocomb_stat();
+
 	if (armynum < 0 || armynum >= MAXARM ||
 		army2 < 0 || army2 >= MAXARM ||
 		armynum == army2 ||
-#ifdef TRADE
-		P_ASTAT == TRADED ||
-		curntn->arm[army2].stat == TRADED ||
-#endif TRADE
-		P_ASTAT == FLIGHT ||
-		curntn->arm[army2].stat == FLIGHT ||
-		P_ASTAT == MAGATT ||
-		curntn->arm[army2].stat == MAGATT ||
-		P_ASTAT == MAGDEF ||
-		curntn->arm[army2].stat == MAGDEF ||
-		P_ASTAT == SCOUT ||
-		curntn->arm[army2].stat == SCOUT ||
-		P_ASTAT == ONBOARD ||
-		curntn->arm[army2].stat == ONBOARD ||
+		(nocomb_stat(P_ASTAT) == TRUE) ||
+		(nocomb_stat(curntn->arm[army2].stat) == TRUE) ||
 		curntn->arm[army2].stat == SIEGE ||    /* may not jump out  */
 		curntn->arm[army2].stat == SORTIE ||   /* of these statuses */
 		P_ATYPE >= MINLEADER ||
@@ -221,7 +236,7 @@ int armynum,new_stat;
 	}
 	P_ASTAT = new_stat;
 	AADJSTAT;
-	if( P_AMOVE>0 ) P_AMOVE--;
+	if( P_AMOVE != 0 ) P_AMOVE--;
 	AADJMOV;
 }
 

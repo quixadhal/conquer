@@ -90,7 +90,11 @@ char **argv;
 		strcpy(scenario, optarg);
 		break;
 	case 'd':
-		strcpy(defaultdir, optarg);
+		if(optarg[0]!='/') {
+			sprintf(defaultdir, "%s/%s", DEFAULTDIR, optarg);
+		} else {
+			strcpy(defaultdir, optarg);
+		}
 		break;
 	case '?': /*  print out command line arguments */
 		printf("Command line format: %s [-maxp -dDIR -rSCENARIO]\n",argv[0]);
@@ -122,9 +126,9 @@ char **argv;
 		exit(FAIL);
 	}
 	if((mflag)||(rflag)) {
-		makeworld(rflag);
 		sprintf(string,"%sup",isonfile);
 		unlink(string);
+		makeworld(rflag);
 		exit(SUCCESS);
 	}
 
@@ -162,7 +166,7 @@ char **argv;
 		/* prevent more than one addition */
 		sprintf(string,"%sadd",isonfile);
 		if(check_lock(string,TRUE)==TRUE) {
-			printf("Some else is adding\n");
+			printf("Someone else is adding\n");
 			printf("Please try again later.\n");
 			exit(FAIL);
 		}

@@ -89,7 +89,7 @@ monster()
 		if( curntn->active==NPC_NOMAD ) do_nomad();
 		else if( curntn->active==NPC_PIRATE ) do_pirate();
 		else if( curntn->active==NPC_BARBARIAN ) do_barbarian();
-		else if( curntn->active==NPC_LIZARD ) do_lizard();
+		else if( curntn->active==NPC_LIZARD ) do_lizard(); /* update.c */
 	}
 }
 
@@ -101,7 +101,7 @@ do_nomad()
 	int	x, y;
 
 	/*move nomads */
-	printf("updating nomad nation %d\n",country);
+	printf("updating nomad (nation %d)\n",country);
 	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD>0){
 		P_ASTAT=ATTACK;
 		P_AMOVE=(curntn->maxmove * *(unitmove+P_ATYPE%UTYPE))/10;
@@ -159,7 +159,7 @@ do_barbarian()
 	short armynum;
 	int x, y;
 
-	printf("updating barbarian nation %d\n",country);
+	printf("updating barbarian (nation %d)\n",country);
 	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD>0){
 		P_ASTAT=ATTACK;
 		if(P_ATYPE<MINLEADER) {
@@ -206,24 +206,12 @@ do_barbarian()
 }
 
 void
-do_lizard()
-{
-	short armynum;
-
-	printf("updating lizard nation %d\n",country);
-	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD>0){
-		P_ASOLD*=102;
-		P_ASOLD/=100;
-	}
-}
-
-void
 do_pirate()
 {
 	short nvynum,shipsize;
 	int x, y, campx, campy;
 
-	printf("updating pirate nation %d\n",country);
+	printf("updating pirate (nation %d)\n",country);
 
 	/* if pirate fleet within 3 attack if outnumber any fleets */
 	/* automatically find their base first */

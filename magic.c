@@ -600,7 +600,7 @@ int *count;
 		mvaddstr((*count)++,0,"  What orc nation:");
 		refresh();
 		i=get_country();
-		if(i<=0 || i>NTOTAL || !isntn(ntn[i].active) )
+		if(i<=0 || i>=NTOTAL || !isntn(ntn[i].active) )
 			mvaddstr((*count)++,0,"  Invalid Nation");
 		else if((curntn->dstatus[i]<HOSTILE)
 		&&(curntn->dstatus[i]!=UNMET)

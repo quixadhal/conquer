@@ -25,12 +25,11 @@
  *      as it comes in.
  *
  * Initial Revision:		(adb@bucsf.bu.edu)
- *	Tuesday March 21th, 1989 - Began the program at 23:26 EST
- *      Wednesday March 22nd, 1989 - Finished the initial version 11:29 EST
+ *     Tuesday March 21th, 1989 - Began the program at 23:26 EST
+ *     Wednesday March 22nd, 1989 - Finished the initial version 11:29 EST
  */
 
 #include <stdio.h>
-#include "header.h"
 #ifndef HPUX
 #include <sysexits.h>
 #endif HPUX
@@ -181,7 +180,7 @@ main(argc, argv)
 
 	}
 
-     /* ==== end of main processing loop ==== */
+	/* ==== end of main processing loop ==== */
 
 	/* close input file if not stdin */
 	if (infile!=stdin) {
@@ -317,4 +316,3 @@ build_node(data, nptr)
 	temp->next = nptr;
 	return(temp);
 }
-

@@ -385,7 +385,7 @@ mymove()
 				} else if(total>0) {
 					/* remove proportion of starting move */
 					P_AMOVE-= total * curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE))/(10*(groupmen+othermen));
-					if( P_AMOVE<0 || P_AMOVE>100 )
+					if( P_AMOVE>150 )
 						P_AMOVE=0;
 					AADJMOV;
 					if( P_AMOVE==0 )
@@ -475,6 +475,7 @@ mymove()
 		&&(P_ASOLD>0)){
 			if((groupmen>=TAKESECTOR)&&(SOWN==0 )){
 				mvaddstr(LINES-2,0,"Taking Unowned Sector");
+				clrtoeol();
 				refresh();
 				sleep(2);
 				SOWN=country;

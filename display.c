@@ -315,15 +315,15 @@ highlight(x,y)
 	switch(hilmode){
 	case HI_MOVE:	/* your armies w/ move left */
 		for(armynum=0;armynum<MAXARM;armynum++)
-			if(( P_ASOLD>0 )
-			&&( P_AMOVE>0 )
+			if(( P_ASOLD != 0 )
+			&&( P_AMOVE != 0 )
 			&&( P_AXLOC==(x+xoffset ))
 			&&( P_AYLOC==(y+yoffset ))) break;
 		if(armynum<MAXARM) standout();
 		break;
 	case HI_YARM:	/* your armies */
 		for(armynum=0;armynum<MAXARM;armynum++)
-			if(( P_ASOLD>0)
+			if(( P_ASOLD != 0)
 			&&( P_AXLOC==x+xoffset)
 			&&( P_AYLOC==y+yoffset)) break;
 		if(armynum<MAXARM) standout();

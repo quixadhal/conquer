@@ -275,7 +275,7 @@ diploscrn()
 			mvaddstr(j++,0,"6) WAR");
 			mvprintw(j++,0,"7) JIHAD (%d talons to break):",BREAKJIHAD);
 			j++;
-			for( i=1; i<=NTOTAL; i++ )
+			for( i=1; i<NTOTAL; i++ )
 				if((isntnorp(ntn[i].active)) && (ntn[nation].dstatus[i]==TREATY))
 				mvprintw(j++,10,"%s has treaty with %s",ntn[nation].name,ntn[i].name);
 
@@ -315,7 +315,7 @@ diploscrn()
 			&&(ntn[nation].dstatus[country]<WAR)) {
 				ntn[nation].dstatus[country]=WAR;
 				EADJDIP(nation,country);
-				for( i=1; i<=NTOTAL; i++ )
+				for( i=1; i<NTOTAL; i++ )
 				if(ntn[i].dstatus[nation]==TREATY){
 					ntn[i].dstatus[country]=WAR;
 					EADJDIP(i,country);
@@ -657,7 +657,7 @@ change()
 				}
 				destroy(country);
 				fclose(fnews);
-				sprintf(command,"%s/%s",DEFAULTDIR, sortname);
+				sprintf(command,"%s/%s", EXEDIR, sortname);
 				sprintf(command,"%s %s %s", command, filename, filename);
 				system(command);
 			}

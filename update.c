@@ -39,9 +39,6 @@ update()
 	check();
 
 #ifdef MONSTER
-	for( country=1;country<NTOTAL;country++)
-		if( ntn[country].active == NPC_LIZARD )
-			updlizards();	/* run lizard nations */
 	check();
 	monster();	/* update monster nations */
 	check();
@@ -670,20 +667,22 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 }
 
 /****************************************************************/
-/*	UPDLIZARDS() 						*/
+/*	DO_LIZARD() 						*/
 /* update lizards	 					*/
 /****************************************************************/
 void
-updlizards()
+do_lizard()
 {
 	register int i, j;
 	int armynum;
 
-	printf("updating lizard (nation %d)\n ",country);
+	printf("updating lizard (nation %d)\n",country);
 	curntn = &ntn[country];
 	for(armynum=0;armynum<MAXARM;armynum++)
 	if((P_ASOLD>0)) {
 		P_AMOVE =20;	/* just in case god wants to move them */
+		P_ASOLD*=102;	/* increase population */
+		P_ASOLD/=100;
 		if(armynum%2==0) {
 			if(P_ASTAT!=SIEGED) P_ASTAT=GARRISON;
 		} else {
