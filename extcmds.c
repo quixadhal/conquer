@@ -113,10 +113,17 @@ int armynum, army2;
 {
 	int nocomb_stat();
 
-	if (armynum < 0 || armynum >= MAXARM ||
-		army2 < 0 || army2 >= MAXARM ||
-		armynum == army2 ||
-		(nocomb_stat(P_ASTAT) == TRUE) ||
+	if (armynum < 0 || armynum >= MAXARM
+	    || army2 < 0 || army2 >= MAXARM || P_ASOLD == 0
+	    || curntn->arm[army2].sold == 0) {
+		errormsg("Selected unit doesn't exist");
+		return;
+	}
+	if (P_ASTAT != curntn->arm[army2].stat
+	    || P_ATYPE != curntn->arm[army2].unittyp
+	    || P_ATYPE >= MINLEADER
+	    || P_ASTAT == ONBOARD || P_ASTAT == TRADED) {
+	  if ((nocomb_stat(P_ASTAT) == TRUE) ||
 		(nocomb_stat(curntn->arm[army2].stat) == TRUE) ||
 		curntn->arm[army2].stat == SIEGE ||    /* may not jump out  */
 		curntn->arm[army2].stat == SORTIE ||   /* of these statuses */
@@ -124,6 +131,7 @@ int armynum, army2;
 		P_ATYPE!=curntn->arm[army2].unittyp) {
 			errormsg("Selected armies not legal");
 			return;
+		}
 	}
 	if((curntn->arm[army2].xloc!=P_AXLOC)
 	||(curntn->arm[army2].yloc!=P_AYLOC)) {
@@ -348,6 +356,10 @@ int	armynum;
 	}
 	if(P_ATYPE==A_ZOMBIE) {
 		errormsg("Your Zombies just don't seem inspired");
+		return;
+	}
+	if(P_ASTAT==MARCH) {
+		errormsg("Your troops must stop marching before they can be lead");
 		return;
 	}
 	if(armynum<0 || armynum >= MAXARM || P_ASTAT==SCOUT ||

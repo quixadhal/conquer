@@ -522,6 +522,7 @@ redomil()
 		case TRADED:
 		case ONBOARD:
 		case GENERAL:
+		case SCOUT:
 			break;
 		default:
 			P_ASTAT=DEFEND;

@@ -849,7 +849,6 @@ newlogin()
 				break;
 			}
 		}
-		check();
 
 		/* check for save */
 		newmsg("Save this nation? [ny]");

@@ -204,9 +204,7 @@ char **argv;
 				printf(".\n");
 				exit(FAIL);
 			}
-#ifdef REMAKE
 			remake=TRUE;
-#endif /*REMAKE*/
 			printf("************* WARNING!!!! *******************\n\n");
 			printf("    There is already a game in progress.\n\n");
 			printf("*********************************************\n\n");
@@ -227,7 +225,7 @@ char **argv;
 		}
 #else
 		/* check for god permissions */
-		if(realuser!=(getpwnam(LOGIN)->pw_uid)) {
+		if(realuser!=(getpwnam(LOGIN))->pw_uid) {
 			printf("Sorry -- you can not create a world\n");
 			printf("you need to be logged in as %s.\n",LOGIN);
 			exit(FAIL);

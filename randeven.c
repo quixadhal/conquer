@@ -627,10 +627,10 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 					break;
 				}
 			}
-			break;
 			/* decrement to contain proper value */
 			xpos--;
 			ypos--;
+			break;
 		case 27:
 			/*plague -- 40% of populace in cities dies*/
 			strcpy(eventstr,"40% of populace & armies in towns die");

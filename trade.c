@@ -81,13 +81,17 @@ trade()
 		}
 		/* read in all of the data */
 		while (notopen==FALSE && !feof(tfile)) {
-			fscanf(tfile,"%d %d %d %d %ld %ld %d\n",&deal[itemnum],
-				&natn[itemnum],&type1[itemnum],&type2[itemnum],&lvar1[itemnum],&lvar2[itemnum],&extra[itemnum]);
-			if (deal[itemnum]==NOSALE) {
-				/* remove item from sales list */
-				deal[type1[itemnum]]=NOSALE;
-			} else if (deal[itemnum]==SELL) {
-				itemnum++;
+			holdint = fscanf(tfile,"%d %d %d %d %ld %ld %d\n",
+				&deal[itemnum],&natn[itemnum],&type1[itemnum],
+				&type2[itemnum],&lvar1[itemnum],
+				&lvar2[itemnum],&extra[itemnum]);
+			if (holdint == 7) {
+				if (deal[itemnum]==NOSALE) {
+					/* remove item from sales list */
+					deal[type1[itemnum]]=NOSALE;
+				} else if (deal[itemnum]==SELL) {
+					itemnum++;
+				}
 			}
 		}
 		if (notopen==FALSE) fclose(tfile);
@@ -899,8 +903,8 @@ checktrade()
 	}
 	/* read in all of the transactions */
 	while(!feof(tfile)) {
-		fscanf(tfile,"%d %d %d %d %ld %ld %d\n",&deal[itemnum],
-			&natn[itemnum],&type1[itemnum],&type2[itemnum],&lvar1[itemnum],&lvar2[itemnum],&extra[itemnum]);
+		if (7 != fscanf(tfile,"%d %d %d %d %ld %ld %d\n",&deal[itemnum],
+			&natn[itemnum],&type1[itemnum],&type2[itemnum],&lvar1[itemnum],&lvar2[itemnum],&extra[itemnum])) break;
 		if (deal[itemnum]==NOSALE) {
 			if (natn[itemnum]==country)
 			takeback(country,type1[type1[itemnum]],lvar1[type1[itemnum]],extra[type1[itemnum]],TRUE);
@@ -946,8 +950,8 @@ uptrade()
 	}
 	/* read in all of the transactions */
 	while(!feof(tfile)) {
-		fscanf(tfile,"%d %d %d %d %ld %ld %d\n",&deal[itemnum],
-			&natn[itemnum],&type1[itemnum],&type2[itemnum],&lvar1[itemnum],&lvar2[itemnum],&extra[itemnum]);
+		if (7 != fscanf(tfile,"%d %d %d %d %ld %ld %d\n",&deal[itemnum],
+			&natn[itemnum],&type1[itemnum],&type2[itemnum],&lvar1[itemnum],&lvar2[itemnum],&extra[itemnum])) break;
 		if (deal[itemnum]==NOSALE) {
 			/* remove item from sales list */
 			deal[type1[itemnum]]=NOSALE;
@@ -979,6 +983,7 @@ uptrade()
 		}
 	}
 	unlink(tradefile);
+	if (itemnum == 0) return;
 	/* reopen the file for unsold commodities */
 	if ((tfile=fopen(tradefile,"w")) == NULL) {
 		/* error on opening file */

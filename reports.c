@@ -361,12 +361,14 @@ budget()
 	chty = max((money*(long)curntn->charity)/100L,0L);
 	mvprintw(15,COLS-50,"CHARITY.......................%8ld",chty);
 	mvprintw(16,COLS-50,"NET INCOME....................%8ld",money);
+
 	infmoney = startgold + money - chty;
 	if (infmoney > 1000000L) {
-		infmoney = (long)(infmoney / (100.0+(float)curntn->inflation/4.0)) * 100L;
+		infmoney = (infmoney / (400L + curntn->inflation)) * 400L;
 	} else {
-		infmoney= (long) (infmoney * 100L) / (100.0 + (float) curntn->inflation/4.0);
+		infmoney = (infmoney * 400L) / (400L + curntn->inflation);
 	}
+
 	mvprintw(17,COLS-50,"LOSS DUE TO INFLATION.........%8ld",(startgold + money-chty)-infmoney);
 	standout();
 	mvprintw(18,COLS-50,"NEXT SEASON'S TREASURY........%8ld",infmoney);
@@ -425,9 +427,9 @@ produce()
 	mvprintw(9,0,  "granary now holds.........%8ld tons",curntn->tfood);
 	mvprintw(10,0, "%8ld people in farms..%8ld tons",spread.infarm,spread.food - curntn->tfood);
 	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
-	mvprintw(12,0, "%8ld people @ %3.1f eat.%8.0f tons",spread.civilians,P_EATRATE,P_EATRATE*(float)spread.civilians);
+	mvprintw(12,0, "%8ld people @ %3.1f eat.%8.0ld tons",spread.civilians,P_EATRATE,(long)(P_EATRATE*(float)spread.civilians));
 	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
-	mvprintw(13,0, "%8ld soldiers eat.....%8.0f tons",military,military*2*P_EATRATE);
+	mvprintw(13,0, "%8ld soldiers eat.....%8.0ld tons",military,(long)(military*2*P_EATRATE));
 	military+= military+spread.civilians; /* military is amount eaten */
 	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 	standout();

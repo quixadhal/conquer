@@ -220,7 +220,7 @@ get_display_for(x,y,dmode)
 			break;
 		case DI_DESI: /*designation*/
 			if(sct[x+xoffset][y+yoffset].owner==0){
-				if(tofood( &sct[x+xoffset][y+yoffset],sct[x+xoffset][y+yoffset].owner)!=0)
+				if(tofood( &sct[x+xoffset][y+yoffset],country)!=0)
 					ch=sct[x+xoffset][y+yoffset].altitude;
 				else ch=sct[x+xoffset][y+yoffset].vegetation;
 			}
@@ -408,11 +408,11 @@ highlight(x,y,hmode)
 void
 coffmap()
 {
-	if((xcurs<=0)||(ycurs<=0)||(xcurs>=SCREEN_X_SIZE-1)
-	||((ycurs>=SCREEN_Y_SIZE-1))||((XREAL)>=MAPX)
-	 ||((YREAL)>=MAPY)) {
-	  centermap();
-	  redraw=PART;
+	if( xcurs<0 || (XREAL!=0 && xcurs==0) || (ycurs<0) ||
+	   (YREAL!=0 && ycurs==0) || xcurs>=SCREEN_X_SIZE-1 ||
+	   ycurs>=SCREEN_Y_SIZE-1 || XREAL>=MAPX || YREAL>=MAPY) {
+		centermap();
+		redraw=PART;
 	}
 	
 	if(redraw!=DONE) {

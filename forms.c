@@ -413,10 +413,10 @@ change()
 		mvprintw(5,0,"active is %d",curntn->active);
 	mvprintw(6,0,"tax_rate...... %2d%%",curntn->tax_rate);
 	mvprintw(7,0,"inflation..... %2d%%",curntn->inflation);
-	i=10*curntn->tax_rate-curntn->popularity-curntn->terror-3*curntn->charity;
+	i=(int)10*curntn->tax_rate-curntn->popularity-curntn->terror-3*curntn->charity;
 	if( i<0 ) i=0;
 	mvprintw(8,0,"peasant revolt %2d%%",(i*PREVOLT)/100);
-	i=5*curntn->tax_rate - curntn->prestige;
+	i=(int)5*curntn->tax_rate - curntn->prestige;
 	if( i<0 ) i=0;
 	mvprintw(9,0,"other revolt.. %2d%%",(i*PREVOLT)/100);
 	standend();
@@ -441,7 +441,7 @@ change()
 	temp = P_EATRATE;
 	mvprintw(7,COLS/2-12, "eatrate.......%3.2f",temp);
 	mvprintw(8,COLS/2-12, "wealth........ %3d",curntn->wealth);
-	mvprintw(9,COLS/2-12,"charity....... %2d%%",curntn->charity);
+	mvprintw(9,COLS/2-12, "charity....... %2d%%",curntn->charity);
 	mvprintw(10,COLS/2-12,"communication.%3.2f",(float) P_NTNCOM);
 	mvprintw(11,COLS/2-12,"reputation.... %3d",curntn->reputation);
 	mvprintw(12,COLS/2-12,"spoilrate.....%3d%%",curntn->spoilrate);

@@ -574,8 +574,8 @@ parse(ch)
 	case 'b':	/*move south west*/
 		pager=0;
 		selector=0;
-		xcurs--;
-		ycurs++;
+		if (XREAL > 0) xcurs--;
+		if (YREAL < MAPY - 1) ycurs++;
 		break;
 	case 'B':	/*budget*/
 		redraw=FULL;
@@ -620,13 +620,14 @@ parse(ch)
 	case 'H':	/*scroll west*/
 		pager=0;
 		selector=0;
-		xcurs-=((COLS-22)/4);
+		if (XREAL > (COLS-22)/4) xcurs-=((COLS-22)/4);
+		else xcurs = -xoffset;
 		break;
 	case '4':
 	case 'h':	/*move west*/
 		pager=0;
 		selector=0;
-		xcurs--;
+		if (XREAL > 0) xcurs--;
 		break;
 	case 'I':	/*campaign information*/
 		camp_info();
@@ -635,35 +636,39 @@ parse(ch)
 	case 'J':	/*scroll down*/
 		pager=0;
 		selector=0;
-		ycurs+=((SCREEN_Y_SIZE)/2);
+		if (YREAL + (SCREEN_Y_SIZE)/2 < MAPY)
+			ycurs+=((SCREEN_Y_SIZE)/2);
+		else ycurs = MAPY - yoffset - 1;
 		break;
 	case '2':
 	case 'j':	/*move down*/
 		pager=0;
 		selector=0;
-		ycurs++;
+		if (YREAL < MAPY - 1) ycurs++;
 		break;
 	case '8':
 	case 'k':	/*move up*/
 		pager=0;
 		selector=0;
-		ycurs--;
+		if (YREAL > 0) ycurs--;
 		break;
 	case 'K':	/*scroll up*/
 		pager=0;
 		selector=0;
-		ycurs-=((SCREEN_Y_SIZE)/2);
+		if (YREAL > (SCREEN_Y_SIZE)/2) ycurs-=((SCREEN_Y_SIZE)/2);
+		else ycurs = -yoffset;
 		break;
 	case '6':
 	case 'l':	/*move east*/
 		pager=0;
 		selector=0;
-		xcurs++;
+		if (XREAL < MAPX - 1) xcurs++;
 		break;
 	case 'L':	/*scroll east*/
 		pager=0;
 		selector=0;
-		xcurs+=((COLS-22)/4);
+		if (XREAL + (COLS-22)/4 < MAPX) xcurs+=((COLS-22)/4);
+		else xcurs = MAPX - xoffset - 1;
 		break;
 	case 'm':	/*move selected item to new x,y */
 		mymove();
@@ -680,8 +685,8 @@ parse(ch)
 	case 'n':	/*move south-east*/
 		pager=0;
 		selector=0;
-		ycurs++;
-		xcurs++;
+		if (YREAL < MAPY - 1) ycurs++;
+		if (XREAL < MAPX - 1) xcurs++;
 		break;
 	case 'N':	/*read newspaper */
 		redraw=PART;
@@ -762,14 +767,16 @@ parse(ch)
 	case 'u':	/*move north-east*/
 		pager=0;
 		selector=0;
-		ycurs--;
-		xcurs++;
+		if (YREAL > 0) ycurs--;
+		if (XREAL < MAPX - 1) xcurs++;
 		break;
     	case 'U':	/* scroll north-east */
 		pager=0;
 		selector=0;
-		xcurs+=((COLS-22)/4);
-		ycurs-=((SCREEN_Y_SIZE)/2);
+		if (XREAL + (COLS-22)/4 < MAPX) xcurs+=((COLS-22)/4);
+		else xcurs = MAPX - xoffset - 1;
+		if (YREAL > (SCREEN_Y_SIZE)/2) ycurs-=((SCREEN_Y_SIZE)/2);
+		else ycurs = -yoffset;
 		break;
     	case 'v':	/* version credits */
 		credits();
@@ -801,14 +808,16 @@ parse(ch)
 	case 'y':	/*move north-west*/
 		pager=0;
 		selector=0;
-		ycurs--;
-		xcurs--;
+		if (YREAL > 0) ycurs--;
+		if (XREAL > 0) xcurs--;
 		break;
 	case 'Y':	/* scroll north-west */
 		pager=0;
 		selector=0;
-		xcurs-=((COLS-22)/4);
-		ycurs-=((SCREEN_Y_SIZE)/2);
+		if (XREAL < (COLS-22)/4) xcurs = -xoffset;
+		else xcurs-=((COLS-22)/4);
+		if (YREAL < (SCREEN_Y_SIZE)/2) ycurs = -yoffset;
+		else ycurs-=((SCREEN_Y_SIZE)/2);
 		break;
 	case 'Z':	/*move civilians up to 2 spaces*/
 		moveciv();

@@ -25,6 +25,7 @@ extern FILE *fnews;
 extern short country;
 int	disarray;		/* TRUE if nation in disarray */
 int	**attr;			/* sector attractiveness */
+long	**newpop;		/* storage for old population */
 
 /****************************************************************/
 /*	UPDATE() - updates the whole world			*/
@@ -523,18 +524,21 @@ void
 updexecs()
 {
 	register struct s_sector	*sptr;
-	register int i, j, x, y;
+	register int x, y;
 #ifdef XENIX
 	register int z;
 #endif /*XENIX*/
 	int	armynum;
-	int moved,done,loop=0,number=0;
+	int done, loop=0, number=0;
 	void move_people();
 	int execed[NTOTAL];
 
 	check();
 	attr = (int **) m2alloc(MAPX,MAPY,sizeof(int));
 	check();
+	newpop = (long **) m2alloc(5,MAPY,sizeof(long));
+	check();
+
 	for(country=0;country<NTOTAL;country++) 
 		if( isntn(ntn[country].active) ) execed[country]=FALSE;
 		else {
@@ -700,6 +704,7 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 			&&( rand()%2==0)) ntn[country].spellpts+=1;
 	}
 	free(attr);
+	free(newpop);
 }
 
 /****************************************************************/
@@ -1044,11 +1049,11 @@ updsectors()
 
 			/* now find new total gold talons in nations*/
 			if (curntn->tgold > 1000000L) {
-				curntn->tgold = (long)(curntn->tgold /
-					(100.0+(float)curntn->inflation/4.0)) * 100L;
+				curntn->tgold = (curntn->tgold /
+					(400L + curntn->inflation)) * 400L;
 			} else {
-				curntn->tgold = (long) (curntn->tgold * 100L) /
-					(100.0 + (float) curntn->inflation/4.0);
+				curntn->tgold = (curntn->tgold * 400L) /
+					(400L + curntn->inflation);
 			}
 
 			/* provide goods production */
@@ -1070,7 +1075,7 @@ updmil()
 	int	AX, AY, AT;	/* armies x,y locations, type : for speed */
 	int armynum,nvynum,flag,dfltunit;
 	int army2,asmen,dsmen,nation,sieges=0;
-	char siegex[MAXSIEGE],siegey[MAXSIEGE],siegok[MAXSIEGE];
+	unsigned char siegex[MAXSIEGE],siegey[MAXSIEGE],siegok[MAXSIEGE];
 
 	fprintf(stderr,"updating armies and navies\n");
 	for(country=1;country<NTOTAL;country++) 
@@ -1409,7 +1414,7 @@ updcomodities()
 		if(curntn->tgold > GOLDTHRESH*curntn->jewels){
 			/* buy jewels off commodities board */
 			xx=curntn->tgold-GOLDTHRESH*curntn->jewels;
-			if (ispc(country)) {
+			if (ispc(curntn->active)) {
 				if (mailopen(country)!=(-1)) {
 					fprintf(fm,"Message from Conquer\n\n");
 					fprintf(fm,"Gold imbalance forced your treasury to purchase\n");
@@ -1536,47 +1541,66 @@ updleader()
 void
 move_people()
 {
+	register int x, y, i, j;
 	register struct s_sector *sptr;
-	register int i, j, x, y;
-	int moved, t_attr;
-	long **newpop, *curpop;
+	int t_attr;
+	long *curpop, moved;
 
-	newpop = (long **) m2alloc(MAPX, MAPY, sizeof(long));
+	/* store the first two rows for computation */
+	for (x = 0; x < 3; x++) {
+		for (y = 0; y < MAPY; y++) {
+			if (sct[x][y].owner == country)
+				newpop[x][y] = sct[x][y].people;
+			else newpop[x][y] = 0L;
+		}
+	}
 
-	for (x = 0; x < MAPX; x++)
-	for (y = 0; y < MAPY; y++)
-		if (sct[x][y].owner == country)
-			newpop[x][y] = sct[x][y].people;
-		else newpop[x][y] = 0;
+	/* go through entire map to move civilians */
+	for (x = 0; x < MAPX; x++) {
+		for (y = 0; y < MAPY; y++) {
+			sptr = &sct[x][y];
+			if ((sptr->owner == country) && (sptr->people != 0)) {
 
-	for (x = 0; x < MAPX; x++)
-	for (y = 0; y < MAPY; y++) {
-		sptr = &sct[x][y];
-		if ((sptr->owner == country) && (sptr->people != 0)) {
-
-			for (t_attr = 0, i = x - 2; i < x + 3; i++)
-			for (j = y - 2; j < y + 3; j++)
-			if ((ONMAP(i, j)) && (sct[i][j].owner == country))
-				t_attr += attr[i][j];
-
-			if (t_attr > 0) {
-				t_attr *= 5;
-				curpop = &newpop[x][y];
-				for (i = x - 2; i < x + 3; i++)
+				for (t_attr = 0, i = x - 2; i < x + 3; i++)
 				for (j = y - 2; j < y + 3; j++)
-				if ((ONMAP(i, j)) && (sct[i][j].owner == country)) {
-					moved = sptr->people * attr[i][j];
-					if (moved > 0) {
-						moved /= t_attr;
-						*curpop -= moved;
-						newpop[i][j] += moved;
+				if (ONMAP(i, j))
+					t_attr += attr[i][j];
+
+				if (t_attr > 0) {
+					t_attr *= 5;
+					curpop = &newpop[x%5][y];
+					for (i = x - 2; i < x + 3; i++)
+					for (j = y - 2; j < y + 3; j++)
+					if (ONMAP(i, j)) {
+						moved = sptr->people * attr[i][j];
+						if (moved > 0) {
+							moved /= t_attr;
+							*curpop -= moved;
+							newpop[i%5][j] += moved;
+						}
 					}
 				}
 			}
 		}
+		/* store old row, and read in new */
+		for (y = 0; y < MAPY; y++) {
+			if (x > 1) {
+				if (sct[x-2][y].owner == country)
+					sct[x-2][y].people = newpop[(x-2)%5][y];
+			}
+			if (x < MAPX - 3) {
+				if (sct[x+3][y].owner == country)
+					newpop[(x+3)%5][y] = sct[x+3][y].people;
+				else newpop[(x+3)%5][y] = 0L;
+			}
+		}
 	}
-	for (x = 0; x < MAPX; x++)
-	for (y = 0; y < MAPY; y++)
-	if (sct[x][y].owner == country)
-		sct[x][y].people = newpop[x][y];
+
+	/* assign values for final rows */
+	for (x = MAPX - 2; x < MAPX; x++) {
+		for (y = 0; y < MAPY; y++) {
+			if (sct[x][y].owner == country)
+				sct[x][y].people = newpop[x%5][y];
+		}
+	}
 }

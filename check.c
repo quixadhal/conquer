@@ -3,6 +3,10 @@
 
 #include	<ctype.h>
 #include	<stdio.h>
+#ifndef FILELOCK
+#include	<sys/types.h>
+#include	<sys/stat.h>
+#endif
 #include	"header.h"
 #include	"data.h"
 
@@ -55,7 +59,7 @@ int	__line__;
 				__file__,__line__,country,i,a->xloc,a->yloc,a->sold);
 				a->sold = 0;
 			}
-			if( a->stat == ONBOARD && a->smove > 0) {
+			if( a->stat == ONBOARD && a->smove != 0) {
 				/* don't echo since this is still getting */
 				/* set some place someplace I can't find yet */
 				a->smove = 0;

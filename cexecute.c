@@ -15,7 +15,7 @@
 #include "data.h"
 extern long startgold;
 extern short country;
-extern FILE *fexe;
+extern FILE *fexe, *fnews;
 extern char fison[];
 
 #ifdef CONQUER
@@ -161,6 +161,14 @@ int	isupdate;	/* 0 if not update, 1 if update */
 			curntn->reputation = y;
 			break;
 		case NTAX:	/* set nations tax rate */
+#ifdef ADMIN
+			if (ispc(curntn->active) && !ispc(x)) {
+			  fprintf(fnews, "1.\tNation %s is now being run by the computer.\n", curntn->name);
+			}
+			if (ispc(x) && !ispc(curntn->active)) {
+			  fprintf(fnews, "1.\tNation %s is no longer being run by the computer.\n", curntn->name);
+			}
+#endif /*ADMIN*/
 			curntn->tax_rate = armynum;
 			curntn->active = x;
 			curntn->charity = y;

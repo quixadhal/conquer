@@ -283,12 +283,37 @@
 227. misc.c[498]: fixed overflow on gold scoring [Kenneth J Dalka]
 228. adjusted inflation calculation in update.c and reports.c.
 229. added the inflation estimation to the budget report.
-230. fixed bug with division of charity by population. [Dave F.]
+230. fixed bug with division of charity by population. [Charles C. Fu]
 231. prevent passage of fleets through hostile cities.
 232. added some checks in npc.c for ownership in drafting in some sectors.
 233. removed destruction of troops on peaks, now that flight is possible.
 234. changed to min zero in attractiveness, now drift will no longer occur
 	for sectors with "zero" attractiveness.  [Dave F.]
+===4.0 patch number seven released => 4.7 ===============================
+235. update.c[1327]: "ispc(country)" => "ispc(curntn->active)"
+236. added a note to README and fixed credit in notes.v4 file.
+237. made sure npcs do not change scout status.
+238. fixed bug with include files in check.c. [J. Bayer]
+239. update.c[1073]: declare items as unsigned char [Rodney Orr]
+240. update.c[1541]: rewrote move_people() routine to avoid memory leak
+	and to use only 5 / MAPX as much memory.
+241. adjusted casting in propuction screen for food consumption.
+242. trade.c: added check for unexpected end of file in trade [R. Orr]
+243. newlogin.c: removed the check() in the routine.
+244. added news notification during update if npc/pc mode is changed.
+245. removed useless ifdef REMAKE statement in admin.c.
+246. added check for edge of screen unnecessarily redrawing.
+247. added check for motion beyond edge of screen.
+248. added stoppage for going beyond map edges.
+249. checked for invalid reads of commerce file in trade.c.
+250. changed float casting back to longs at line 1052 of update.c.
+251. did the same for the calculations in function budget() of report.c.
+252. fixed display.c designation to show tofood(sctptr, country).
+253. made Dragyn the nation leader name and Dragon the monster name.
+254. restricted marching troops from being grouped.  (could get into
+	defend mode this way; even when they had marched too far).
+255. allow recombination of troops with same status and same type
+	unless the type is TRADED or ON_BOARD.
 
 -------------------------------------------------------------------------
 | 2.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V5             |

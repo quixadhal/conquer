@@ -62,10 +62,10 @@ char *unittype[]= {
 "Knights", "Gryfins","Elephants","Zombies","Spy","Scout",
 "King","Baron","Emperor","Prince","Wizard","Mage",
 "Pope","Bishop","Admiral","Captain","Warlord","Lord",
-"Demon","Devil","Dragon","Wyrm","Shadow","Nazgul",
+"Demon","Devil","Dragyn","Wyrm","Shadow","Nazgul",
 "Spirit", "Assasin", "Efreet", "Gargoyl", "Wraith",
 "Hero", "Centaur", "Giant", "Suphero", "Mummy",
-"Elmentl", "Mintaur", "Demon", "Balrog", "Dragon"
+"Elmentl", "Mintaur", "Daemon", "Balrog", "Dragon"
 };
 
 #ifdef CONQUER
@@ -80,7 +80,7 @@ char *shunittype[]= {
 "Demn","Devl","Drag","Wyrm","Shad","Nazg",
 "spir", "Assn", "efr", "Garg", "Wra",
 "Hero", "Cent", "gt", "Shro", "Mumm",
-"Elem", "mino", "dem", "Bal", "Drag"
+"Elem", "mino", "daem", "Bal", "Drgn"
 };
 #endif CONQUER
 int unitminsth[]=		/* min strength of a unit */
