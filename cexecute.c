@@ -194,6 +194,17 @@ int	isupdate;	/* 0 if not update, 1 if update */
 			}
 			sct[x][y].people=armynum;
 			break;
+		case XSACIV3:	/*Sadjciv3 - incremental people adjust */
+			/* if you dont own it, put people in your capitol */
+			if((sct[x][y].owner!=country)&&(country!=0)) {
+				sct[curntn->capx][curntn->capy].people+=armynum;
+				fprintf(stderr,"SACIV3: <%s> told to put %d civilians in sector %d,%d not owned - placed in capitol\n",curntn->name,armynum,x,y);
+			}
+			else
+			{
+				sct[x][y].people+=armynum;
+			}
+			break;
 		case XSIFORT:	/*Sincfort*/
 			sct[x][y].fortress++;
 			break;
@@ -269,6 +280,8 @@ int	isupdate;	/* 0 if not update, 1 if update */
 void
 hangup()
 {
+	char line[LINELTH];
+
 	if(country==0) writedata();
 	else {
 		fprintf(fexe,"L_NGOLD\t%d \t%d \t%ld \t0 \t0 \t%s\n",
@@ -281,12 +294,20 @@ hangup()
 	/*close file*/
 	fclose(fexe);
 	/*send a message to God*/
-	mailopen( 0 );
-	fprintf(fm,"WARNING: Nation %s hungup on me.\n",curntn->name);
-	mailclose();
+	if(mailopen( 0 )!=(-1)) {
+		fprintf(fm,"WARNING: Nation %s hungup on me.\n",curntn->name);
+		mailclose(0);
+	}
 
 	/* remove the lock file */
 	unlink(fison);
+	/* remove any existing mail reading/writing file */
+	if (mailok!=DONEMAIL) {
+		extern char tmp_mail_name[];
+		unlink(tmp_mail_name);
+	}
+	sprintf(line,"%s%hd.tmp",msgfile,country);
+	unlink(line);
 	/* exit program */
 	exit(FAIL);
 }

@@ -41,8 +41,10 @@ showscore()
 	int nationid; 	     /*current nation id */
 
 	count2=1;
+	clear();
 	while(done==FALSE) {
-		clear();
+		move(0,0);
+		clrtobot();
 		standout();
 		mvaddstr(0,(COLS/2)-10,"NATION SCORE SCREEN");
 		standend();
@@ -94,8 +96,8 @@ showscore()
 				mvprintw(ypos+6,xpos,"%ld",ntn[nationid].score);
 #ifdef NOSCORE
 				if(isnpc(ntn[nationid].active))
-					mvprintw(ypos+7,xpos,"Yes");
-				else mvprintw(ypos+7,xpos,"No");
+					mvaddstr(ypos+7,xpos,"Yes");
+				else mvaddstr(ypos+7,xpos,"No");
 				if (country==0) {
 					mvprintw(ypos+8,xpos,"%ld",ntn[nationid].tgold);
 					mvprintw(ypos+9,xpos,"%ld",ntn[nationid].tmil);
@@ -108,8 +110,8 @@ showscore()
 				mvprintw(ypos+9,xpos,"%ld",ntn[nationid].tciv);
 				mvprintw(ypos+10,xpos,"%d",ntn[nationid].tsctrs);
 				if(isnpc(ntn[nationid].active))
-					mvprintw(ypos+11,xpos,"Yes");
-				else mvprintw(ypos+11,xpos,"No");
+					mvaddstr(ypos+11,xpos,"Yes");
+				else mvaddstr(ypos+11,xpos,"No");
 #endif /* NOSCORE */
 				count++;
 				if(count<MAXINSCR && count%MAXINROW==0) {
@@ -151,11 +153,13 @@ diploscrn()
 		isgod=TRUE;
 		if (get_god()) return;
 	}
+	clear();
 	count2=1;
 	while(1){
 		count=1;
 		offset=0;
-		clear();
+		move(0,0);
+		clrtobot();
 		standout();
 		mvaddstr(0,(COLS/2)-12,"NATION DIPLOMACY SUMMARY");
 		standend();
@@ -255,7 +259,6 @@ diploscrn()
 				exit(FAIL);
 			}
 			BRIBENATION;
-			mailclose();
 
 			ntn[nation].dstatus[country]--;
 
@@ -313,16 +316,20 @@ diploscrn()
 			}
 			if((temp<=UNMET)||(temp>JIHAD)
 			||((isgod==FALSE)&&(temp==UNMET))){
-				mvprintw(LINES-1,0,"SORRY, Invalid inputs -- hit return");
-				refresh();
-				getch();
+				errormsg("SORRY, Invalid inputs -- hit return");
 				if(isgod==TRUE) reset_god();
 				return;
 			}
 
-			if(((curntn->dstatus[nation]==TREATY)&&(temp!=TREATY))
-			||(( curntn->dstatus[nation]==JIHAD)&&(temp!=JIHAD)))
+			if((curntn->dstatus[nation]==JIHAD)&&(temp!=JIHAD))
 		    		curntn->tgold -= BREAKJIHAD;
+			else if ((curntn->dstatus[nation]==TREATY)&&(temp!=TREATY)) {
+				if (ntn[nation].dstatus[country]!=TREATY) {
+					errormsg("Non-binding Treaty broken... fee waived.");
+				} else {
+					curntn->tgold -= BREAKJIHAD;
+				}
+			}
 
 			curntn->dstatus[nation]=temp;
 			EADJDIP(country,nation);
@@ -330,11 +337,12 @@ diploscrn()
 			if((temp>HOSTILE)
 			&&(ispc(ntn[nation].active))
 			&&(ntn[nation].dstatus[country]<WAR)) {
-				mailopen(nation);
-				fprintf(fm,"Message to %s from CONQUER\n",ntn[nation].name);
-				fprintf(fm,"    During the %s of Year %d,\n",PSEASON(TURN),YEAR(TURN));
-				fprintf(fm,"      %s declared war on you\n",curntn->name);
-				mailclose();
+				if(mailopen(nation)!=(-1)) {
+					fprintf(fm,"Message to %s from CONQUER\n",ntn[nation].name);
+					fprintf(fm,"    During the %s of Year %d,\n",PSEASON(TURN),YEAR(TURN));
+					fprintf(fm,"      %s declared war on you\n",curntn->name);
+					mailclose(nation);
+				}
 			}
 
 			/*prevent ron from being sneaky*/
@@ -347,7 +355,7 @@ diploscrn()
 				if(ntn[i].dstatus[nation]==TREATY){
 					ntn[i].dstatus[country]=WAR;
 					EADJDIP(i,country);
-					mailopen(country);
+					if (mailopen(country)==(-1)) {
 					fprintf(fm,"Message to %s from %s\n",ntn[country].name,ntn[i].name);
 					switch( rand()%4 ) {
 					case 0: fprintf(fm,"You just attacked my friend %s - your loss!!!\n",ntn[nation].name);
@@ -361,7 +369,8 @@ diploscrn()
 						fprintf(fm,"appropriate counter measures!!! DIE!!!\n");
 						break;
 					}
-					mailclose();
+					}
+					mailclose(country);
 				}
 			}
 		}
@@ -390,8 +399,10 @@ change()
 	}
  
 	/* continuous loop */
-	while(1) {
 	clear();
+	while(1) {
+	move(0,0);
+	clrtobot();
 	standout();
 	mvaddstr(0,(COLS/2)-10,"NATION STATS SUMMARY");
 	mvprintw(3,0,"nation name is %s",curntn->name);

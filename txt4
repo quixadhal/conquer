@@ -27,8 +27,8 @@ ZCITY  troops (if population > civilians / 16+(number of sectors)/2)
 ZCAPITOL  and can build ships here.  Town tax=rate*XTAXTOWN talons/person and
        City tax=rate*XTAXCITY talons/person.  Both cost a lot to redesignate
        AND take metal to create.  They are captured only if you are the ONLY
-       occupant of the sector when the world is updated.  NPC nations are
-       destroyed if they lose their capitol.  Cities, Towns, and Capitols
+       occupant of the sector when the world is updated.  Nations become
+       depleted if they lose their capitol.  Cities, Towns, and Capitols
        add to many of a nations characteristics.
 ZMINE  Mine:  Produce (tax/100)*XTAXMETAL*Metal*People Talons & Produces
        Metal Ores.  Each mine you own adds to your nations mine_ability.
@@ -36,8 +36,8 @@ ZFARM  Produces (tax/100)*XTAXFOOD*Vegetation*People Talons & Produces Food
        Each farm you own adds to your nations farm_ability.
 ZGOLD  Produces (tax/100)*XTAXGOLD*Gold*People Talons & Produces Jewels
 ZDEVASTATED  Devastated sector.  People dont like to live where devastated.
-ZRUIN  Ruins are devastated Cities.  They may be rebuilt at 1/2 price.
-       They can't be redesignated to anything other than a city.
+ZRUIN  Ruins are devastated Cities.  They may be rebuilt to cities at
+       half cost or for XREBUILDCOST talons may be redesignated otherwise.
 END
                       DESIGNATION DESCRIPTIONS              pg.2
 

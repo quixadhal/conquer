@@ -387,18 +387,96 @@ offmap()
 void
 centermap()
 {
-  int xx,yy;
-  xx=XREAL;
-  yy=YREAL;
-  xoffset = xx - (SCREEN_X_SIZE/2);
-  yoffset = yy - (SCREEN_Y_SIZE/2);
-  if (xoffset<0)
-      xoffset=0;
-  if (yoffset<0)
-      yoffset=0;
-  xcurs= xx-xoffset;
-  ycurs= yy-yoffset;
-  whatcansee();
+	int xx,yy;
+	xx=XREAL;
+	yy=YREAL;
+	xoffset = xx - (SCREEN_X_SIZE/2);
+	yoffset = yy - (SCREEN_Y_SIZE/2);
+	if (xoffset<0)
+		xoffset=0;
+	if (yoffset<0)
+		yoffset=0;
+	xcurs= xx-xoffset;
+	ycurs= yy-yoffset;
+	whatcansee();
+}
+
+/************************************************************************/
+/*   JUMP_TO()      - move screen position to a specific location       */
+/*                    home indicates just go to capitol sector.         */
+/************************************************************************/
+void
+jump_to(home)
+	int home;
+{
+	int i,j,done;
+	static int next_ntn;
+
+	/* find location to jump to */
+	if (home) {
+		if (country==0) {
+			/* check if in sequence */
+			if ((XREAL!=ntn[next_ntn].capx)
+			||(YREAL!=ntn[next_ntn].capy)) {
+				next_ntn= 0;
+			}
+			/* find next capitol */
+			done = FALSE;
+			do {
+				next_ntn++;
+				if (next_ntn==NTOTAL) {
+					j = 0;
+					for(i=0;i<NTOTAL;i++)
+					if (isntn(ntn[i].active)) {
+						j = i;
+						i = NTOTAL;
+					}
+					next_ntn = j;
+					done = TRUE;
+				} else {
+					if (isntn(ntn[next_ntn].active)) {
+						done = TRUE;
+					}
+				}
+			} while (done==FALSE);
+			/* default location; or next capitol */
+			if (next_ntn==0) {
+				i = MAPX/2-1;
+				j = MAPY/2-1;
+			} else {
+				i = ntn[next_ntn].capx;
+				j = ntn[next_ntn].capy;
+			}
+		} else {
+			/* go to capitol */
+			i = curntn->capx;
+			j = curntn->capy;
+		}
+	} else {
+		/* entered location */
+		clear_bottom(0);
+		mvaddstr(LINES-3,0,"Jump to what X location? ");
+		refresh();
+		i = get_number();
+		if (i==(-1)) return;
+		if (i>=MAPX) {
+			errormsg("That location is out of this world!");
+			return;
+		}
+		mvaddstr(LINES-2,0,"Jump to what Y location? ");
+		refresh();
+		j = get_number();
+		if (j==(-1)) return;
+		if (j>=MAPY) {
+			errormsg("That location is out of this world!");
+			return;
+		}
+	}
+	/* now center location about given position */
+	xcurs = i;
+	ycurs = j;
+	xoffset = yoffset = 0;
+	centermap();
 }
 
 /************************************************************************/
@@ -470,8 +548,9 @@ int x,y,isupd,slaver;
 	int svcountry=country;
 	int slaves=0;
 	int i,j;
-	country=sct[x][y].owner;
+	int people_to_add;
 
+	country=sct[x][y].owner;
 	if(slaver==TRUE){
 		slaves= sct[x][y].people/4;
 		sct[x][y].people-=slaves;
@@ -499,8 +578,10 @@ int x,y,isupd,slaver;
 	for(i=x-2;i<=x+2;i++) for(j=y-2;j<=y+2;j++)
 		if(ONMAP(i,j)
 		&&(ntn[sct[i][j].owner].race==ntn[sct[x][y].owner].race)) {
-			sct[i][j].people += sct[x][y].people / count;
-			if(isupd==0) SADJCIV2;
+			people_to_add = sct[x][y].people / count;
+			/* don't show until next turn if player move */
+			if(isupd==0) SADJCIV3;
+			else	sct[x][y].people += people_to_add;
 		}
 	} else {
 		sct[x][y].people /= 2;

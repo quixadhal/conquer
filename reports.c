@@ -65,10 +65,12 @@ armyrpt(repnum)
 			return;
 		}
 	}
-	count2=0;
 	/*new army screen*/
+	clear();
+	count2=0;
 	while(done==FALSE) {
-		clear();
+		move(0,0);
+		clrtobot();
 		armynum=count2;
 		xpos=BUF_COLS;
 		ypos=2;
@@ -194,7 +196,7 @@ armyrpt(repnum)
 					/*spys are given a shut up fee */
 					mvprintw(LINES-4,0,"Your spy demands %ld talons to remain quiet",
 					*(u_encost+(P_ATYPE%UTYPE)) * 2);
-					mvprintw(LINES-3,0,"Pay him off? (y or n)");
+					mvaddstr(LINES-3,0,"Pay him off? (y or n)");
 					clrtoeol();
 					refresh();
 					if(getch()=='y'){
@@ -208,7 +210,7 @@ armyrpt(repnum)
 					mvprintw(LINES-4,0,"Your mercenaries demand %ld talons to disband",
 					*(u_encost+(P_ATYPE%UTYPE)) * P_ASOLD);
 	
-					mvprintw(LINES-3,0,"Give them severance pay? (y or n)");
+					mvaddstr(LINES-3,0,"Give them severance pay? (y or n)");
 					clrtoeol();
 					refresh();
 					if(getch()=='y'){
@@ -497,9 +499,11 @@ fleetrpt()
 		}
   	}
 
+	clear();
 	count2=0;
 	while(done==FALSE) {
-		clear();
+		move(0,0);
+		clrtobot();
 		ypos=2;
 		xpos=BUF_COLS;
 		count=0;
@@ -524,7 +528,7 @@ fleetrpt()
 				standout();
 				mvprintw(ypos,xpos,"%d:",nvynum);
 				standend();
-				mvprintw(ypos+1,xpos,"lt/md/hv");
+				mvaddstr(ypos+1,xpos,"lt/md/hv");
 				mvprintw(ypos+2,xpos,"%2hd/%2hd/%2hd",P_NWAR(N_LIGHT),P_NWAR(N_MEDIUM),P_NWAR(N_HEAVY));
 				mvprintw(ypos+3,xpos,"%2hd/%2hd/%2hd",P_NMER(N_LIGHT),P_NMER(N_MEDIUM),P_NMER(N_HEAVY));
 				mvprintw(ypos+4,xpos,"%2hd/%2hd/%2hd",P_NGAL(N_LIGHT),P_NGAL(N_MEDIUM),P_NGAL(N_HEAVY));

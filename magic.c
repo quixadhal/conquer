@@ -197,9 +197,11 @@ domagic()
 		if (get_god()) return;
 	}
 
+	clear();
 	while(done==FALSE){
 		done=TRUE;
-		clear();
+		move(0,0);
+		clrtobot();
 		county=3;
 		countx=0;
 		redraw=FULL;
@@ -242,7 +244,7 @@ domagic()
 			mvaddstr(county++,0,"DO YOU WISH TO CHANGE THIS NATION'S POWERS? [yn]");
 			standend();
 			refresh();
-			if (getch()=='y') god_magk(FALSE);
+			if (getch()=='y') god_magk();
 		} else
 #endif OGOD
 		if(price <= curntn->jewels){
@@ -252,7 +254,7 @@ domagic()
 		refresh();
 		if(getch()=='y'){
 			done=FALSE;
-			mvprintw(county++,0,"ENTER SELECTION (1,2,3):");
+			mvaddstr(county++,0,"ENTER SELECTION (1,2,3):");
 			refresh();
 			type = getch() - '0';
 			if(type==M_MIL || type==M_CIV || type==M_MGK){
@@ -821,8 +823,8 @@ god_magk()
 	int county,countx,choice;
 	int remove,i,done=FALSE;
 
+	clear();
 	while (done==FALSE) {
-		clear();
 		county=3;
 		countx=0;
 		standout();
@@ -845,7 +847,7 @@ god_magk()
 			}
 		}
 		move(0,0);
-		clrtoeol();
+		clrtobot();
 		if (remove)
 		mvprintw(0,(COLS/2)-15,"CURRENT POWERS FOR %s",curntn->name);
 		else

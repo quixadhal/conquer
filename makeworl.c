@@ -23,7 +23,7 @@
 
 int pwater;		/* percent water in world (0-100) */
 extern short	country;
-extern int	numleaders;
+extern int	numleaders,remake;
 char datadir[FILELTH];
 char **area_map;			/*Value Map of Areas*/
 char **type;
@@ -65,6 +65,7 @@ zeroworld()
 		curntn->powers = curntn->tciv = curntn->tmil = curntn->score = 0L;
 		curntn->race = TUNKNOWN;
 		curntn->maxmove = 0;
+		curntn->spellpts = 0;
 		curntn->class = curntn->aplus = curntn->dplus = (short)0;
 		curntn->inflation = curntn->tsctrs = curntn->tships = (short)0;
 	}
@@ -106,7 +107,7 @@ int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 
 	valid=FALSE;
 	while(valid==FALSE) {			/* password routine */
-		mvprintw(7,0,"Enter Super-User Password: ");
+		mvaddstr(7,0,"Enter Super-User Password: ");
 		clrtoeol();
 		refresh();
 		i = get_pass(newstring);
@@ -117,7 +118,7 @@ int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 			newerror("Password Too Long");
 			continue;
 		}
-		mvprintw(7,0,"Reenter Super-User Password: ");
+		mvaddstr(7,0,"Reenter Super-User Password: ");
 		clrtoeol();
 		refresh();
 		i = get_pass(passwd);
@@ -130,29 +131,62 @@ int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 	
 	/* finally ask for the secondary administrator */
 	mvaddstr(7,0,"You may designate an other user as an alternate \"god\" for this world.");
-	mvaddstr(8,0,"Enter System Login of alternate user or hit return to continue.");
+	mvaddstr(8,0,"Enter a System Login or \"god\" to have none.  [Return for default]");
+#ifdef REMAKE
+	if (remake==FALSE) {
+		(void) strcpy(ntn[0].leader,"god");
+	} else if (getpwnam(ntn[0].leader)==NULL) {
+		(void) strcpy(ntn[0].leader,"god");
+		remake=FALSE;
+	}
+#else
+	(void) strcpy(ntn[0].leader,"god");
+#endif REMAKE
 	while(TRUE) {
-		mvaddstr(9,0,"What demi-god shall co-rule this world: ");
+		mvprintw(9,0,"What demi-god shall co-rule this world? [%s]: ",ntn[0].leader);
 		clrtoeol();
 		refresh();
 		get_nname( newstring );
-		if (strlen(newstring)==0) {
+		if ((strcmp(newstring,"GOD")==0)
+		||(strcmp(newstring,"God")==0)
+		||(strcmp(newstring,"god")==0)) {
 			newmsg("God will personally rule this world!!!");
 			sleep(1);
 			(void) strcpy(ntn[0].leader,LOGIN);
 			mvaddstr(7,0,"Demi-God: [none]");
 			clrtoeol();
 			break;
+		}
+		if (strlen(newstring)==0) {
+#ifdef REMAKE
+			if (remake==FALSE) {
+#endif /*REMAKE*/
+				newmsg("God will personally rule this world!!!");
+				sleep(1);
+				(void) strcpy(ntn[0].leader,LOGIN);
+				mvaddstr(7,0,"Demi-God: [none]");
+				clrtoeol();
+				break;
+#ifdef REMAKE
+			} else {
+				(void) sprintf(tempc,"The demi-god %s will continue to reign.",ntn[0].leader);
+				newmsg(tempc);
+				sleep(1);
+				mvprintw(7,0,"Demi-God: [%s]",ntn[0].leader);
+				clrtoeol();
+				break;
+			}
+#endif /*REMAKE*/
 		} else if (strlen(newstring) <= LEADERLTH) {
 			if (getpwnam(newstring)!=NULL) {
-				sprintf(tempc,"The demi-god %s may administrate this new world.",newstring);
+				(void) sprintf(tempc,"The demi-god %s may administrate this new world.",newstring);
 				newmsg(tempc);
 				(void) strncpy(ntn[0].leader,newstring,LEADERLTH);
 				mvprintw(7,0,"Demi-God: %s",ntn[0].leader);
 				clrtoeol();
 				break;
 			} else {
-				sprintf(tempc,"Their is no mortal named %s on this system.",newstring);
+				(void) sprintf(tempc,"Their is no mortal named %s on this system.",newstring);
 				newerror(tempc);
 			}
 		} else {
@@ -722,10 +756,10 @@ rawmaterials() 		 /*PLACE EACH SECTOR'S RAW MATERIALS */
 		}
 	}
 
-	mvprintw(13,5,"All manner of creatures were created: big ones, little ones,");
-	mvprintw(14,0,"fat ones, skinny ones, orange ones, turquois ones, bright blue ones.");
-	mvprintw(15,0,"WAIT!!!  God has suddenly realized that smurfs were taking things");
-	mvprintw(16,0,"too far and stopped creating new ones, and placed everybody on the map...");
+	mvaddstr(13,5,"All manner of creatures were created: big ones, little ones,");
+	mvaddstr(14,0,"fat ones, skinny ones, orange ones, turquois ones, bright blue ones.");
+	mvaddstr(15,0,"WAIT!!!  God has suddenly realized that smurfs were taking things");
+	mvaddstr(16,0,"too far and stopped creating new ones to place everybody on the map...");
 	newmsg("Day 5... God decreed that world would be populated");
 	sleep(1);
 	move(14,0);
@@ -1140,10 +1174,11 @@ populate()
 	}
 
 	cnum=1;
-	mvprintw(15,0,"ADDING NATIONS:");
+	mvaddstr(14,0,"ADDING NATIONS:");
+	clrtoeol();
 	refresh();
 	xpos = 16;
-	ypos = 15;
+	ypos = 14;
 	while(fgets(line,LINELTH,fp)!=NULL) {
 		/*read and parse a new line*/
 		if(line[0]!='#') {

@@ -185,10 +185,89 @@
 133. added fix to make sure '-p' command checks void properly. [D. Caplinger]
 134. inserted a check for allowing extra clear when redrawing.
 135. renamed all of the conqps source files to 'psmap'.
+===4.0 patch number five released => 4.5 ===========================
+136. changed situations of string printing mvprintw's to mvaddstr's.
+137. moved a 'makebottom()' from 'm'ove command to parse routine.
+138. npc.c (1339): added a check for ntn[country].tciv > 0 [T. Kivinen]
+139. reset both roads_this_turn and terror_adj in login change. [T. Kivinen]
+140. fixed overflow on wealth calculations [K. Bera]
+141. adjusted flee() code for incremental people adjustment [K. Bera]
+142. added patch to include XENIX header file in update.c [J. Bayer]
+143. fixed passing of a parameter in god_magk() call.
+144. fixed highlight function call three places in move.c.
+145. fixed prep function call in move.c and io.c.
+146. fixed get_display_for function call in display.c.
+147. adjusted txt1 to clarify attractiveness calculation. {9 per jewels
+	was written as 9 / jewels.  Changed it to 9 * jewels.} [T. Kivenen]
+148. implemented the command 'X' to center screen around a nations capitol.
+149. implemented the command 'x' to center screen around given sector.
+150. in god mode, the 'X' command jumps between active nations' capitols.
+151. centered screen about captitol during initial login.
+152. gave god the ability to move civilians using 'Z' {#ifdef OGOD}.
+153. altered calcuation of both poverty and inflation and added to txt5.
+154. changed F_OK to 00 in update.c.
+155. rewrote the isinstr() function in psmap.c to avoid the use of index().
+156. implemented tests throughout find_avg_sector() for zero division.
+157. changed astr,dstr to floats in combat.c (198).  [Bob Earl]
+158. added use of indicator instead of using MGKNUM in combat.c. [T. Kivinen]
+159. added extra check in land_reachp() for movecost < 0.  [Dean Brooks]
+160. removed MOVECOST from 'd'isplay command.
+161. altered bottom display of move() after error messages.
+162. added makebottom() to civilian movement, was accidently removed(?)
+163. big adjustment to mining_ability and wealth:
+	-if it is lowered, it decreases by only a quarter of the difference.
+164. fixed typo and checking of placed in terraform() [Dean Brooks]
+165. added in dgod_make flag to indicate if the demi-god is remaking.
+166. added setting of spell points to zero in zeroworld().
+167. renamed dgod_make to remake and made demi-god be default for any remake.
+168. changed the clear(); in change() to move(0,0); clrtobot();
+169. added move(0,0), etc. to fleetrpt() and armyrpt().
+170. moved the makebottom(); to parse after the EXT_CMD entry.
+171. added move(0,0), etc. to fleetrpt() and armyrpt().
+172. added move(0,0), etc. to trade() in trade.c.
+173. made major adjustments to the mailing routines mailopen() mailclose().
+174. rewrote the mail interface to be a little more robust.
+175. the mail writing and reading routines now prevent most conflicts.
+176. made the mail writer a little spiffier.
+177. fixed a bug in detection of leader death and recreation in update.c.
+178. no longer charge BREAKJIHAD for breaking one-sided treaties.
+179. added in fix to ruin redesignation when DERVISH or DESTROYER.
+180. allow redesignation of ruin to a non-city type at REBUILDCOST cost.
+181. altered the god_mgk() display routine a little.
+182. added in a limit of 16% to charity creeping for democracy.
+183. added a check for a line with a period on it to end mail.
 
 -------------------------------------------------------------------------
-| 2.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V4             |
+| 2.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V5             |
 -------------------------------------------------------------------------
+o new functions:
+	- status_value() = returns base values of attack.defend,etc.
+	- sect_movecost() = returns move cost for given unit in given sector.
+o adding to grouped soldiers with ZERO movement should not change status.
+o changes to zombies:
+	- should need less food.
+	- some should decay each turn. [5% or so]
+	- drafting zombies should decrease popularity. [just killed people!]
+	- zombie formation could be a factor of nation being in battle not
+	  neccesarily having zombies in battle.  OR limit number of zombies
+          created to be half or third size of zombie armies, since zombies
+          are needed to create other zombies.
+o new display options:
+	- highlight units who haven't moved since start of turn.
+o multiple leaders in a unit?  [then experience is not able to be
+	added in later.]
+o limit spell points via knowledge, or cause lose based on knowledge factor.
+o might scroll screen without moving sector.  [What keys?  Needed?]
+o implement automatic updates through use of checking what nations have
+	moved.
+o additional extended commands:  [ESC prefix]
+	'r' = Renumber an army.  [new army structure could facilitate]
+	'j' = Jump to location of given army number.
+o additional commands:
+	'O' = go to previous army.
+o implement interface for 'Z' command.  [Movement locator]
+o email to real diety. [hmmm... needed or not?  I would actually vote
+	for allowing mail to both the diety and the demi-god. -adb]
 o make land capture only occur during update.
 o some problems due to two nations capturing same land.  should fix by above.
 o some problems with MINER not providing initial stats on first turn after

@@ -177,8 +177,8 @@ jihad.  Aggressiveness points accrue doubled when against a nation of the
 same race as you.
   
 # STARTING VALUES
-reputation = prestige = 50         knowledge = mine ability = farm ability=10
-eatrate     = 1.00                 tax rate=10%              poverty = 95%
+reputation = prestige = 50     knowledge = mine ability = farm ability = 10
+eatrate     = 1.00             tax rate=10%               poverty = 95%
 END
                 FORMULAE USED FOR NATION ATTRIBUTES          pg. 2
 
@@ -199,12 +199,24 @@ knowledge   = cityfolk/333 + scholars/333 + townfolk/1000 + tradegoods max=100
 END
                 FORMULAE USED FOR NATION ATTRIBUTES          pg. 3
 
-poverty     : is funny.  You can give charity to the poor to lower the poverty
-              rate but the equilibrium level with no charity will be about
-              100-wealth/4.  Charity is a user paramter, which indicates the
-              percent of your NET income to go to the poor.  Giving twice your
-              population in talons will reduce poverty by one.
-wealth      : see elsewhere.
+charity     = Is the percent of net gold given directly to the general
+              population.  This has a direct effect of reducing poverty
+              by 1% for every two talons given to each person.
+poverty     = Poverty is a relative value of the number of talons you have
+              per each civilian.  The inital value is determined as:
+                talons/civilian  poverty       talons/civilian  poverty
+                      < 0          95%             80-120       40%-30%
+                     0-30        95%-65%          120-200       30%-20%
+                    30-80        65%-40%           > 200          20%
+              Poverty is then modified directly by the amount of talons given
+              directly to the people through charity.
+inflation   = inflation is an indicator as to the actual value of the national
+              talon.  If inflation is zero percent, then it is 1:1.
+              Inflation is calculated as:
+                  between 25%-125% of the tax rate [randomly determined]
+                  plus (poverty - 50)/2 and is then adjusted by the ratio of
+                  military to civilians.
+wealth      = see elsewhere.
 END
                 ADDITIONAL MODIFIERS TO NATIONAL ATTRIBUTES
 

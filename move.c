@@ -161,7 +161,7 @@ mymove()
 			if(hilmode==3) {
 				for(i=XREAL-xoffset-1;i<=XREAL-xoffset+1;i++){
 					for(j=YREAL-yoffset-1;j<=YREAL-yoffset+1;j++){
-						highlight(i,j);
+						highlight(i,j,hilmode);
 						see(i,j);
 					}
 				}
@@ -176,7 +176,7 @@ mymove()
 				}
 			} else for(i=XREAL-xoffset-1;i<=XREAL-xoffset+1;i++){
 				for(j=YREAL-yoffset-1;j<=YREAL-yoffset+1;j++){
-					highlight(i,j);
+					highlight(i,j,hilmode);
 					see(i,j);
 				}
 			}
@@ -407,8 +407,9 @@ mymove()
 					done=TRUE;
 				}
 			}
+		}
 
-			if( done==FALSE ) {
+		if( done==FALSE ) {
 			standout();
 			if(armornvy==ARMY){
 				mvprintw(LINES-2,0,"MOVESCREEN: move left: %d",P_AMOVE);
@@ -428,13 +429,11 @@ mymove()
 			for(i=XREAL-1;i<=XREAL+1;i++)
 			for(j=YREAL-1;j<=YREAL+1;j++) if(ONMAP(i,j))
 				if(!canbeseen((int)i,(int)j)) {
-					highlight(i-xoffset,j-yoffset);
+					highlight(i-xoffset,j-yoffset,hilmode);
 					see(i-xoffset,j-yoffset);
 				}
-
-			}
-			makeside(TRUE);
 		}
+		makeside(TRUE);
 		move(ycurs,xcurs*2);
 		refresh();
 	}
@@ -508,7 +507,7 @@ mymove()
 				} else{
 					flee(XREAL,YREAL,0,FALSE);
 				}
-				mvprintw(LINES-2,0,"TAKING SECTOR");
+				mvaddstr(LINES-2,0,"TAKING SECTOR");
 				clrtoeol();
 				refresh();
 				sleep(2);
@@ -548,7 +547,7 @@ mymove()
 		return;
 	} else {
 		/*else navy*/
-		mvprintw(LINES-1,0,"NAVY DONE: ");
+		mvaddstr(LINES-1,0,"NAVY DONE: ");
 		clrtoeol();
 		P_NXLOC=XREAL;
 		P_NYLOC=YREAL;
@@ -570,16 +569,15 @@ mymove()
 		if (magic(country,SAILOR)==TRUE) mvused/=2;
 		if (mvused!=0) mvused= (rand()%mvused);
 		P_NPEOP = (unsigned char) (P_NPEOP*(LONGTRIP-mvused)/LONGTRIP);
-		mvprintw(LINES-1,60,"HIT ANY KEY");
+		mvaddstr(LINES-1,60,"HIT ANY KEY");
 		refresh();
 		getch();
 	}
 	whatcansee();
 	redraw=DONE;
-	prep(country,FALSE,TRUE);
+	prep(country,FALSE);
 	makemap();
 	armornvy=AORN;
-	makebottom();
 	pager=0;
 	selector=0;
 }

@@ -11,14 +11,18 @@
  */
 
 #include <ctype.h>
+#ifndef	XENIX
 #include <sys/file.h>
+#else
+#include	<unistd.h>
+#endif
 #include "header.h"
 #include "data.h"
 
 extern FILE *fnews;
 
 extern short country;
-int	dissarray;		/* TRUE if nation in dissarray */
+int	disarray;		/* TRUE if nation in disarray */
 int	**attr;			/* sector attractiveness */
 
 /****************************************************************/
@@ -356,7 +360,7 @@ int armynum;
 				}
 				if(sct[x][y].owner==0){
 					sct[x][y].owner=country;
-					curntn->popularity++;
+					if (curntn->popularity<MAXTGVAL) curntn->popularity++;
 #ifdef XENIX
 					z = attr[x][y];
 					z /= 8;
@@ -394,7 +398,7 @@ int armynum;
 				P_AXLOC=x;
 				P_AYLOC=y;
 				if(sct[x][y].owner==0){
-					curntn->popularity++;
+					if (curntn->popularity<MAXTGVAL) curntn->popularity++;
 					sct[x][y].owner=country;
 					attr[x][y] = 1;
 					takesctr++;
@@ -445,7 +449,7 @@ cheat()
 	/* take inventory of countries */
 	for(x=1;x<NTOTAL;x++) {
 		sprintf(tempc,"%s%d", exefile, x);
-		if (isnpc(ntn[x].active) && access(tempc,F_OK)==0) {
+		if (isnpc(ntn[x].active) && access(tempc,00)==0) {
 			realnpc[x]=TRUE;
 		} else {
 			realnpc[x]=FALSE;
@@ -558,7 +562,7 @@ updexecs()
 		printf("updating nation number %d -> %s\n",country,curntn->name);
 	check();
 
-		dissarray=FALSE;
+		disarray=FALSE;
 #ifdef TRADE
 		if(isntn(curntn->active)) checktrade();
 #endif TRADE
@@ -570,9 +574,11 @@ updexecs()
 #ifdef CMOVE
 			printf("\tthe computer will move for %s\n",curntn->name);
 			fprintf(fnews,"1.\tthe computer will move for %s\n",curntn->name);
-			mailopen( country );
-			fprintf(fm,"the computer moved for you (%s) in %s of Year %d\n",curntn->name,PSEASON(TURN),YEAR(TURN));
-			mailclose();
+			if (mailopen( country )!=(-1)) {
+				fprintf(fm,"Message to %s from CONQUER\n\n",curntn->name);
+				fprintf(fm,"The computer moved for you in the %s of Year %d\n",curntn->name,PSEASON(TURN),YEAR(TURN));
+				mailclose(country);
+			}
 			check();
 			nationrun();
 			check();
@@ -599,16 +605,19 @@ updexecs()
 #endif /*NPC*/
 		}
 
-		/* is leader killed - put nation into dissarray */
+		/* is leader killed - put nation into disarray */
+		disarray=TRUE;
 		x = getleader((int)curntn->class) - 1;
 		for(armynum=0;armynum<MAXARM;armynum++)
-			if(P_ATYPE == x) break;
+		if(P_ATYPE == x && P_ASOLD>0) {
+			disarray=FALSE;
+			break;
+		}
 #ifdef DEBUG
 printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 #endif DEBUG
 
-		if(armynum == MAXARM) {
-			dissarray=TRUE;
+		if(disarray == TRUE) {
 			if(rand()%100 < 30) {	/* new leader takes over */
 				x++;
 				for(armynum=0;armynum<MAXARM;armynum++)
@@ -616,28 +625,32 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 				if( armynum<MAXARM) {
 					P_ATYPE=x-1;
 					P_ASOLD= *(unitminsth+(x-1)%UTYPE);
-					dissarray=FALSE;
+					disarray=FALSE;
 					fprintf(stderr,"new leader in nation %s\n",curntn->name);
 					fprintf(fnews,"1.\tnation %s has a new leader\n",curntn->name);
 					if(ispc(curntn->active)){
-						mailopen(country);
-						fprintf(fm,"MESSAGE FROM CONQUER: YOU HAVE A NEW LEADER\n");
-						fprintf(fm,"YOUR TROOPS MAY NOW MOVE NORMALLY\n");
-						mailclose();
+						if (mailopen(country)!=(-1)) {
+							fprintf(fm,"MESSAGE FROM CONQUER:\n\n");
+							fprintf(fm,"YOU HAVE A NEW NATIONAL LEADER.\n");
+							fprintf(fm,"YOUR TROOPS MAY NOW MOVE NORMALLY.\n");
+							mailclose(country);
+						}
 					}
 				}
 			}
-		} else dissarray=FALSE;
+		}
 
-		if( dissarray ==  TRUE) {
+		if( disarray ==  TRUE) {
 			fprintf(stderr,"no leader in nation %s\n",curntn->name);
 			fprintf(fnews,"1.\tnation %s still has no national leader\n",curntn->name);
 			if(ispc(curntn->active)){
-				mailopen(country);
-				fprintf(fm,"MESSAGE FROM CONQUER: YOU DONT HAVE A COUNTRY LEADER\n");
-				fprintf(fm,"YOUR TROOPS MAY NOT MOVE\n");
-				fprintf(fm,"THERE IS A 30%% CHANCE/TURN OF GETTING A NEW ONE \n");
-				mailclose();
+				if (mailopen(country)!=(-1)) {
+					fprintf(fm,"MESSAGE FROM CONQUER\n\n");
+					fprintf(fm,"YOU DON'T HAVE A COUNTRY LEADER;\n");
+					fprintf(fm,"YOUR TROOPS MAY NOT MOVE\n");
+					fprintf(fm,"THERE IS A 30%% CHANCE/TURN OF GETTING A NEW ONE\n");
+					mailclose(country);
+				}
 			}
 		}
 
@@ -818,7 +831,7 @@ updcapture()
 				sptr = &sct[P_AXLOC][P_AYLOC];
 				if(sptr->owner==0){
 					sptr->owner=country;
-					curntn->popularity++;
+					if (curntn->popularity<MAXTGVAL) curntn->popularity++;
 				} else if((sptr->owner!=country)
 				&&(curntn->dstatus[sptr->owner]>=WAR)) {
 					if(ntn[sptr->owner].race!=curntn->race)
@@ -858,19 +871,21 @@ updcapture()
 					/* capture the scout */
 					P_ASOLD=0;
 					if (ispc(curntn->active)) {
-						mailopen(country);
-						fprintf(fm,"Message from Conquer\n\n");
-						fprintf(fm,"\tYour Scouting Unit %d was captured\n");
-						fprintf(fm,"\t  by %s military in sector %d,%d\n",
-							ntn[occval].name,(int)P_AXLOC,(int)P_AYLOC);
-						mailclose();
+						if(mailopen(country)!=(-1)) {
+							fprintf(fm,"Message from Conquer\n\n");
+							fprintf(fm,"\tYour Scouting Unit %d was captured\n");
+							fprintf(fm,"\t  by %s military in sector %d,%d\n",
+								   ntn[occval].name,(int)P_AXLOC,(int)P_AYLOC);
+							mailclose(country);
+						}
 					}
 					if (ispc(ntn[occval].active)) {
-						mailopen(occval);
-						fprintf(fm,"Message from Conquer\n\n");
-						fprintf(fm,"\tA Scout from nation %s was captured\n",curntn->name);
-						fprintf(fm,"\t  in sector %d,%d.\n",(int)P_AXLOC,(int)P_AYLOC);
-						mailclose();
+						if(mailopen(occval)!=(-1)) {
+							fprintf(fm,"Message from Conquer\n\n");
+							fprintf(fm,"\tA Scout from nation %s was captured\n",curntn->name);
+							fprintf(fm,"\t  in sector %d,%d.\n",(int)P_AXLOC,(int)P_AYLOC);
+							mailclose(occval);
+						}
 					}
 				}
 			}
@@ -998,7 +1013,9 @@ updsectors()
 			}
 
 			spreadsheet(country);
-			curntn->popularity = min(0,(int)(curntn->popularity-2*curntn->inflation));
+			if ((int)curntn->popularity-2*curntn->inflation < (int)MAXTGVAL) {
+				curntn->popularity = min(0,(int)(curntn->popularity-2*curntn->inflation));
+			} else curntn->popularity = (char) MAXTGVAL;
 			curntn->tsctrs = spread.sectors;
 			curntn->tciv=spread.civilians;
 			curntn->tfood=spread.food;
@@ -1006,14 +1023,34 @@ updsectors()
 			/* take out for charity */
 			charity=((spread.gold-curntn->tgold)*curntn->charity)/100;
 
-			if(charity > 0) charity = 0;
+			if(charity < 0) charity = 0;
 			if(curntn->tciv > 0) charity /= curntn->tciv;
 			else charity = 0;
 
 			curntn->tgold = spread.gold - charity;
 
-			/* give them some benefit of the doubt */
-			curntn->popularity += 5*charity;
+			/* calculate poverty base */
+			if (curntn->tgold < 0L) {
+				curntn->poverty = 95;
+			} else if (curntn->tciv < 100L) {
+				/* give some check on civilians */
+				curntn->poverty = (unsigned char)20;
+			} else if (curntn->tgold/curntn->tciv < 30L) {
+				curntn->poverty = (unsigned char)(95L - curntn->tgold/curntn->tciv);
+			} else if (curntn->tgold/curntn->tciv < 80L) {
+				curntn->poverty = (unsigned char)(65L - (curntn->tgold/curntn->tciv-30L)/2L);
+			} else if (curntn->tgold/curntn->tciv < 120L) {
+				curntn->poverty = (unsigned char)(40L - (curntn->tgold/curntn->tciv-80L)/4L);
+			} else if (curntn->tgold/curntn->tciv < 200L) {
+				curntn->poverty = (unsigned char)(30L - (curntn->tgold/curntn->tciv-120L)/8L);
+			} else {
+				curntn->poverty = (unsigned char)20;
+			}
+
+			/* charity increase to popularity */
+			curntn->popularity = min(curntn->popularity+5*charity,MAXTGVAL);
+
+			/* charity adjustment to poverty; rounding upward */
 			if(curntn->poverty < (charity+1)/2 )
 				curntn->poverty = 0;
 			else	curntn->poverty -= (charity+1)/2;
@@ -1027,14 +1064,9 @@ updsectors()
 			/* adjustment for military */
 			if (spread.civilians>0)
 				curntn->inflation += ((curntn->tmil*100/spread.civilians - 15)/5);
-			/* adjustment for debt and/or wealth */
-			if(curntn->tgold<75000L) {
-				curntn->inflation += (short)(-(curntn->tgold/25000L)+1);
-			} else if(curntn->tgold<100000L) {
-				curntn->inflation -= 1;
-			} else if(curntn->tgold>=200000L) {
-				curntn->inflation += (short)(curntn->tgold/100000L-1);
-			}
+			/* adjustment for poverty */
+			curntn->inflation += (curntn->poverty-50)/2;
+
 			/* plus maybe an adjustment for jewel production as a ratio */
 			/* for whatever is produced by the country.                 */
 
@@ -1066,17 +1098,18 @@ updmil()
 	if(isntn(ntn[country].active)){
 		curntn = &ntn[country];
 
+		disarray=TRUE;
+		dfltunit=(getleader(curntn->class)-1);
+		for(armynum=0;armynum<MAXARM;armynum++)
+			if (P_ATYPE==dfltunit && P_ASOLD>0) {
+				disarray=FALSE;
+				break;
+			}
+
 		if(ispc(curntn->active)) {
 		prep( country, TRUE );	/* occ[][] now >0 if leader near */
 		dfltunit = defaultunit(country);
 		} else dfltunit = A_INFANTRY;
-
-		dissarray=TRUE;
-		for(armynum=0;armynum<MAXARM;armynum++)
-			if (P_ATYPE==(getleader(curntn->class)-1) && P_ASOLD>0) {
-				dissarray=FALSE;
-				break;
-			}
 
 		for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD>0) {
 
@@ -1102,7 +1135,7 @@ updmil()
 
 			/*add movement to all armies */
 			/*unitmove is 10 times movement rate*/
-			if(dissarray) A->smove=0;
+			if(disarray) A->smove=0;
 			else switch(A->stat) {
 			case MARCH:
 				A->smove=(curntn->maxmove * *(unitmove+(AT%UTYPE)))/5;
@@ -1215,12 +1248,13 @@ updmil()
 				curntn->jewels -= (long) (*(unitmaint+(AT%UTYPE)));
 				else {
 					if(ispc(curntn->active)) {
-					mailopen(country);
-					fprintf(fm,"Message to %s from Conquer\n",curntn->name);
-					fprintf(fm,"\nYour %s (unit %d) leaves due to lack of jewels\n",
-						*(unittype+(AT%UTYPE)),armynum);
-					mailclose();
-					A->sold=0;
+					if(mailopen(country)!=(-1)) {
+						fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
+						fprintf(fm,"Your %s (unit %d) leaves due to lack of jewels\n",
+							   *(unittype+(AT%UTYPE)),armynum);
+						mailclose(country);
+						A->sold=0;
+					}
 					}
 				}
 			}
@@ -1284,7 +1318,7 @@ updmil()
 				}
 				}
 #endif
-				if(dissarray) P_NMOVE=0;
+				if(disarray) P_NMOVE=0;
 				else P_NMOVE = (fltspeed(nvynum)*P_NCREW)/SHIPCREW;
 				if(magic(country,SAILOR)==TRUE) P_NMOVE*=2;
 
@@ -1312,11 +1346,12 @@ updmil()
 			curntn->name,siegex[army2],siegey[army2]);
 #endif HIDELOC
 		if(ispc(curntn->active)) {
-			mailopen( country );
-			fprintf(fm, "Message to %s from Conquer\n\n",ntn[nation].name);
-			fprintf(fm, "\tYou are under siege in sector %d,%d.\n",
-				siegex[army2],siegey[army2]);
-			mailclose();
+			if (mailopen( country )!=(-1)) {
+				fprintf(fm, "Message to %s from Conquer\n\n",ntn[nation].name);
+				fprintf(fm, "\tYou are under siege in sector %d,%d.\n",
+					   siegex[army2],siegey[army2]);
+				mailclose(country);
+			}
 		}
 		for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD>0){
 			if(P_ASTAT!=FLIGHT&&(P_AXLOC==siegex[army2])
@@ -1376,12 +1411,13 @@ updcomodities()
 #endif HIDELOC
 				printf("famine hits town at %d,%d in %s.\n",x,y,curntn->name);
 				if(ispc(curntn->active)){
-				mailopen( country );
-				fprintf(fm,"Message to %s from CONQUER\n%s\n",curntn->name,curntn->name);
-				fprintf(fm," During the %s of Year %d,\n",PSEASON(TURN),YEAR(TURN));
-				fprintf(fm," a famine hit your town at %d,%d.\n",x,y);
-				fprintf(fm," %d out of %d people died.\n",dead,sptr->people);
-				mailclose();
+				if (mailopen( country )!=(-1)) {
+					fprintf(fm,"Message to %s from CONQUER\n\n",curntn->name);
+					fprintf(fm,"During the %s of Year %d,\n",PSEASON(TURN),YEAR(TURN));
+					fprintf(fm,"a famine hit your town at %d,%d.\n",x,y);
+					fprintf(fm,"%d out of %d people died.\n",dead,sptr->people);
+					mailclose(country);
+				}
 				}
 			}
 		}
@@ -1400,6 +1436,15 @@ updcomodities()
 		if(curntn->tgold>GOLDTHRESH*curntn->jewels){
 			/* buy jewels off commodities board */
 			xx=curntn->tgold-GOLDTHRESH*curntn->jewels;
+			if (ispc(country)) {
+				if (mailopen(country)!=(-1)) {
+					fprintf(fm,"Message from Conquer\n\n");
+					fprintf(fm,"Gold imbalance forced your treasury to purchase");
+					fprintf(fm,"%ld jewels for %ld gold talons to compensate\n",
+						xx*GODJEWL/GODPRICE,xx);
+					mailclose(country);
+				}
+			}
 			curntn->jewels += (xx*GODJEWL/GODPRICE);
 			curntn->tgold  -= xx;
 		}
@@ -1455,10 +1500,11 @@ updleader()
 				P_ASTAT = DEFEND;
 				P_AMOVE = 2*curntn->maxmove;
 				if( ispc( ntn[nation].active ) ){
-					mailopen( nation );
-					fprintf(fm,"Message to %s from Conquer:\n",ntn[nation].name);
+					if (mailopen( nation )!=(-1)) {
+					fprintf(fm,"Message to %s from Conquer:\n\n",ntn[nation].name);
 					fprintf(fm,"\t\tMonster born in your nation!\n");
-					mailclose();
+					mailclose(nation);
+					}
 				}
 				printf("\tmonster born in nation %s\n",curntn->name); 
 				break;
@@ -1493,10 +1539,11 @@ updleader()
 			P_ASTAT = DEFEND;
 			P_AMOVE = 2*curntn->maxmove;
 			if( ispc( ntn[nation].active ) ){
-				mailopen( nation );
-				fprintf(fm,"Message to %s from Conquer:\n",ntn[nation].name);
-				fprintf(fm,"\t\tLeader born in your nation!\n");
-				mailclose();
+				if(mailopen( nation )!=(-1)) {
+					fprintf(fm,"Message to %s from Conquer:\n\n",ntn[nation].name);
+					fprintf(fm,"\t\tLeader born in your nation!\n");
+					mailclose(nation);
+				}
 			}
 			printf("\tleader born in nation %s\n",curntn->name); 
 			break;

@@ -903,14 +903,15 @@ char *event;
 
 	/*send a message to the country if it is a PC*/
 	if(ispc(ntn[cntry].active)) {
-		mailopen( cntry );
-		fprintf(fm,"MESSAGE FROM CONQUER\n");
+		if(mailopen( cntry )!=(-1)) {
+		fprintf(fm,"MESSAGE FROM CONQUER\n\n");
 		fprintf(fm,"An event occurs within your nation (%s)\n",ntn[cntry].name);
 		fprintf(fm,"%s during the %s of Year %d,\n",event,PSEASON(TURN),YEAR(TURN));
 		if(xloc != -1)
 		fprintf(fm," centered around location %d, %d.\n",xloc,yloc);
 		if(prcnt>0) {
 			fprintf(fm,"Damage was estimated at about %d%% in severity.\n",prcnt);
+		}
 		}
 	}
 
@@ -928,7 +929,7 @@ char *event;
 		if(ispc(ntn[cntry].active))
 			fprintf(fm,"\t%s\n",eventstr);
 	}
-	mailclose();
+	if(ispc(ntn[cntry].active)) mailclose(cntry);
 }
 
 int

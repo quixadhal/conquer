@@ -195,7 +195,7 @@ redesignate()
 			reset_god();
 			return;
 		case 'o':
-			mvprintw(LINES-3,7,"what nation owner:");
+			mvaddstr(LINES-3,7,"What nation owner:");
 			refresh();
 			x = get_country();
 			if (x<NTOTAL) sptr->owner=x;
@@ -314,11 +314,17 @@ redesignate()
 
 	if((newdes!=DTOWN)&&(newdes!=DFORT)&&(newdes!=DCITY)&&(newdes!=DCAPITOL)){
 		/*decrement treasury*/
-		if((newdes==DRUIN)||(newdes==DDEVASTATED)) {
-			DEVASTATE(XREAL,YREAL);
-		} else{
-			sptr->designation=newdes;
+		if(newdes==DRUIN) {
+			if (sptr->fortress>4) {
+				sptr->fortress-=4;
+			} else {
+				sptr->fortress=0;
+			}
+		} else if (sptr->designation==DRUIN) {
+			curntn->tgold-=REBUILDCOST;
 		}
+		sptr->designation=newdes;
+
 		SADJDES;
 		if(newdes == DSTOCKADE)
 			curntn->tgold-=STOCKCOST*(1-isgod);
@@ -684,7 +690,7 @@ construct()
 			NADJHLD;
 			NADJLOC;
 			NADJMOV;
-			mvprintw(LINES-2,65,"HIT ANY KEY");
+			mvaddstr(LINES-2,65,"HIT ANY KEY");
 			refresh();
 			getch();
 
@@ -881,7 +887,7 @@ draft()
 		return;
 	} else if(i_cost > curntn->metals) {
 		mvprintw(LINES-1,0,"You don't have %ld metal",i_cost);
-		mvprintw(LINES-1,COLS-20,"PRESS ANY KEY");
+		mvaddstr(LINES-1,COLS-20,"PRESS ANY KEY");
 		clrtoeol();
 		refresh();
 		getch();
@@ -1033,7 +1039,7 @@ rmessage()
 	char line[LINELTH+1], inpch;
 	char save[LINELTH][LINELTH+1];
 
-	/*open file*/
+	/*open file; used in mailopen() as well */
 	sprintf(tempfile,"%s%hd.tmp",msgfile,country);
 	if( (fptemp = fopen(tempfile,"w")) == NULL ) {
 		clear_bottom(0);
@@ -1046,9 +1052,21 @@ rmessage()
 
 	sprintf(mesgfile,"%s%d",msgfile,country);
 	if ((mesgfp=fopen(mesgfile,"r"))==NULL) {
-	        (void) unlink (tempfile) ;
+		(void) unlink (tempfile) ;
 		clear_bottom(0);
-		errormsg("no messages");
+		errormsg("No Messages");
+		makebottom();
+		redraw=DONE;
+		return;
+	}
+
+	/* check for people sending mail */
+	sprintf(line,"send.%s%hd",msgfile,country);
+	if (access(line,00)==0) {
+		/* someone is sending mail to the country */
+		(void) unlink (tempfile) ;
+		clear_bottom(0);
+		errormsg("Someone is sending you mail... please wait.");
 		makebottom();
 		redraw=DONE;
 		return;
@@ -1059,7 +1077,7 @@ rmessage()
 		done=TRUE;
 		redraw=DONE;
 		clear_bottom(0);
-		errormsg("no messages");
+		errormsg("No messages");
 		makebottom();
 	}
 	if (done==FALSE) clear();
@@ -1120,18 +1138,18 @@ wmessage()
 	char ch;
 	char name[NAMELTH+1];
 	int temp=(-1);
-	int linedone;
+	int linedone,dotitles=TRUE;
 	char line[BIGLTH];
 
 	/*what nation to send to*/
 	clear();
-	mvprintw(0,0,"to send a message to the administrator, send to 'god';");
-	mvprintw(1,0,"to post to the news, send to 'news':");
-	mvprintw(2,0,"Enter the name of the country to send to:");
+	mvaddstr(0,0,"To send a message to the administrator, send to 'god';");
+	mvaddstr(1,0,"To post to the news, send to 'news':");
+	mvaddstr(2,0,"Enter the name of the country to send to: ");
 	refresh();
 	temp=get_country();
 
-	if( temp == (-2) ) {
+	if( temp == NEWSMAIL ) {
 		strcpy(name,"news");
 	} else {
 		/* quick return on bad input */
@@ -1141,80 +1159,138 @@ wmessage()
 		strcpy(name,ntn[temp].name);	/* find nation name */
 	}
 
-	mailopen( temp );
-
-	move(0,0);
-	clrtoeol();
-	move(1,0);
-	clrtoeol();
-	move(2,0);
-	clrtoeol();
-	standout();
-	if(temp != -2)
-		mvprintw(3,(COLS-25)/2,"message to nation %s",name);
-	else
-		mvprintw(3,(COLS-25)/2,"message to all players");
-	mvprintw(LINES-2,(COLS-35)/2,"end with a return on a new line");
-	standend();
+	if(mailopen( temp )==(-1)) {
+		return;
+	}
 
 
 	if(temp != -2) {
 		if (country==0)
-		fprintf(fm,"Message to %s from GOD (%s of year %d)\n",name,PSEASON(TURN),YEAR(TURN));
-		else	fprintf(fm,"Message to %s from %s (%s of year %d)\n",name,curntn->name,PSEASON(TURN),YEAR(TURN));
+		fprintf(fm,"Message to %s from GOD (%s of year %d)\n\n",name,PSEASON(TURN),YEAR(TURN));
+		else	fprintf(fm,"Message to %s from %s (%s of year %d)\n\n",name,curntn->name,PSEASON(TURN),YEAR(TURN));
 	} else fprintf(fm,"5.----------\n");
+	strcpy(line,"");
 
-	y=6;
-	x=0;
-	refresh();
 	while(done==FALSE) {
+		if (dotitles==TRUE) {
+			move(0,0);
+			clrtobot();
+			standout();
+			if(temp != -2)
+				mvprintw(3,(COLS-25)/2,"Message to Nation %s",name);
+			else
+				mvaddstr(3,(COLS-25)/2,"Message to All Players");
+			mvaddstr(LINES-2,(COLS-37)/2,"End with a <Control-D> on a New Line");
+			mvaddstr(LINES-1,(COLS-28)/2,"Hit ESC to Abort the Message");
+			standend();
+			mvaddstr(5,0,line);
+			y=6;
+			x=0;
+			refresh();
+			dotitles=FALSE;
+		}
 		linedone=FALSE;
 		ch=' ';
 		/*read line*/
 		while(linedone==FALSE){
 			/* check for delete or backspace */
-			if(ch=='\b' || ch=='\177'){
+			switch(ch) {
+			case '\b':
+			case '\177':
+				/* backspace or delete */
 				if(x>1) x--;
 				mvaddch(y,x,' ');
 				move(y,x);
 				line[x]=' ';
 				refresh();
 				ch=getch();
-			} else if((ch=='\n')||(ch=='\r')) linedone=TRUE;
-			else if(isprint(ch)&&(x<65)){
-				/*concatonate to end*/
-				line[x]=ch;
-				mvaddch(y,x,ch);
-				x++;
+				break;
+			case '\n':
+			case '\r':
+				/* newline or carriage return */
+				linedone=TRUE;
+				break;
+			case '\004':
+				/* a control-d was hit */
+				if (x==1) {
+					linedone=TRUE;
+					done=TRUE;
+				} else {
+					standout();
+					mvaddstr(LINES-3,(COLS-37)/2,"Hit [RETURN] Control-D to End Message");
+					standend();
+					move(y,x);
+					refresh();
+					ch = getch();
+					move(LINES-3,0);
+					clrtoeol();
+					refresh();
+				}
+				break;
+			case '\033':
+				/* escape key was hit */
+				mvaddstr(LINES-3,0,"Abort Message? ");
 				refresh();
-				ch=getch();
-			} else if (ch=='') {
+				if(getch()=='y') {
+					linedone=TRUE;
+					done=TRUE;
+					temp=ABORTMAIL;
+				} else {
+					move(LINES-3,0);
+					clrtoeol();
+					move(y,x);
+					refresh();
+					ch = getch();
+				}
+				break;
+			case '':
+				/* new page -- end of form */
 				wrefresh(stdscr);
 				ch=getch();
-			} else	ch=getch();
+				break;
+			default:
+				/* any remaining possibilities */
+				if(isprint(ch)&&(x<65)){
+					/*concatonate to end*/
+					line[x]=ch;
+					mvaddch(y,x,ch);
+					x++;
+					refresh();
+				}
+				ch=getch();
+				break;
+			}
 		}
-		if((ch!='\n')&&(ch!='\r')) {
+		if((ch!='\n')&&(ch!='\r')&&(ch!='\033')) {
 			mvaddch(y,x,ch);
 			line[x]=ch;
 			x++;
 		}
 		line[x]='\0';
 
+		/*check for single period */
+		if (strcmp(line," .")==0) done=TRUE;
+
 		/*write to file*/
-		if(x<=1) done=TRUE;
-		else if (temp != -2) fprintf(fm,"%s\n",line);
-		else {
-			if (country!=0) fprintf(fm,"5.%-9s:%s\n",curntn->name,line);
-			else fprintf(fm,"5.God      :%s\n",line);
+		if (done==FALSE) {
+			if (temp != -2) fprintf(fm,"%s\n",line);
+			else {
+				if (country!=0) fprintf(fm,"5.%-9s:%s\n",curntn->name,line);
+				else fprintf(fm,"5.God      :%s\n",line);
+			}
+			x=0;
+			y++;
+			if (y==LINES-3) {
+				standout();
+				mvaddstr(LINES-3,0,"Continuing...");
+				standend();
+				refresh();
+				sleep(2);
+				dotitles=TRUE;
+			}
 		}
-		x=0;
-		y++;
 	}
-	if (temp != -2) mailclose();
-	else {
-		mailok=FALSE;
-		fclose(fm);
-	}
+	mailclose(temp);
 }
 
 /*strategic move of civilians...once only*/
@@ -1225,7 +1301,12 @@ moveciv()
 	short	i,j;
 
 	clear_bottom(0);
-	if(sct[XREAL][YREAL].owner!=country){
+#ifdef OGOD
+	if(sct[XREAL][YREAL].owner!=country && country!=0)
+#else
+	if(sct[XREAL][YREAL].owner!=country)
+#endif
+	{
 		errormsg("Sorry, you don't own that sector.");
 		return;
 	}
@@ -1274,7 +1355,13 @@ moveciv()
 	}
 	if((j-(YREAL)>2)||((YREAL)-j>2)) {
 		errormsg("Sorry, your people refuse to move more than two sectors.");
-	} else if(sct[i][j].owner!=country){
+	}
+#ifdef OGOD
+	else if(sct[i][j].owner!=country && country!=0)
+#else
+	else if(sct[i][j].owner!=country)
+#endif /*OGOD*/
+	{
 		errormsg("Sorry, you don't own that sector.");
 	} else if(movecost[i][j]<0){
 		/*need to check move cost > 0 for sector*/

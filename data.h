@@ -18,6 +18,11 @@ extern	char	*strcpy(),*strncpy(),*strcat(),*strncat();
 #define	FALSE		0
 #endif
 
+/* definitions for mail sending */
+#define	DONEMAIL	(-3)
+#define	NEWSMAIL	(-2)
+#define	ABORTMAIL	(-1)
+
 /* definitions for screen redrawing */
 #define	DONE	0
 #define	PART	1
@@ -498,6 +503,7 @@ struct	s_nation		/* player nation stats	*/
 #define XNAGAL		30
 #define XNAHOLD		31
 #define NPOP		32
+#define XSACIV3	33
 
 #define	BRIBENATION fprintf(fm,"L_NGOLD\t%d\t%d\t%ld\t0\t%d\t%s\n",XBRIBE,country,bribecost,nation,"null");
 #define	DESTROY fprintf(fexe,"DESTROY\t%d\t%d\t%hd\t0\t0\t%s\n",DESTRY,save,country,"null")
@@ -523,6 +529,7 @@ struct	s_nation		/* player nation stats	*/
 #define	SADJDES2	fprintf(fexe,"S_ADES\t%d\t%hd\t0\t%d\t%d\t%c\n",XSADES,country,x,y,sct[x][y].designation)
 #define	SADJCIV2 fprintf(fexe,"S_ACIV\t%d\t%hd\t%ld\t%d\t%d\t%s\n",XSACIV,country,sct[i][j].people,i,j,"null")
 #define	SADJCIV	fprintf(fexe,"S_ACIV\t%d\t%hd\t%ld\t%d\t%d\t%s\n",XSACIV,country,sct[xcurs+xoffset][ycurs+yoffset].people,xcurs+xoffset,ycurs+yoffset,"null")
+#define	SADJCIV3 fprintf(fexe,"S_ACIV3\t%d\t%hd\t%ld\t%d\t%d\t%s\n",XSACIV3,country,people_to_add,i,j,"null")
 #define	INCFORT fprintf(fexe,"SIFORT\t%d\t%hd\t0\t%d\t%d\t%s\n",XSIFORT,country,xcurs+xoffset,ycurs+yoffset,"null")
 #define	SADJOWN	fprintf(fexe,"S_AOWN\t%d\t%hd\t0\t%d\t%d\t%s\n",XSAOWN,country,xcurs+xoffset,ycurs+yoffset,"null")
 #define	EADJDIP(a,b)	fprintf(fexe,"E_ADJ\t%d\t%hd\t%d\t%d\t0\t%s\n",EDADJ,a,b,ntn[a].dstatus[b],"null")
@@ -612,7 +619,7 @@ extern long	get_number(), solds_in_sector(),defaultunit();
 
 extern int	move_file(), land_2reachp(), land_reachp(), canbeseen();
 extern int	water_reachp(), markok(), is_habitable(), parse();
-extern int	units_in_sector(), num_powers(), tofood();
+extern int	units_in_sector(), num_powers(), tofood(), mailopen();
 extern int	get_god(), flightcost(), todigit(), getclass(), startcost();
 extern int	water_2reachp(),tg_ok(), readmap(), avian();
 extern int	cbonus(), armymove(),takeover(),getnewname();
@@ -628,15 +635,15 @@ extern void	getjewel(),getmetal(),loadfleet(),removemgk(),exenewmgk();
 extern struct	s_sector *rand_sector();
 extern void	subgships(),submships(),subwships(),getspace(),sackem();
 extern void	sleep(), whatcansee(), reset_god(), get_nname(), camp_info();
-extern void	main(), makebottom(), makeside(), check_mail();
+extern void	main(), makebottom(), makeside(), check_mail(), centermap();
 extern void	checkout(),copyscreen(),bye(),credits(),init_hasseen();
 extern void	combinearmies(),change_status(),reducearmy(),splitarmy();
 extern void	errormsg(), clear_bottom(), addgroup(),ext_cmd();
 extern void	randomevent(), wdisaster(), weather(), deplete();
 extern void	verify_ntn(), verify_sct(), verifydata(), prep();
 extern void	errorbar(), newbye(), newreset(), newmsg(), newerror();
-extern void	newinit();
-extern void	destroy(), updmove(), spreadsheet(), mailopen(), mailclose();
+extern void	newinit(), jump_to();
+extern void	destroy(), updmove(), spreadsheet(), mailclose();
 extern void	updexecs(), updcapture(), updsectors();
 extern void	updmil(), updcomodities(), updleader();
 extern void	nationrun(), n_atpeace(), n_trespass(), n_people();
@@ -653,7 +660,7 @@ extern void	makeworld(),monster(),moveciv();
 extern void	mymove(),navalcbt(),newdip(),newdisplay(),newlogin();
 extern void	newspaper(),npcredes(),offmap(),place(),populate();
 extern void	printele(),printnat(),printscore(),printveg();
-extern void	pr_ntns(),produce();
+extern void	pr_ntns(),pr_desg(),produce();
 extern void	readdata(),redesignate(),redomil(),reduce(),rmessage(),score();
 extern void	see(),showscore(),update();
 extern void	wmessage(),writedata(),getdstatus(),exit();

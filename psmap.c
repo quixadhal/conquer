@@ -104,12 +104,16 @@ int
 isinstr(string, word)
     char *string, *word;
 {
-    while ((c = index(string, *word)) != 0)
-	if (!strncmp((char *) c, word, strlen(word))) {
-	    return (TRUE);
-	} else
-	    string = (char *) c + 1;
-    return (FALSE);
+    int i,l1=strlen(string),l2=strlen(word);
+    
+    if (l1 < l2) return(FALSE);
+    for(i = 0; i < l1; i++ ) {
+	    if (l1-i<l2) break;
+	    if (string[i] == word[0]) {
+		    if (strncmp(string+i,word,l2)==0) return(TRUE);
+	    }
+    }
+    return(FALSE);
 }
 
 int

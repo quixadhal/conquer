@@ -44,7 +44,7 @@ int	armie;
 		if (P_ATYPE>=MINLEADER && P_ATYPE<MINMONSTER &&
 		ISCITY(sct[P_AXLOC][P_AYLOC].designation)) addstr(", (R)ule");
 	}
-	mvprintw(LINES-4, 0, "Extended command:");
+	mvaddstr(LINES-4, 0, "Extended command:");
 	refresh();
 
 	switch(getch()) {
@@ -80,8 +80,6 @@ int	armie;
 	default:		/* unimplemented? */
 		errormsg("Unimplemented extended command");
 	}
-	makebottom();
-	refresh();
 }
 
 /* returns TRUE if uncombinable FALSE if combinable */

@@ -125,8 +125,8 @@ sectors of various types.  The program is intelligent enough to appropriately
 handle poor or low value sectors.  Sum the numbers found below.  The result
 is the relative "attractiveness" of a sector.
 
-General Modifiers:   Goldmine: XGOLDATTR / jewels   Farm: XFARMATTR / food value  Other: XOTHRATTR
-  Trade Good: XTGATTR     Mine: XMINEATTR / metals       Town: XTOWNATTR             City: XCAPATTR
+General Modifiers:   Goldmine: XGOLDATTR * jewels   Farm: XFARMATTR * food value  Other: XOTHRATTR
+  Trade Good: XTGATTR     Mine: XMINEATTR * metals       Town: XTOWNATTR             City: XCAPATTR
 
                                 Racial Modifiers
 Race        Mtn    Hill   Clear  Forest    Wood    City    Mine Gldmine

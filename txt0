@@ -1,24 +1,45 @@
-                       CONQUER COMMAND HELP SCREEN
+                        CONQUER COMMAND HELP SCREEN
 
-     SELECTIVE                 MOVEMENT                   CIVIL
-'o': pick previous unit    'h': move west          'r': redesignate
-'p': pick next unit        'y': move north-west    't': transport via ship
-'G': go to next army       'k': move north         'C': construct
-'F': go to next fleet      'u': move north-east    'D': draft armies
-'m': move selected unit    'l': move east          'Z': move civilians
-                           'n': move south-east
-       FORMS               'j': move south             COMMUNICATIVE
-'c': administrative        'b': move south-west    'R': read mail messages
-'s': world score list      'J': scroll south       'N': read newspaper
-'B': budget status         'K': scroll north       'T': trade with players
-'I': campaign info         'L': scroll east        'W': write mail messages
-'M': magic screen          'H': scroll west
-'P': production status                                   MILITARY
-'S': diplomacy status        MISC COMMANDS         'a': army report
-                           'q': quit and save      'f': fleet report
+      SELECTIVE                  MOVEMENT                 CIVIL
+'o': pick previous unit    'x': jump to sector     'r': redesignate
+'p': pick next unit        'X': jump to capitol    't': transport via ship
+'G': go to next army       'h','H': move west      'C': construct
+'F': go to next fleet      'y': move north-west    'D': draft armies
+'m': move selected unit    'k','K': move north     'Z': move civilians
+                           'u': move north-east
+       FORMS               'l','L': move east          COMMUNICATIVE
+'c': administrative        'n': move south-east    'R': read mail messages
+'s': world score list      'j','J': move south     'N': read newspaper
+'B': budget status         'b': move south-west    'T': trade with players
+'I': campaign info                                 'W': write mail messages
+'M': magic screen             MISC COMMANDS
+'P': production status     'Q': quit and save            MILITARY
+'S': diplomacy status      'q': quit and save      'a': army report
+                           'z': change login       'f': fleet report
       VISUAL               'v': version credits    'g': group army report
 'd': change display        '!': repeat unit cmd    'w': wizardry commands
 'cntrl-L': redraw          '?': help screens     'ESC': extra commands
+END
+                       CONQUER CURSOR MOVEMENT
+
+                               NORTH
+
+                                (K)
+                          y,7   k,8   u,9
+                             \   |   /
+                               \ | /
+          WEST      (H) h,4 ---- 0 ---- l,6 (L)       EAST
+                               / | \
+                             /   |   \
+                          b,1   j,2   n,3
+                                (J)
+
+                               SOUTH
+
+               Figures in parenthesis indicate scrolling
+           Note either numeric keypad OR vi keys can be used
+
+                <cntrl>-L will redraw the screen
 END
                       CONQUER EXTENDED COMMANDS
 
@@ -99,27 +120,6 @@ in the campaign information display ('I').
       Perhaps god is looking for people to run his worlds.  Send mail
 to XLOGIN and you may find out.
 END
-                       CONQUER CURSOR MOVEMENT
-
-                               NORTH
-
-                                (K)
-                          y,7   k,8   u,9
-                             \   |   /
-                               \ | /
-          WEST      (H) h,4 ---- 0 ---- l,6 (L)       EAST
-                               / | \
-                             /   |   \
-                          b,1   j,2   n,3
-                                (J)
-
-                               SOUTH
-
-               Figures in parenthesis indicate scrolling
-           Note either numeric keypad OR vi keys can be used
-
-                <cntrl>-L will redraw the screen
-END
                         CONQUER COMMANDS -- lower case commands
 
 'a': army report:    Gives an army's details & permits changing army status,
@@ -194,7 +194,7 @@ END
 
 To my knowledge Conquer runs well on UNIX (SYS V or BSD 4.3) systems.  The
 game treats turns like a hidden move wargame would...  you enter all your
-moves into the program and conquer tells you what happens.  Like wargames, 
+moves into the program and conquer tells you what happens.  Like wargames,
 there is no turning back.  Every move you make will be saved when you quit.
 If you goof up real bad, you need to go to the administrator, and have him
 log in (as god) and fix whatever you did.  Of course, bribery will probably

@@ -71,6 +71,7 @@ trade()
 	long lvar1[MAXITM], lvar2[MAXITM], holdlong, holdlong2, armyvalue();
 	void tradeerr(), setaside(), takeback();
 	
+	clear();
 	while (done==FALSE) {
 		itemnum=0;
 		done=TRUE;
@@ -90,14 +91,15 @@ trade()
 			}
 		}
 		if (notopen==FALSE) fclose(tfile);
-		clear();
+		move(0,0);
+		clrtobot();
 		/* display header */
 		standout();
 		mvaddstr(0,27,"COMMODITIES EXCHANGE");
 		mvaddstr(1,20,"No Guarantees... All Trades Final");
 		standend();
 		count=3;
-		mvprintw(count,0,"    Nation                       Item            Price");
+		mvaddstr(count,0,"    Nation                       Item            Price");
 		/* give some minor items for purchase */
 		mvprintw(++count,0,"%2d) %-20s",GETFOOD,"Merchants Guild");
 		mvprintw(count,30,"%9ld %s",GODFOOD,commodities[TDFOOD]);
@@ -147,7 +149,7 @@ trade()
 					standout();
 					mvaddstr(0,27,"COMMODITIES EXCHANGE");
 					standend();
-			    		mvprintw(2,0,"    Nation                       Item            Minimum Price");
+			    		mvaddstr(2,0,"    Nation                       Item            Minimum Price");
 					count=2;
 				}
 			}
@@ -364,7 +366,7 @@ trade()
 				}
 				break;
 			case TDLAND:
-				mvprintw(count++,0,"What Y position? ");
+				mvaddstr(count++,0,"What Y position? ");
 				refresh();
 				extint = get_number();
 				if (extint < 0) {

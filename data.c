@@ -247,7 +247,7 @@ FILE *fnews, *fopen();
 struct sprd_sht spread;
 
 FILE	*fm;
-int	mailok=FALSE;
+int	mailok=DONEMAIL;
 
 #ifdef CONQUER
 #ifdef SYSMAIL

@@ -19,7 +19,7 @@
 #include	<signal.h>
 #include	<pwd.h>
 
-extern	int armornvy;
+extern	int armornvy,roads_this_turn,terror_adj;
 
 char	fison[FILELTH];
 char	*getpass();
@@ -388,17 +388,15 @@ char	**argv;
 	/* check if user is super-user nation[0] */
 	/*	else setup cursor to capitol*/
 	if((country==0)||(ismonst(ntn[country].active))) {
-		xcurs=LINES/2;
-		xoffset=0;
-		ycurs=COLS/4;
-		yoffset=0;
+		xcurs=MAPX/2-1;
+		ycurs=MAPY/2-1;
 		redraw=FULL;
 		/* create gods lock file but do not limit access */
 		(void) aretheyon();
 	} else {
 		if(curntn->active==INACTIVE) {
 			standout(); 
-			mvprintw(LINES-2,0,"Sorry, for some reason, your country no longer exists.");
+			mvaddstr(LINES-2,0,"Sorry, for some reason, your country no longer exists.");
 			mvprintw(LINES-1,0,"If there is a problem, please send mail to %s", LOGIN);
 			if (strcmp(LOGIN, ntn[0].leader)!=0) {
 				printw(" or %s",ntn[0].leader);
@@ -411,8 +409,8 @@ char	**argv;
 			bye(TRUE);
 		}
 		if(aretheyon()==TRUE) {
-			mvprintw(LINES-2,0,"Sorry, country is already logged in.");
-			mvprintw(LINES-1,0,"Please try again later.");
+			mvaddstr(LINES-2,0,"Sorry, country is already logged in.");
+			mvaddstr(LINES-1,0,"Please try again later.");
 			beep();
 			refresh();
 			getch();
@@ -422,21 +420,12 @@ char	**argv;
 #ifdef TRADE
 		checktrade();
 #endif TRADE
-		if(curntn->capx>15) {
-			xcurs=15;
-			xoffset= ((int)curntn->capx-15);
-		} else {
-			xcurs= curntn->capx;
-			xoffset= 0;
-		}
-		if(curntn->capy>10) {
-			ycurs=10;
-			yoffset= ((int)curntn->capy-10);
-		} else {
-			yoffset= 0;
-			ycurs= curntn->capy;
-		}
+		xcurs = curntn->capx;
+		ycurs = curntn->capy;
 	}
+	xoffset = 0;
+	yoffset = 0;
+	centermap();
 	updmove(curntn->race,country);
 
 	/* open output for future printing*/
@@ -468,7 +457,7 @@ char	**argv;
 		(void) strcpy(sysmail,getenv("MAIL"));
 	}
 #endif SYSMAIL
-	mvprintw(LINES-1, COLS-20, "PRESS ANY KEY");
+	mvaddstr(LINES-1, COLS-20, "PRESS ANY KEY");
 	refresh();
 	getch();		/* get response from copyscreen */
 
@@ -556,13 +545,13 @@ parse(ch)
 	switch(ch) {
 	case EXT_CMD:	/* extended command */
 		ext_cmd( -1 );
+		makebottom();
+		refresh();
 		curntn->tgold -= MOVECOST;
 		return(TRUE);
 		break;
 	case '':	/* redraw the screen */
-		whatcansee();	/* what can they see */
 		centermap();
-		clear();
 		redraw=FULL;
 		break;
 #ifdef DEBUG
@@ -574,7 +563,7 @@ parse(ch)
 		break;
 #endif /* DEBUG */
 	case 'a':	/*army report*/
-		redraw=PART;
+		redraw=FULL;
 		armyrpt(0);
 		curntn->tgold -= MOVECOST;
 		break;
@@ -602,7 +591,6 @@ parse(ch)
 		break;
 	case 'd':	/*change display*/
 		newdisplay();
-		curntn->tgold -= MOVECOST;
 		break;
 	case 'D':	/*draft*/
 		draft();
@@ -676,6 +664,7 @@ parse(ch)
 		break;
 	case 'm':	/*move selected item to new x,y */
 		mymove();
+		makebottom();
 		curntn->tgold -= MOVECOST;
 		return(TRUE);
 		break;
@@ -793,6 +782,19 @@ parse(ch)
 		curntn->tgold -= MOVECOST;
 		wmessage();
 		break;
+	case 'X': /*jump to capitol*/
+		redraw = PART;
+		pager=0;
+		selector=0;
+		jump_to(TRUE);
+		break;
+	case 'x': /*jump to a location*/
+		redraw=PART;
+		pager=0;
+		selector=0;
+		jump_to(FALSE);
+		makebottom();
+		break;
 	case '7':
 	case 'y':	/*move north-west*/
 		pager=0;
@@ -808,6 +810,7 @@ parse(ch)
 		break;
 	case 'Z':	/*move civilians up to 2 spaces*/
 		moveciv();
+		makebottom();
 		curntn->tgold -= MOVECOST;
 		break;
 	case 'z':	/*login as new user */
@@ -816,7 +819,7 @@ parse(ch)
 		    ((pwent=getpwnam(ntn[0].leader))==NULL || owneruid != pwent->pw_uid )) break;
 #endif
 		clear();
-		redraw=PART;
+		redraw=FULL;
 		if(country != 0) {
 		fprintf(fexe,"L_NGOLD\t%d \t%d \t%ld \t0 \t0 \t%s\n",
 			XNAGOLD ,country,curntn->tgold,"null");
@@ -881,6 +884,8 @@ parse(ch)
 		curntn = &ntn[country];
 
 		fprintf(stderr,"\n");
+		roads_this_turn=0;
+		terror_adj=0;
 		readdata();
 		execute(FALSE);
 
@@ -888,25 +893,14 @@ parse(ch)
 		updmove(curntn->race,country);
 		/*go to that nations capitol*/
 		if((country==0)||(!isntn(ntn[country].active))) {
-			xcurs=15; xoffset=15;
-			ycurs=15; yoffset=15;
+			xcurs=MAPX/2-1;
+			ycurs=MAPY/2-1;
 		} else {
-			if(curntn->capx>15) {
-				xcurs=15;
-				xoffset= ((int)curntn->capx-15);
-			} else {
-				xcurs= curntn->capx;
-				xoffset= 0;
-			}
-			if(curntn->capy>10) {
-				ycurs=10;
-				yoffset= ((int)curntn->capy-10);
-			} else {
-				yoffset= 0;
-				ycurs= curntn->capy;
-			}
+			xcurs=curntn->capx;
+			ycurs=curntn->capy;
 		}
-		whatcansee();
+		xoffset = yoffset = 0;
+		centermap();
 		redraw=PART;
 		break;
 	case '?':	/*display help screen*/
@@ -1300,7 +1294,7 @@ copyscreen()
 		fclose(timefp);
 	}
 #endif /* TIMELOG */
-	mvprintw(LINES-1, COLS-20, "PLEASE WAIT");
+	mvaddstr(LINES-1, COLS-20, "PLEASE WAIT");
 	refresh();
 }
 
@@ -1398,7 +1392,7 @@ camp_info()
 	/* other information */
 	mvprintw(LINES-6,0,"The Diety: %s", LOGIN);
 	if (strcmp(LOGIN,ntn[0].leader)==0) {
-		mvprintw(LINES-5,0,"The Demi-God: [none]");
+		mvaddstr(LINES-5,0,"The Demi-God: [none]");
 	} else {
 		mvprintw(LINES-5,0,"The Demi-God: %s", ntn[0].leader);
 	}

@@ -161,6 +161,7 @@
 				   for cities				*/
 #define FORTCOST	1000L	/* cost to build a fort point		*/
 #define STOCKCOST	3000L	/* cost to build a stockade		*/
+#define REBUILDCOST	3000L	/* cost to remove a ruin		*/
 #define WARSHPCOST	20000L	/* cost to build one light warship	*/
 #define MERSHPCOST	25000L	/* cost to build one light merchant	*/
 #define GALSHPCOST	25000L	/* cost to build one light galley	*/

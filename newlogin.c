@@ -113,7 +113,7 @@ int range,chance;
 		if((i!=x)&&(j!=y)&&(ONMAP(i,j))
 		&&(sct[i][j].altitude!=WATER)) {
 			if (rand()%2==0)
-			sct[x][y].altitude = CLEAR;
+			sct[i][j].altitude = CLEAR;
 
 			if (rand()%2==0)
 				sct[i][j].vegetation=WOOD;
@@ -136,9 +136,11 @@ char	*string;
 	int	ctry;
 	for( ctry=0; ctry<NTOTAL; ctry++){
 		if((ctry==0)||(ispc(ntn[ctry].active))){
-			mailopen(ctry);
-			fprintf(fm,"%s",string);
-			mailclose();
+			if (mailopen(ctry)!=(-1)) {
+				fprintf(fm,"Message from Conquer\n\n");
+				fprintf(fm,"%s\n",string);
+				mailclose(ctry);
+			}
 		}
 	}
 }
@@ -394,7 +396,7 @@ newlogin()
 		/*get name*/
 		while(valid==FALSE) {
 			valid=TRUE;
-			mvprintw(1,0,"Enter a Name for your Country: ");
+			mvaddstr(1,0,"Enter a Name for your Country: ");
 			clrtoeol();
 			refresh();
 			get_nname(tempc);
@@ -431,7 +433,7 @@ newlogin()
 
 		valid=FALSE;
 		while(valid==FALSE) {			/* password routine */
-			mvprintw(2,0,"Enter National Password: ");
+			mvaddstr(2,0,"Enter National Password: ");
 			clrtoeol();
 			refresh();
 			i = get_pass(tempc);
@@ -442,7 +444,7 @@ newlogin()
 				newerror("Password Too Long");
 				continue;
 			}
-			mvprintw(2,0,"Reenter National Password: ");
+			mvaddstr(2,0,"Reenter National Password: ");
 			clrtoeol();
 			refresh();
 			i = get_pass(passwd);
@@ -457,7 +459,7 @@ newlogin()
 		valid=FALSE;
 		while(valid==FALSE) {
 			valid=TRUE;
-			mvprintw(2,0,"Enter the name of your country's leader (Ex. The Ed, Gandalf, Conan)");
+			mvaddstr(2,0,"Enter the name of your country's leader (Ex. The Ed, Gandalf, Conan)");
 			clrtoeol();
 			mvprintw(3,0,"    [maximum %d characters]: ",LEADERLTH);
 			refresh();
@@ -471,7 +473,7 @@ newlogin()
 
 		mvprintw(2,0,"Leader Name: %s", curntn->leader);
 		clrtoeol();
-		mvprintw(3,0,"Enter your Race [ (D)warf (E)lf (H)uman (O)rc ]:");
+		mvaddstr(3,0,"Enter your Race [ (D)warf (E)lf (H)uman (O)rc ]:");
 		clrtoeol();
 		refresh();
 		valid=FALSE;
@@ -482,7 +484,7 @@ newlogin()
 			case 'd':
 				/*MINER POWER INATE TO DWARVES*/
 				newmsg("Dwarves have MINING skills");
-				mvprintw(3,0,"National Race: Dwarf");
+				mvaddstr(3,0,"National Race: Dwarf");
 				clrtoeol();
 				curntn->powers=MINER;
 				x=MINER;
@@ -503,7 +505,7 @@ newlogin()
 			case 'E':
 			case 'e':
 				newmsg("Elves are magically cloaked (VOID power)");
-				mvprintw(3,0,"National Race: Elf");
+				mvaddstr(3,0,"National Race: Elf");
 				clrtoeol();
 				curntn->powers=THE_VOID;
 				x=THE_VOID;
@@ -525,7 +527,7 @@ newlogin()
 			case 'o':
 				/*MINOR MONSTER POWER INATE TO ORCS*/
 				newmsg("Your leader is a Monster!");
-				mvprintw(3,0,"National Race: Orc");
+				mvaddstr(3,0,"National Race: Orc");
 				clrtoeol();
 				curntn->powers=MI_MONST;
 				x=MI_MONST;
@@ -547,7 +549,7 @@ newlogin()
 			case 'h':
 				curntn->race=HUMAN;
 				newmsg("Humans have the combat skill of a WARRIOR");
-				mvprintw(3,0,"National Race: Human");
+				mvaddstr(3,0,"National Race: Human");
 				clrtoeol();
 				curntn->powers = WARRIOR;
 				x=WARRIOR;
@@ -576,7 +578,7 @@ newlogin()
 			valid=TRUE;
 			curntn->active=PC_EVIL;
 		} else {
-			mvprintw(5,0,"Please Enter Alignment [ (G)ood, (N)eutral, (E)vil ]");
+			mvaddstr(5,0,"Please Enter Alignment [ (G)ood, (N)eutral, (E)vil ]");
 			refresh();
 		}
 		while (valid==FALSE) {
@@ -607,7 +609,7 @@ newlogin()
 		curntn->mark = ' ';
 		while(TRUE) {
 			temp = 30;
-			mvprintw(6,0,"This can be any of the following:");
+			mvaddstr(6,0,"This can be any of the following:");
 			for (tempc[0]='!';tempc[0]<='~';tempc[0]++) {
 				if( markok( tempc[0], FALSE ) ) {
 					temp += 2;
@@ -618,7 +620,7 @@ newlogin()
 					printw(" %c",tempc[0]);
 				}
 			}
-			mvprintw(5,0,"Enter National Mark (for maps): ");
+			mvaddstr(5,0,"Enter National Mark (for maps): ");
 			clrtoeol();
 			refresh();
 			tempc[0] = getch();
@@ -651,7 +653,7 @@ newlogin()
 				if (curntn->race==ORC) {			
 					switch(i) {
 					case CH_MOVEMENT:
-						mvprintw(ypos++,COLS/2+5,"  -     --------");
+						mvaddstr(ypos++,COLS/2+5,"  -     --------");
 						continue;
 					case CH_REPRO:
 						x = 2*Munits[i]*Mvalues[i];
@@ -927,7 +929,7 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 				if(sct[i][j].altitude==WATER) temp++;
 			if(temp>=7) placed=0;
 		}
-		teraform( x,y,1,25 );
+		if(placed) teraform( x,y,1,25 );
 		break;
 	case RANDOM:
 		while ((placed == 0)&&(n++<2000)){
@@ -960,7 +962,7 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 			for(i=x-1;i<=x+1;i++) for(j=y-1;j<=y+1;j++)
 				if(sct[i][j].owner!=0) placed=0;
 		}
-		teraform( x,y,1,40 );
+		if(placed) teraform( x,y,1,40 );
 		break;
 	case FAIR:
 		while ((placed == 0)&&(n++<2000)) {
@@ -1012,7 +1014,7 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 			}
 		}
 
-		teraform( x,y,1,65 );
+		if(placed) teraform( x,y,1,65 );
 		break;
 	case GREAT:
 		placed = 0;
@@ -1069,7 +1071,7 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 				if(temp>=15) placed=0;
 			}
 		}
-		teraform( x,y,1,100 );
+		if(placed) teraform( x,y,1,100 );
 	}
 
 	/*done with one try*/
@@ -1222,7 +1224,7 @@ getclass(race)
 	short ypos=4;
 	int i,j;
 	
-	mvprintw(ypos,0,"The List of Possible Nation Classes:");
+	mvaddstr(ypos,0,"The List of Possible Nation Classes:");
 	ypos+=2;
 	mvprintw(ypos++,0,"     %-8s %4s   %15s %8s %4s", "class", "who",
 		"", "magic", "cost");
@@ -1244,7 +1246,7 @@ getclass(race)
 	}
 	ypos++;
 	while(chk==FALSE){
-		mvprintw(ypos,0,"Enter the number of your choice: ");
+		mvaddstr(ypos,0,"Enter the number of your choice: ");
 		clrtoeol();
 		refresh();
 		tmp = get_number();

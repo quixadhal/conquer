@@ -345,7 +345,7 @@ see(x,y)
 		mvaddch(y,2*x,ch);
 		if ( otherdismode > 0 ) {
 			highlight(x,y,otherhilmode);
-			ch=get_display_for(x,y,otherdismode,otherhilmode);
+			ch=get_display_for(x,y,otherdismode);
 			mvaddch(y,2*x+1,ch);
 		}
 	}

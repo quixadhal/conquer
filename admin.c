@@ -39,6 +39,9 @@ short	dismode=2;
 short	country=0;
 struct	s_nation	*curntn;
 extern char datadir[];
+#ifdef REMAKE
+int	remake=FALSE;
+#endif /*REMAKE*/
 
 FILE *fexe, *fopen();
 
@@ -53,7 +56,7 @@ char **argv;
 	void srand();
 	int getopt();
 	long time();
-	/* mflag = makeworld, a=add player, x=execute, p=print */
+	/* mflag = make world, a=add player, x=execute, p=print */
 	/* rflag = make world from read in files */
 	int mflag, aflag, xflag, rflag;
 	char string[FILELTH];
@@ -201,6 +204,9 @@ char **argv;
 				printf(".\n");
 				exit(FAIL);
 			}
+#ifdef REMAKE
+			remake=TRUE;
+#endif /*REMAKE*/
 			printf("************* WARNING!!!! *******************\n\n");
 			printf("    There is already a game in progress.\n\n");
 			printf("*********************************************\n\n");
@@ -485,10 +491,15 @@ att_base()
 		temp=1000*curntn->score/WORLDSCORE + 1000*curntn->tmil/WORLDMIL;
 		curntn->power = min(temp/5,MAXTGVAL);
 
+		/* calculate national wealth */
 		temp = curntn->tgold;
 		if(temp<0) temp=0;
-		temp = 1000*temp/WORLDGOLD + 1000*curntn->jewels/WORLDJEWELS + 1000*curntn->metals/WORLDMETAL + cityfolk*5/3 + townfolk*5/6;
-		curntn->wealth = min( temp/10,MAXTGVAL );
+		temp = (long)(1000.0*temp/WORLDGOLD + 1000.0*curntn->jewels/WORLDJEWELS + 1000.0*curntn->metals/WORLDMETAL) + cityfolk*5/3 + townfolk*5/6;
+		if (temp >= curntn->wealth) {
+			curntn->wealth = min( temp/10,MAXTGVAL );
+		} else {
+			curntn->wealth -= (curntn->wealth - temp)/4;
+		}
 
 		if( TURN!= 1) {
 		curntn->reputation += rand()%8-3;
@@ -501,21 +512,26 @@ att_base()
 		else temp = 0;
 		curntn->farm_ability = min( temp,MAXTGVAL );
 		}
-		temp = (minepts/3 + cityfolk/2 + townfolk/2 + blksmths);
-		curntn->mine_ability = min( temp,MAXTGVAL );
-		if( magic(country,MINER) )
-			curntn->mine_ability += 15;
-		if( magic(country,STEEL) )
-			curntn->mine_ability += 15;
 
+		/* calcualte mining ability */
+		temp = (minepts/3 + cityfolk/2 + townfolk/2 + blksmths);
+		if( magic(country,MINER) )
+			temp += 15;
+		if( magic(country,STEEL) )
+			temp += 15;
+		if (temp >= curntn->mine_ability) {
+			curntn->mine_ability = min( temp,MAXTGVAL );
+		} else {
+			curntn->mine_ability -= (curntn->mine_ability - temp)/4;
+		}
+
+		/* calculate knowledge */
 		temp = cityfolk/2 + townfolk/6 + scholars/2;
 		curntn->knowledge = min( temp,MAXTGVAL );
 
+		/* find national popularity */
 		temp = (curntn->wealth + 10*P_EATRATE + clerics + curntn->popularity)/2;
 		curntn->popularity = min( temp,MAXTGVAL );
-
-		/* poverty tends 10% to 100-wealth/4 */
-		curntn->poverty += (100-curntn->wealth/4-curntn->poverty+5)/10;
 
 		if(magic(country,SLAVER))	curntn->terror+=PWR_NA;
 		if(magic(country,RELIGION))	curntn->popularity+=PWR_NA;
@@ -529,7 +545,10 @@ att_base()
 			if(curntn->terror > PWR_NA)
 				curntn->terror-=PWR_NA;
 			else	curntn->terror=0;
-			curntn->charity+=2;	/* it creeps up */
+			if (curntn->charity < 15) {
+				/* it creeps up */
+				curntn->charity+=2;
+			}
 		}
 		if(magic(country,KNOWALL))	curntn->knowledge+=PWR_NA;
 		if(magic(country,ARCHITECT)){

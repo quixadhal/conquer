@@ -5,6 +5,7 @@
 #include	"data.h"
 
 extern FILE *fnews;
+extern short country;
 
 extern char *HVegcost, *OVegcost, *EVegcost, *DVegcost, *FVegcost;
 extern char *HElecost, *OElecost, *EElecost, *DElecost, *FElecost;
@@ -182,6 +183,8 @@ int	move_points;
 			if( (y = ay + dy[i]) < 0 || y >= MAPY )
 				continue;
 
+			if ( movecost[ x ][ y ] < 0 )	/* just in case */
+				continue;
 			if( sct[x][y].altitude == PEAK)
 				continue;
 			if( sct[x][y].altitude == WATER)
@@ -790,19 +793,21 @@ int country;
 			}
 			P_ASOLD=0;
 			if(ispc(curntn->active)) {
-				mailopen(country);
-				fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
-				fprintf(fm,"\tYour %s Army %d disperses into the population\n",*(unittype+(P_ATYPE%UTYPE)),armynum);
-				mailclose();
+				if (mailopen(country)!=(-1)) {
+					fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
+					fprintf(fm,"\tYour %s Army %d disperses into the population\n",*(unittype+(P_ATYPE%UTYPE)),armynum);
+					mailclose(country);
+				}
 			}
 		} else if(P_ATYPE>=MINMONSTER) {
 			/* disbanding of ALL monsters should take place */
 			P_ASOLD=0;
 			if(ispc(curntn->active)) {
-				mailopen(country);
-				fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
-				fprintf(fm,"\tYour %s (unit %d) leaves due to the loss of your jewels.\n",*(unittype+(P_ATYPE%UTYPE)),armynum);
-				mailclose();
+				if (mailopen(country)!=(-1)) {
+					fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
+					fprintf(fm,"\tYour %s (unit %d) leaves due to the loss of your jewels.\n",*(unittype+(P_ATYPE%UTYPE)),armynum);
+					mailclose(country);
+				}
 			}
 		}
 	}
@@ -810,9 +815,10 @@ int country;
 	/* check for sectors breaking away -- not capx, capy */
 	if(ispc(curntn->active)) {
 		/* create a summarized mail message of sectors effected */
-		mailopen(country);
-		fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
-		fprintf(fm,"Riots and Rebellion flourish:\n");
+		if (mailopen(country)!=(1)) {
+			fprintf(fm,"Message to %s from Conquer\n\n",curntn->name);
+			fprintf(fm,"Riots and Rebellion flourish:\n");
+		}
 	}
 	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++)
 	if(sct[i][j].owner==country && (i!=x || j!=y) ) {
@@ -838,7 +844,7 @@ int country;
 		}
 	}
 	if(ispc(curntn->active)) {
-		mailclose();
+		mailclose(country);
 	} else if(isnpc(curntn->active)) {
 		if(sct[curntn->capx][curntn->capy].owner==country) {
 			/* reset capitol for npcs */
@@ -912,26 +918,28 @@ sackem(country)
 	if ((x!=curntn->capx)||(y!=curntn->capy)) {
 		/* assign new pseudo capitol */
 		if(ispc(curntn->active)) {
-			mailopen(country);
+			if(mailopen(country)!=(-1)) {
 			fprintf(fm,"Message to %s from Conquer\n\n",ntn[country].name);
 			fprintf(fm,"\tYour Capitol at sector location %d,%d\n",curntn->capx,curntn->capy);
 			fprintf(fm,"\t was overrun by nation %s.\n\n",ntn[nation].name);
 			fprintf(fm,"\tA temporary headquarters is now in sector %d,%d,\n",x,y);
 			fprintf(fm,"\t but designation of a new Capitol is recommended.\n");
-			mailclose();
+			mailclose(country);
+			}
 		}
 		curntn->capx=x;
 		curntn->capy=y;
 	} else {
 		/* no new capitol assignment */
 		if(ispc(curntn->active)) {
-			mailopen(country);
+			if(mailopen(country)!=(-1)) {
 			fprintf(fm,"Message to %s from Conquer\n\n",ntn[country].name);
 			fprintf(fm,"\tYour Capitol at sector location %d,%d\n",curntn->capx,curntn->capy);
 			fprintf(fm,"\t was overrun by nation %s.\n\n",ntn[nation].name);
 			fprintf(fm,"\tNo other land remains.  The destruction\n");
 			fprintf(fm,"\t of your nation seems imminent.\n");
-			mailclose();
+			mailclose(country);
+			}
 		}
 	}
 	/* restore */
@@ -1375,7 +1383,7 @@ get_country()
 
 	/* check for 'god' */
 	if (strcmp("god",name)==0) hold=0;
-	if (strcmp("news",name)==0) hold= -2;
+	if (strcmp("news",name)==0) hold= NEWSMAIL;
 
 	/* check for numbers if name too long */
 	if (hold==NTOTAL) {
@@ -1454,32 +1462,78 @@ int	class;
 }
 #endif ADMIN
 
-void
+/* name of the currently open mail file */
+char tmp_mail_name[LINELTH];
+
+int
 mailopen(to)
 {
 	char	line[LINELTH];
-	if(mailok == TRUE) mailclose();
+	if(mailok != DONEMAIL) mailclose(ABORTMAIL);
 
-	if (to != -2)
-		sprintf(line,"%s%d",msgfile,to);
-	else
-		sprintf(line,"news%d",TURN -1);	/* -1 so it appears in
-						   the news now		*/
-	if ((fm=fopen(line,"a+"))==NULL) {
-		printf("error opening %s",line);
-		return;
+	if (to != NEWSMAIL) {
+#ifdef CONQUER
+		/* check if the player is currently reading messages */
+		sprintf(line,"%s%hd.tmp",msgfile,to);
+		if (access(line,00)==0) {
+			if (to>0 && to<NTOTAL) {
+				sprintf(line,"Nation %s is reading their mail... try again later.", ntn[to].name);
+				errormsg(line);
+			}
+			return(-1);
+		}
+
+		/* otherwise continue; checking for others */
+		/* this file name is also used in rmessages() */
+		sprintf(tmp_mail_name,"send.%s%hd",msgfile,to);
+		if (access(tmp_mail_name,00)==0) {
+			if (to>=0 && to<NTOTAL)
+			errormsg("Someone is already sending mail to Nation %s... try again later.", ntn[to].name);
+			return(-1);
+		}
+#endif /*CONQUER*/
+#ifdef ADMIN
+		sprintf(tmp_mail_name,"%s%hd",msgfile,to);
+#endif /*ADMIN*/
+	} else {
+		/* send to a location marked by the current player */
+		sprintf(tmp_mail_name,"send.news%d", country);
 	}
-	mailok=TRUE;
+	if ((fm=fopen(tmp_mail_name,"a+"))==NULL) {
+		fprintf(stderr,"error opening %s",tmp_mail_name);
+		return(-1);
+	}
+	mailok=to;
 }
 
 void
-mailclose()
+mailclose(to)
 {
-	if(mailok==FALSE) return;
+	char line[BIGLTH];
 
-	fputs("END\n",fm);
+	if(mailok==DONEMAIL) return;
+
+	if(to >= 0) {
+		fputs("END\n",fm);
+	}
 	fclose(fm);
-	mailok=FALSE;
+
+#ifdef CONQUER
+	if((to!=ABORTMAIL)&&(to==mailok)) {
+		if (to==NEWSMAIL) {
+			/* send to the current newspaper */
+			sprintf(line,"cat %s >> news%d",tmp_mail_name,TURN-1);
+		} else {
+			/* send to the player now */
+			sprintf(line,"cat %s >> %s%d",tmp_mail_name,msgfile,to);
+		}
+		system(line);
+	}
+	if (tmp_mail_name!=NULL) {
+		(void) unlink(tmp_mail_name);
+	}
+#endif /*CONQUER*/
+	mailok=DONEMAIL;
 }
 
 #ifdef ADMIN

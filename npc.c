@@ -840,23 +840,29 @@ getdstatus()
 			curntn->dstatus[x]=HOSTILE;
 			fprintf(fnews,"2.\tnation %s and %s announce ceasefire\n",curntn->name,ntn[x].name);
 			if( isnotpc(ntn[x].active) ) continue;
-			mailopen(x);
-			fprintf(fm,"nation %s and you negotiate a ceasefire\n",curntn->name);
-			mailclose();
+			if (mailopen(x)!=(-1)) {
+				fprintf(fm,"Message from Conquer\n\n");
+				fprintf(fm,"Nation %s and you negotiate a ceasefire\n",curntn->name);
+				mailclose(x);
+			}
 		} else if((oldstat[x]==WAR)&&(curntn->dstatus[x]==WAR)){
 			fprintf(fnews,"2.\tnation %s stays at war with %s\n",curntn->name,ntn[x].name);
 		} else if((oldstat[x]<WAR)&&(curntn->dstatus[x]==WAR)){
 			fprintf(fnews,"2.\tnation %s goes to war with %s\n",curntn->name,ntn[x].name);
 			if( isnotpc(ntn[x].active) ) continue;
-			mailopen(x);
-			fprintf(fm,"nation %s goes to war with you\n",curntn->name);
-			mailclose();
+			if (mailopen(x)!=(-1)) {
+				fprintf(fm,"Message from Conquer\n\n");
+				fprintf(fm,"Nation %s goes to war with you\n",curntn->name);
+				mailclose(x);
+			}
 		} else if((oldstat[x]!=JIHAD)&&(curntn->dstatus[x]==JIHAD)){
 			fprintf(fnews,"2.\tnation %s announces a jihad with %s\n",curntn->name,ntn[x].name);
 			if( isnotpc(ntn[x].active) ) continue;
-			mailopen(x);
-			fprintf(fm,"nation %s announces a jihad with you\n",curntn->name);
-			mailclose();
+			if(mailopen(x)!=(-1)) {
+				fprintf(fm,"Message from Conquer\n\n");
+				fprintf(fm,"nation %s announces a jihad with you\n",curntn->name);
+				mailclose(x);
+			}
 		}
 	}
 }
@@ -865,20 +871,16 @@ getdstatus()
 /* Find the average world food value per sector
  * and the average tradegood value per sector.
  * This is used for unseen sectors and unseen
- * armies.													*/
+ * armies.
+ */
 static void
 find_avg_sector ()
 {
-				int			armynum;
-				int			i;
-				int			nation;
-				int			repeat;
-	struct		s_sector	*sptr;		/*	used to speed up this function	*/
-	register	int			x,y;
-	register	long		total_food   = 0;
-				int			total_sectors;
-	register	long		total_tg     = 0;
-	register	long		useable_land = 0;
+	int armynum, i, nation, repeat, total_sectors, total_food = 0;
+	struct s_sector *sptr;	/* used to speed up this function */
+	register int  x,y;
+	register long total_tg = 0;
+	register long useable_land = 0;
 
 	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {
 		sptr = &sct[x][y];	
@@ -892,14 +894,21 @@ find_avg_sector ()
 			}
 		}
 	}
-	Avg_food = total_food / useable_land;
-	Avg_tradegood = total_tg / useable_land;
+	if (useable_land>0) {
+		Avg_food = total_food / useable_land;
+		Avg_tradegood = total_tg / useable_land;
+	} else {
+		/* for stupidities sake */
+		Avg_food = 0;
+		Avg_tradegood = 0;
+	}
 
 	for(nation=1;nation<NTOTAL;nation++) {
 		if(isntn(ntn[nation].active)
 		&& !COUNT_ARMIES(nation,country)) { 
 			/* Count the number of sectors which are occupied by each
-			 * nation's armies.											*/
+			 * nation's armies.
+			 */
 			total_sectors = 0;
 			for(armynum=1;armynum<MAXARM;armynum++)
 				if(ntn[nation].arm[armynum].sold > 0) {
@@ -913,11 +922,13 @@ find_avg_sector ()
 					if (!repeat) 
 						total_sectors++;
 				}
-
-			Avg_soldiers[nation] = ntn[nation].tmil / total_sectors;
+			if (total_sectors > 0)
+				Avg_soldiers[nation] = ntn[nation].tmil / total_sectors;
+			else Avg_soldiers[nation] = 0;
 		}
 	}
 }
+
 void
 nationrun()
 {
@@ -927,7 +938,7 @@ nationrun()
 	float	hunger;
 	long zz;
 	check();
-	prep(country,FALSE,FALSE);
+	prep(country,FALSE);
 
 	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) attr[x][y]=0;
 
@@ -967,12 +978,13 @@ nationrun()
 		if((curntn->dstatus[x] >= HOSTILE) 
 		&& (ispc(ntn[x].active))) 
 		if (rand()%4 == 0) {	/* send the message!! */
-			printf("Sent message to %s\n",ntn[x].name);
-			mailopen(x);
-			fprintf(fm,"Message to %s from %s (%s of year %d)\n\n"
-		 	,ntn[x].name,curntn->name,PSEASON(TURN),YEAR(TURN));
-			makemess(rand()%5 +1,fm);
-			mailclose();
+			if (mailopen(x)!=(-1)) {
+				fprintf(fm,"Message to %s from %s (%s of year %d)\n\n"
+					   ,ntn[x].name,curntn->name,PSEASON(TURN),YEAR(TURN));
+				makemess(rand()%5 +1,fm);
+				mailclose(x);
+				printf("Sent message to %s\n",ntn[x].name);
+			}
 		}
 	}
 #endif SPEW
@@ -1287,7 +1299,7 @@ n_defend(natn)
 register short natn;
 {
 	register	int		i,j;
-				int		repeat;
+	int		repeat;
 	register	int		x,y;
 
 	if (COUNT_ARMIES(natn,country)) {
@@ -1336,6 +1348,7 @@ register short natn;
 			if(ISCITY(sct[x][y].designation))
 				attr[x][y] += 50;
 			/* should spread 3000 points over country */
+			if (ntn[country].tciv>0)
 			attr[x][y]+=3000*sct[x][y].people/ntn[country].tciv;
 		}
 	}

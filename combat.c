@@ -35,6 +35,7 @@ long	troops[MGKNUM];		/*starting troops in army */
 int	xspot,yspot;		/*location of battles*/
 int	anation;		/*nation attacking in this fight*/
 int	dnation;		/*one nation defending in this fight*/
+int	count=0;                /*number of armies or navies in sector*/
 
 /************************************************************************/
 /*	COMBAT()	run all combat on the map			*/
@@ -49,7 +50,6 @@ combat()
 	int	initialized=FALSE;	/* TRUE if arrays initialized */
 	short	armynum,nvynum;
 	int	valid;
-	int	count=0;
 	struct  s_nation *nptr;
 	struct  army	 *aptr;
 
@@ -195,7 +195,7 @@ fight()
 	int	done;
 	int	i,j,k;
 	long	asold=0,dsold=0;	/*a's and d's total soldiers*/
-	long	astr=0,dstr=0;		/*a's and d's relative strength*/
+	float astr=0,dstr=0;		/*a's and d's relative strength*/
 	long	Aloss,Dloss;    	/*a's and d's total losses*/
 	int	PAloss,PDloss;		/*percent a and d loss*/
 	long	loss;
@@ -204,7 +204,7 @@ fight()
 	short	nvamps=0;		/* number of vampire armies */
 
 	/* determine who is attacker & who is on defenders side?*/
-	for(j=0;j<MGKNUM;j++) if(owner[j]!=(-1)){
+	for(j=0;j<count;j++) if(owner[j]!=(-1)){
 		if(owner[j]==anation) side[j]=ATKR;
 		else if(owner[j]==dnation) side[j]=DFND;
 		else if(ntn[anation].dstatus[owner[j]]==JIHAD) side[j]=DFND;
@@ -218,7 +218,7 @@ fight()
 	/*calculate number of troops and assign statuses */
 	asold=0;
 	dsold=0;
-	for(i=0;i<MGKNUM;i++) if(owner[i]>(-1)) {
+	for(i=0;i<count;i++) if(owner[i]>(-1)) {
 		/* record troops for all units in sector */
 		troops[i]=ntn[owner[i]].arm[unit[i]].sold;
 
@@ -228,12 +228,13 @@ fight()
 		&&( ntn[owner[i]].arm[unit[i]].stat < NUMSTATUS )
 		&&( rand()%100<15 )) {
 			if( ispc(ntn[owner[i]].active)) {
-				mailopen( owner[i] );
-				fprintf(fm,"Message to %s from Conquer\n",ntn[owner[i]].name);
-				fprintf(fm,"\n  Your %s Army %d Refuses to Fight\n",
+				if (mailopen( owner[i] )!=(-1)) {
+				fprintf(fm,"Message to %s from Conquer\n\n",ntn[owner[i]].name);
+				fprintf(fm,"  Your %s Army %d Refuses to Fight\n",
 				  unittype[ntn[owner[i]].arm[unit[i]].unittyp],
 				  unit[i]);
-				mailclose();
+				mailclose(owner[i]);
+				}
 			}
 			retreatside = side[i];
 			fdxyretreat();
@@ -281,7 +282,7 @@ fight()
 	else	odds = (asold*100)/dsold;
 
 	/* mercenaries/orcs/goblins might run away */
-	for(i=0;i<MGKNUM;i++) if(owner[i]>(-1)) {
+	for(i=0;i<count;i++) if(owner[i]>(-1)) {
 		if(((( odds > 200 )&&(side[i]==DFND))
 		||(( odds < 100 )&&(side[i]==ATKR)))
 		&&((ntn[owner[i]].arm[unit[i]].unittyp == A_MERCENARY)
@@ -290,12 +291,13 @@ fight()
 		&&(ntn[owner[i]].arm[unit[i]].stat < NUMSTATUS)
 		&&( rand()%100<30 )) {
 			if( ispc(ntn[owner[i]].active)) {
-				mailopen( owner[i] );
-				fprintf(fm,"Message to %s from Conquer\n",ntn[owner[i]].name);
+				if(mailopen( owner[i] )!=(-1)) {
+				fprintf(fm,"Message to %s from Conquer\n\n",ntn[owner[i]].name);
 				fprintf(fm,"  Your %s Army %d Runs Away\n",
 				  unittype[ntn[owner[i]].arm[unit[i]].unittyp],
 				  unit[i]);
-				mailclose();
+				mailclose(owner[i]);
+				}
 			}
 			retreatside = side[i];
 			if( side[i] == ATKR ) asold-= troops[i];
@@ -324,7 +326,7 @@ fight()
 	/* CALCULATE AVERAGE COMBAT BONUS */
 	abonus=0;
 	dbonus=0;
-	for(i=0;i<MGKNUM;i++) if(owner[i]>(-1)) {
+	for(i=0;i<count;i++) if(owner[i]>(-1)) {
 		if(side[i]==ATKR)
 			abonus += cbonus(i)*troops[i];
 		else if(side[i]==DFND && ntn[owner[i]].arm[unit[i]].stat!=RULE)
@@ -334,7 +336,7 @@ fight()
 	/*archer bonus if not in fort vs knights/cavalry*/
 	j=0;
 	k=0;
-	for(i=0;i<MGKNUM;i++) if(owner[i]>(-1))
+	for(i=0;i<count;i++) if(owner[i]>(-1))
 	if(ISCITY(sct[xspot][yspot].designation)){
 		if((ntn[owner[i]].arm[unit[i]].unittyp == A_CAVALRY)
 		||(ntn[owner[i]].arm[unit[i]].unittyp == A_KNIGHT))
@@ -342,7 +344,7 @@ fight()
 		else if(side[i]==DFND) k+=troops[i];
 	}
 
-	for(i=0;i<MGKNUM;i++) if(owner[i]>(-1)) {
+	for(i=0;i<count;i++) if(owner[i]>(-1)) {
 		if(j>0) abonus += (15 * j * troops[i]) / asold;
 		if(k>0 && dsold>0) dbonus += (15 * k * troops[i]) / dsold;
 	}
@@ -351,7 +353,7 @@ fight()
 	if (dsold>0) dbonus/=dsold;
 
 	/*CALCULATED BONUSES TO WHOLE COMBAT*/
-	for(i=0;i<MGKNUM;i++) if(owner[i]>(-1)) {
+	for(i=0;i<count;i++) if(owner[i]>(-1)) {
 		if(fort_val(&sct[xspot][yspot]) != 0){
 			/*Catapults add +1%/20 men defending castle (max +10%)*/
 			if((ntn[owner[i]].arm[unit[i]].unittyp == A_CATAPULT)
@@ -472,7 +474,7 @@ fight()
 	if(PDloss>100) PDloss = 100;
 
 	Aloss = Dloss = 0;
-	for(i=0;i<MGKNUM;i++) if(owner[i]>(-1)){
+	for(i=0;i<count;i++) if(owner[i]>(-1)){
 		if(side[i]==ATKR){
 			if( ntn[owner[i]].arm[unit[i]].unittyp >= MINLEADER) {
 				if((rand()%100) < PAloss){ /* kill it */
@@ -546,12 +548,12 @@ printf("I AM VERY CONFUSED - PLEASE HELP... combat.c\n");
 	fprintf(fnews,"4.\tBattle in %d,%d",xspot,yspot);
 	k = 25;
 #endif
-	for(j=0;j<MGKNUM;j++) if(UOWNER(j)>(-1)){
+	for(j=0;j<count;j++) if(UOWNER(j)>(-1)){
 		done=FALSE;
 		for(i=0;i<j;i++) if(UOWNER(j)==UOWNER(i)) done=TRUE;
 		if(done==FALSE) {
 			loss=NTRL;
-			for(i=j;(loss==NTRL||loss==WIMP) && i<MGKNUM;i++)
+			for(i=j;(loss==NTRL||loss==WIMP) && i<count;i++)
 				if(UOWNER(i)==UOWNER(j)) {
 					if(owner[i]<(-1)) loss=WIMP;
 					else loss=side[i];
@@ -574,7 +576,7 @@ printf("I AM VERY CONFUSED - PLEASE HELP... combat.c\n");
 	}
 	fprintf(fnews,"\n");
 	if(nvamps>0){
-		for(i=0;i<MGKNUM;i++) if(owner[i]>(-1)){
+		for(i=0;i<count;i++) if(owner[i]>(-1)){
 			if((magic(owner[i],VAMPIRE)==TRUE)
 			&&(ntn[owner[i]].arm[unit[i]].unittyp==A_ZOMBIE)
 			&&(ntn[owner[i]].arm[unit[i]].sold > 0))
@@ -583,7 +585,7 @@ printf("I AM VERY CONFUSED - PLEASE HELP... combat.c\n");
 	}
 
 	/*who is in the battle; but don't send to scared armies */
-	for(j=0;j<MGKNUM;j++) if(owner[j]>(-1)){
+	for(j=0;j<count;j++) if(owner[j]>(-1)){
 		done=FALSE;
 
 		/*first time your nation appears done=FALSE*/
@@ -592,9 +594,9 @@ printf("I AM VERY CONFUSED - PLEASE HELP... combat.c\n");
 		if((done==FALSE)&&(ispc(ntn[owner[j]].active))) {
 
 			loss=NTRL;
-			for(i=j;loss==NTRL && i<MGKNUM;i++)
+			for(i=j;loss==NTRL && i<count;i++)
 				loss=side[i];
-			mailopen( owner[j] );
+			if (mailopen( owner[j] )==(-1)) continue;
 
 			fprintf(fm,"BATTLE SUMMARY for sector %d, %d\n",xspot,yspot);
 			fprintf(fm,"Battle occured during %s of Year %d\n",PSEASON(TURN),YEAR(TURN));
@@ -606,16 +608,22 @@ printf("I AM VERY CONFUSED - PLEASE HELP... combat.c\n");
 			else	fprintf(fm,"You are Neutral\n");
 
 			/*detail all participants in battle*/
-			for(k=0;k<MGKNUM;k++) if(owner[k]!=(-1)){
+			for(k=0;k<count;k++) if(owner[k]!=(-1)){
 				fprintf(fm," %s ",ntn[UOWNER(k)].name);
 				if(owner[k]<(-1))
 					fprintf(fm,"chickens out: ");
 				else if(side[k]==DFND
-				&& ntn[UOWNER(k)].arm[unit[k]].stat!=RULE)
+				&& ntn[owner[k]].arm[unit[k]].stat!=RULE)
 					fprintf(fm,"defending: ");
 				else if(side[k]==ATKR)
 					fprintf(fm,"attacking: ");
-				else fprintf(fm,"neutral: ");
+				else if(side[k]==NTRL
+				|| (side[k]==DFND
+				    && ntn[owner[k]].arm[unit[k]].stat==RULE))
+					fprintf(fm,"neutral: ");
+				else
+					fprintf(fm,"in limbo: ");
+			
 				fprintf(fm,"army %d (%s, men %d, bonus=%d, loss=%d)",
 					unit[k],
 					unittype[ntn[UOWNER(k)].arm[unit[k]].unittyp%UTYPE],
@@ -643,7 +651,7 @@ printf("I AM VERY CONFUSED - PLEASE HELP... combat.c\n");
 			if(Dloss<dsold)
 			fprintf(fm,"Additionally, All defenders retreat to %d %d\n",retreatx,retreaty);
 			}
-			mailclose();
+			mailclose(owner[j]);
 		}
 	}
 	retreat( -1 );
@@ -794,7 +802,7 @@ int	unitnum;	/* if -1 then normal, else retreat only unit ismerc */
 
 	if(retreatside == 0) return;
 
-	for(cnum=0;cnum<MGKNUM;cnum++) if(owner[cnum]>(-1)){
+	for(cnum=0;cnum<count;cnum++) if(owner[cnum]>(-1)){
 		if( unitnum != (-1) ) cnum=unitnum;
 		if((side[cnum]==ATKR)&&(retreatside==ATKR)){
 			ntn[owner[cnum]].arm[unit[cnum]].xloc = retreatx;
@@ -840,7 +848,7 @@ navalcbt()
 	printf("In Naval Combat....\n");
 
 	/* determine who is attacker & who is on defenders side?*/
-	for(j=0;j<MGKNUM;j++) if(owner[j]!=(-1)){
+	for(j=0;j<count;j++) if(owner[j]!=(-1)){
 		if(owner[j]==anation) side[j]=ATKR;
 		else if(ntn[anation].dstatus[owner[j]]==JIHAD) side[j]=DFND;
 		else if(ntn[owner[j]].dstatus[anation]==JIHAD) side[j]=DFND;
@@ -864,7 +872,7 @@ navalcbt()
       *     MARINE                          1/3
 	 *     others                          4/3
 	 */
-	for(j=0;j<MGKNUM;j++) if(owner[j]!=(-1)){
+	for(j=0;j<count;j++) if(owner[j]!=(-1)){
 		curntn= &ntn[owner[j]];
 		country= owner[j];
 		wnum[j]=SHIPS(ntn[country].nvy[unit[j]].warships,N_LIGHT)+
@@ -1016,7 +1024,7 @@ navalcbt()
 	if (PDloss>100) PDloss=100;
 
 	/* calculate actual losses */
-	for(j=0;j<MGKNUM;j++) if(owner[j]!=(-1)){
+	for(j=0;j<count;j++) if(owner[j]!=(-1)){
 		curntn= &ntn[owner[j]];
 		country= owner[j];
 
@@ -1228,7 +1236,7 @@ navalcbt()
 #else
 	fprintf(fnews,"4.\t%d,%d: Naval Battle",xspot,yspot);
 #endif
-	for(j=0;j<MGKNUM;j++) if(owner[j]!=(-1)){
+	for(j=0;j<count;j++) if(owner[j]!=(-1)){
 		k=0;
 		for(i=0;i<j;i++) if(owner[j]==owner[i]) k=1;
 		if(k==0) {
@@ -1241,14 +1249,14 @@ navalcbt()
 	fprintf(fnews,"\n");
 
 	/*mail results; who is in the battle*/
-	for(j=0;j<MGKNUM;j++) if(owner[j]!=(-1)){
+	for(j=0;j<count;j++) if(owner[j]!=(-1)){
 		done=FALSE;
 
 		/*first time your nation appears done=FALSE*/
 		for(i=0;i<j;i++) if(owner[j]==owner[i]) done=TRUE;
 
 		if((done==FALSE)&&(ispc(ntn[owner[j]].active))) {
-			mailopen( owner[j] );
+			if (mailopen( owner[j] )==(-1)) continue;
 
 			fprintf(fm,"NAVAL BATTLE in sector %d %d\n",xspot,yspot);
 			fprintf(fm,"Battle occured during %s of Year %d\n",
@@ -1261,7 +1269,7 @@ navalcbt()
 			else	fprintf(fm,"You are on the Neutral Side\n");
 
 			/*detail all participants in battle*/
-			for(k=0;k<MGKNUM;k++) if(owner[k]!=(-1)){
+			for(k=0;k<count;k++) if(owner[k]!=(-1)){
 				if(side[k]==DFND)
 				fprintf(fm," %s is defender with navy ",ntn[owner[k]].name);
 				else if(side[k]==ATKR)
@@ -1283,7 +1291,7 @@ navalcbt()
 			show_ships("Defending","sunk",dwsunk,dgsunk,dmsunk);
 			show_ships("Attacking","captured",awcapt,agcapt,amcapt);
 			show_ships("Defending","captured",dwcapt,dgcapt,dmcapt);
-			mailclose();
+			mailclose(owner[j]);
 		}
 	}
 	curntn= saventn;
@@ -1302,7 +1310,7 @@ capture(type,to,shipsize,holdcount)
 	printf("capture: hdcnt==%d typ==%d spsz==%d to==%d\n",holdcount,
 		  type,shipsize,to);
 #endif DEBUG
-	for (i=0;holdcount && i<MGKNUM;i++) {
+	for (i=0;holdcount && i<count;i++) {
 		if (owner[i]!=(-1) && side[i]==to) {
 			curntn= &ntn[owner[i]];
 			holdcount -= fltwhold(unit[i]);
@@ -1315,7 +1323,7 @@ capture(type,to,shipsize,holdcount)
 #ifdef DEBUG
 	printf("capture 2: holdcount==%d i==%d\n",holdcount,i);
 #endif DEBUG
-	if (i==MGKNUM) {
+	if (i==count) {
 		curntn = saventn;
 		return;
 	}
