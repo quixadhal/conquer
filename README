@@ -1,0 +1,221 @@
+
+			NOTES TO INSTALLER OF CONQUEST
+
+What you have here is a copyrighted beta test version of CONQUEST.  Included
+in this file are the following:
+
+	1) A Brief Description of Conquest
+	2) Installation (unpacking) Instructions
+	3) A Manifest (after you have installed it)
+	4) Compilation Instructions
+	5) administration instructions
+	6) execution instructions (how to play)
+	7) a list of further enhancements I am planning on making
+	8) Bug list and unimplemented options
+
+Remember this is an BETA version, not to be redistributed, and
+probably has bugs.  Any comments and bug reports would be appreciated.
+
+-----------------------------------------------------------
+I   A Brief Description of Conquest
+-----------------------------------------------------------
+
+READ FILE .help FOR A DESCRIPTION OF CONQUEST.  The help file can be
+read in nice format by using "conquest -h" after compilation.
+
+-----------------------------------------------------------
+II  Installation (unpacking) Instructions
+-----------------------------------------------------------
+
+This program came in three shar scripts, which can be unpacked
+by using "sh filename".  If you are reading this, you know this.
+
+-----------------------------------------------------------
+III A Manifest (after you have unpacked it) of Conquest Files is a follows
+	/bin/ls -aFC should look like this
+-----------------------------------------------------------
+
+THE FOLLOWING 2 FILES SHOULD BE MODIFIED TO REFLECT THE TYPE OF GAME YOU WISH
+
+header file: header.h   
+makefile: Makefile
+
+suport files: .nations .help README 
+
+C code: 
+	combat.c      forms.c       main.c        newlogin.c    update.c
+	commands.c    io.c          makeworld.c   npc.c
+	execute.c     magic.c       move.c        reports.c
+
+-----------------------------------------------------------
+IV  Compilation Instructions
+-----------------------------------------------------------
+
+Browse the file header.h.  This sets up configurable parameters for the
+game.  This program should be easy to compile (although it never really is -- 
+I have tried to make it as easy as possible). If there are problems check 
+the following.
+
+1.  Sometimes termcap/termlib... are not on systems.  You will know this
+    is the error if all the '.c' files compile but will not compile together.
+    Unreferenced symbol errors will occur.  Try changing the name
+    of the library (or eliminating it on some systems) on the final compile 
+    and link step.
+2.  Find your nearest unix guru and ask him.
+
+-----------------------------------------------------------
+V   administration instructions
+-----------------------------------------------------------
+
+Now that you have compiled it, this is how you administer the game.
+I recommend following these instructions once yourself in a mock game 
+(ie. no other players) for a few turns to get things straight.  Then you 
+can add other players.
+
+You can type the following commands to help administer the game
+
+Make clobber:  clobber everything but the source (destroys executable)
+Make clean:    clean up objects (does not destroy executable)
+Make install:	Installs executable & data in appropriate directories (header.h)
+Make docs:	Creates documentation from help file
+
+Make lint:	produces lint output for the game.  
+run:		read it, it permits you to run the update automatically
+
+This is the command line format for conquest:
+	Cmd line format: conquest [-maxhp]
+		(no options) play the game
+		-m   make a world (file '.data' must not exist, must be god)
+		-a   add new player (must be god)
+		-x   execute program (must be god)
+		-h   print help text
+		-p   print a map to stdout (must be god)
+
+Again, prior to the compile, you should have browsed the header.h file.  
+Follow the comments.  
+
+Then create the world via:
+	<conquest -m>    this will make your world.  Try it.
+			 This also sets up npc nations as per the .nations file
+			 npc stats can be adjusted by editing .nations
+			 prior to making the world.  Non player nations have
+			 the same password as god.
+
+Add 0 or more players via
+	<conquest -a>    which should be self explanitory
+
+Now type <conquest> and log in as <god> with the appropriate super user
+password.  
+
+Learn the commands (Type '?' to get help) & play around to get your 
+syntax right.
+
+Try logging in as either a player or non player nation (they use the super
+user passwd) and noticing any differences.
+
+Now move around on the map and learn where the players are
+positioned.  If there is a problem (they are surrounded by water...), 
+use the redesignate command to change elvation or vegitation. 
+In the worst case, god can destroy a nation
+with 'c', the change nation command.  Once you
+think the game will be fair, it is time to allow players to proceed.
+
+Now you are all set -- play via 
+	<conquest>
+
+and update (every midnight via at...) with
+	<conquest -x>
+an "at" script to do this is contained in the shell script "run".
+
+I have attempted to give enough aides to playing that it should
+take no longer than fifteen minutes per day to play.  If it takes
+more, something is wrong.
+
+*WARNING*  IF YOU REMOVE THE .data FILE, REMEMBER TO ZERO THE .execute
+file or the world will be screwed up when you recreate it.  This will
+cause you to spend hours browsing the source code and result in untold
+frustration (I speak from experience).
+
+--------------------------------------------------------------------
+VI a list of further enhancements/bug fixes I am planning on making
+--------------------------------------------------------------------
+
+Trade is unimplemented
+Naval combat and movement has not been system tested
+Cities do not have garrison armies
+Only one type of soldier and one type of warship allowed
+Various Scoreing techniques are not implemented
+Character Classes are not fully implemented
+
+---------------------------------------------------------------------------
+VII The following are future changes to myh magic system (Comments, Ideas?)
+---------------------------------------------------------------------------
+
+			ADDITIONAL (UNIMPLEMENTED) MAGIC POWERS   
+
+WARLOCK      Use all level 1 Spells  (see separate)
+SORCERER     Use all level 2 Spells  (see separate)
+WYZARD       Use all level 3 Spells  (see separate)
+SEA LORD:    2x sea movement/combat, storms not sink ships, (HUMANS ONLY)
+ESKIMO:      Ice sectors = 0 move, have vegitation 9, and give +30% combat 
+DRUID:       Wood/Jungle sectors = 0 move, have vegitation 9, and +30% combat 
+TYRANT:      Costs nothing to enlist and support troops. 
+
+				MAGIC ARTIFACTS 
+
+			1)KINGS SWORD  (KNOWALL)
+			2)LONG SPEAR   (CAPTAIN)
+			3)SILVER ARMOR (CAPTAIN)
+			4)BLACK SHIELD (DEFENDER)
+			5)EVIL CLOAK   (VOID)
+			6)DEMON WAND   (MINOR MONSTER)
+			7)GREAT HELM   (HIDDEN)
+			8)DWARVEN PYRAMID (MINER)
+			9)BLACK RING   (SPY)
+			10)SEA FLASK   (SEA LORD)
+			11)GREAT HAMMER (MINER)
+			12)ELVEN BOW   (ARCHER)
+			13)DEATH SCEPTER  (VAMPIRE)
+			14)GOLD CROWN  (MINOR MONSTER,DESTROYER)
+			15)FIRE BOOTS  
+			16)GREAT THRONE (DESTROYER)
+			17)FROST BELT (ICE LORD)
+			18)WOOD STAFF (WOOD LORD)
+			19)DARK HORN 
+			20)TREE OF LIFE (URBAN)
+
+				WYZARDRY
+
+There are three spell levels: Warlock, Sorcerer, and Wizard.  Spells can
+imitate any of the powers listed above, and can do single shot impacts.
+Spells are used as follows.  First the user is asked what spell they wish
+to use.  These spells effect either the nations temporary magic level, or
+specific areas.
+
+                                                	Jewel pts:level
+Use a Magic Item                               		:Free	: none
+
+Kill 50% of civilians in non city sector 		:	:
+Kill all civilians in non city sector			:	:
+Kill 50% of civilians in city sector 			:	:
+Destroy all civilians in city sector 			:	:
+Freeze all movement by 1 npc (AMOVE=0) 			:	:
+Curse -- -2 to movement of 1 PC nations armies 		:	:
+Curse -- -2 to movement of 1 NPC nations armies		:	:
+friendly (+1) with 1 npc nation				:	:
+Build 1 point of fort walls  				:	:
+Summon dead army (VAMPIRE ONLY, 500 men)		:	:
+Summon dead legion (VAMPIRE ONLY, 1500 men)		:	:
+Friendship (+2) with 1 npc nation			:	:
+Animosity (-1) between 2 other nations     		:	:
+Hatred (-2) between 2 other nations    	 		:	:
+Warm Permanently  (+1 vegitation to sector)		:	:
+Freeze Permanently (-1 vegitation to sector)		:	:
+Breech forts walls					:	:
+Takeover NPC Nation Of Same Race 			:	:
+Teleport one army (up to 100 men)			:	:	
+Teleport one army (up to 1000 men)			:	:
+Teleport one army (any # men)				:	:
+Transmute iron to jewels 				:	:
+Cloak activity						:	:
+Cause fear (1 oposing army to home capitol)		:	:	
