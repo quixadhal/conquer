@@ -15,7 +15,7 @@
 #include "data.h"
 extern long startgold;
 extern short country;
-extern FILE *fexe;
+extern FILE *fexe,*fison;
 
 int
 execute()
@@ -36,7 +36,7 @@ execute()
 
 	/* initialize i_people */
 	for(x=0;x<MAPX;x++)
-		for(y=0;y<MAPX;y++)
+		for(y=0;y<MAPY;y++)
 			if(( sct[x][y].owner == country)&&
 			((sct[x][y].designation == DCITY)
 			||( sct[x][y].designation == DCAPITOL)))
@@ -200,6 +200,8 @@ hangup()
 	fputs("END\n",fp);
 
 	fclose(fp);
+	/* remove the lock file */
+	unlink(fison);
 	/* exit program */
 	exit(FAIL);
 }

@@ -144,23 +144,32 @@ int type;
 		ntn[country].powers|=BREEDER;
 		return(BREEDER);
 	}
-	else if(ntn[country].active >= 2) return(0L);	/*npc nation*/
-	else if((newpower==NINJA)
+	else if(ntn[country].active >= 2) {
+		return(0L);	/* remaining powers only for pc's */
+	} else if((newpower==NINJA)
 	||(newpower==SLAVER)
 	||(newpower==SAILOR)
 	||(newpower==DEMOCRACY)
 	||(newpower==ROADS)
-	||(newpower==SUMMON)
-	||(newpower==WYZARD)
-	||(newpower==SORCERER)
 	||(newpower==SAPPER)
 	||(newpower==ARMOR)
-	||(newpower==AVIAN)){	/* these powers are only for pc's */
+	||(newpower==AVIAN)){	
 		if(magic(country,newpower)==TRUE) return(0L);
 		ntn[country].powers|=newpower;
 		return(newpower);
 	}
-	else return(0L);
+	else if((newpower==SUMMON)||(newpower==WYZARD)||(newpower==SORCERER)){
+		if(magic(country,SUMMON)!=TRUE) {
+			ntn[country].powers|=SUMMON;
+			return(SUMMON);
+		} else if(magic(country,WYZARD)!=TRUE) {
+			ntn[country].powers|=WYZARD;
+			return(WYZARD);
+		} else if(magic(country,SORCERER)!=TRUE) {
+			ntn[country].powers|=SORCERER;
+			return(SORCERER);
+		} else return(0L);
+	} else return(0L);
 }
 #ifdef CONQUER
 /*form to interactively get a magic power*/
@@ -599,24 +608,24 @@ int *count;
 orctake(count)
 int *count;
 {
-	int chance=0;
+	int chance=0,done=TRUE,i;
 	if((*count)>20) {
 		(*count)=2;
 		clear();
 	}
-	if(magic((*count)ry,MA_MONST)==TRUE) {
-	mvaddstr((*count)++,0,"  You have a 10 percent chance for %ld Jewels take over other orcs",TAKEPRICE);
+	if(magic(country,MA_MONST)==TRUE) {
+	mvprintw((*count)++,0,"  You have a 10 percent chance for %ld Jewels take over other orcs",TAKEPRICE);
 	chance=10;
-	} else if(magic((*count)ry,AV_MONST)==TRUE) {
-	mvaddstr((*count)++,0,"  You have a 6 percent chance for %ld Jewels take over other orcs",TAKEPRICE);
+	} else if(magic(country,AV_MONST)==TRUE) {
+	mvprintw((*count)++,0,"  You have a 6 percent chance for %ld Jewels take over other orcs",TAKEPRICE);
 	chance=6;
-	} else if(magic((*count)ry,MI_MONST)==TRUE){
-	mvaddstr((*count)++,0,"  You have a 3 percent chance for %ld Jewels to take over other orcs",TAKEPRICE);
+	} else if(magic(country,MI_MONST)==TRUE){
+	mvprintw((*count)++,0,"  You have a 3 percent chance for %ld Jewels to take over other orcs",TAKEPRICE);
 	chance=3;
 	}
-	if(chance==0) return(1);
+	if(chance==0) return(TRUE);
 
-	mvprintw((*count)++,0,"DO YOU WISH TO TAKE OVER AN ORC NPC NATION (enter y or n):");
+	mvaddstr((*count)++,0,"DO YOU WISH TO TAKE OVER AN ORC NPC NATION (enter y or n):");
 	refresh();
 	if(getch()=='y'){
 		done=FALSE;
@@ -624,7 +633,7 @@ int *count;
 		refresh();
 		i=get_number();
 		if(ntn[i].race==ORC){
-			ntn[(*count)ry].jewels-=TAKEPRICE;
+			ntn[country].jewels-=TAKEPRICE;
 			if((i=takeover(chance,i))==1)
 			mvprintw((*count)++,0," Successful: %d",i);
 		}

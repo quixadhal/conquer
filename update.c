@@ -33,7 +33,9 @@ update()
 
 	/*run each nation in a random order*/
 	updexecs();
-
+#ifdef TRADE
+	uptrade();
+#endif
 #ifdef LZARD
 	/* run lizard nations */
 	updlizards();
@@ -714,7 +716,7 @@ updcomodities()
 	char command[80];
 	long dead;
 
-	fprintf(fnews,"2\tWORLD FOOD SUPPLY & DECLARATIONS OF WAR\n");
+	fprintf(fnews,"2\tWORLD ECONOMY & DECLARATIONS OF WAR\n");
 	for(country=1;country<MAXNTN;country++) if(ntn[country].active!=0){
 		/*soldiers eat  2*/
 		ntn[country].tfood-=ntn[country].tmil*2;

@@ -252,7 +252,7 @@ diploscrn()
 void
 change()
 {
-	char string[10];
+	char string[10], command[80];
 	int i, cbonus;
 	short armynum;
 	char passwd[8];
@@ -284,8 +284,8 @@ change()
 	mvprintw(5,(COLS/2), "defense bonus..........+%2d",ntn[country].dplus);
 	mvprintw(6,(COLS/2), "maximum move rate.......%2d",ntn[country].maxmove);
 	mvprintw(7,(COLS/2), "reproduction rate......%2d%%",ntn[country].repro);
-	mvprintw(9,(COLS/2), "gold talons.....$%8ld",ntn[country].tgold);
-	mvprintw(10,(COLS/2),"jewels .........$%8ld",ntn[country].jewels);
+	mvprintw(9,(COLS/2), "gold talons......$%8ld",ntn[country].tgold);
+	mvprintw(10,(COLS/2),"jewels ..........$%8ld",ntn[country].jewels);
 	mvprintw(11,(COLS/2),"iron & minerals...%8ld",ntn[country].tiron);
 	if(ntn[country].tfood<2*ntn[country].tciv) standout();
 	mvprintw(12,(COLS/2),"food in granary...%8ld",ntn[country].tfood);
@@ -303,8 +303,12 @@ change()
 	if(magic(country,VAMPIRE)!=1)
 		mvaddstr(21,(COLS/2)-14,"HIT 3 TO ADD TO YOUR COMBAT BONUS");
 	else	mvaddstr(21,(COLS/2)-17,"( VAMPIRES MAY NOT ADD TO COMBAT BONUS )");
-	if(isgod==TRUE) mvaddstr(22,(COLS/2)-9,"HIT 4 TO DESTROY NATION");
 
+#ifdef OGOD
+ 	if(isgod==TRUE) mvaddstr(22,(COLS/2)-21,"HIT 4 TO DESTROY NATION OR 5 TO CHANGE TREASURY");
+#else OGOD
+  	if(isgod==TRUE) mvaddstr(22,(COLS/2)-9,"HIT 4 TO DESTROY NATION");
+#endif OGOD
 	standend();
 	refresh();
 	switch(getch()){
@@ -437,15 +441,30 @@ change()
 			refresh();
 
 			if(getch()=='y') {
-				if ((fnews=fopen(newsfile,"w"))==NULL) {
+				if ((fnews=fopen(newsfile,"a+"))==NULL) {
 					printf("error opening news file\n");
 					exit(FAIL);
 				}
 				destroy(country);
 				fclose(fnews);
+				sprintf(command,"sort -n -o %s %s ",
+					newsfile, newsfile);
+				system(command);
 			}
 		}
 		break;
+#ifdef OGOD
+	case '5':
+		if (isgod==TRUE) {
+			/* adjust treasury */
+			mvaddstr(0,0,"WHAT IS NEW TOTAL OF TREASURY?");
+			refresh();
+			i = get_number();
+			/* as god it will be saved nothing else needed */
+			ntn[country].tgold = (long) i;
+		}
+		break;
+#endif OGOD
 	default:
 		if(isgod==TRUE) country=0;
 		return;

@@ -943,7 +943,7 @@ char race;
 		} /* switch */
 	} /* for */
 
-	for(x=0;x<MAPX;x++) for(y=0;y<MAPX;y++){
+	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++){
 		sptr = &sct[x][y];
 
 		if(race==GOD) movecost[x][y] = 0;

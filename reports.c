@@ -48,7 +48,7 @@ armyrpt(repnum)
 		standend();
 		refresh();
 		country = get_number();
-		if(country<0||country>NTOTAL) return;
+		if(country<0||country>NTOTAL) { country=0; return; }
 	}
 	armynum=0;
 	/*new army screen*/
@@ -104,11 +104,22 @@ armyrpt(repnum)
 			clrtoeol();
 			refresh();
 			armynum = get_number();
-			if((armynum<0)||(armynum>MAXARM)) return;
+			if((armynum<0)||(armynum>MAXARM)) {
+				if (isgod==TRUE) country=0;
+				return;
+			}
+#ifdef TRADE
+			if(ASTAT==TRADED) {
+				errormsg("May not change traded army");
+				if (isgod==TRUE) country=0;
+				return;
+#endif TRADe
+			}
 			if(ATYPE<99)
 			mvaddstr(18,0,"1) CHANGE STATUS, 2) TRANSFER / MERGE, 3) SPLIT ARMY, 4) DISBAND ARMY");
 			else mvaddstr(18,0,"1) CHANGE STATUS, 4) DISBAND ARMY:");
 			clrtoeol();
+#ifdef OGOD
 			if(isgod==TRUE) mvaddstr(20,0,"5) LOCATION, 6) SOLDIERS:");
 			refresh();
 			switch(getch()){
@@ -362,6 +373,7 @@ fleetrpt()
 		standend();
 		done=TRUE;
 		refresh();
+ 		getch();
 		if(isgod==TRUE) country=0;
 		return;
 	}
@@ -378,7 +390,8 @@ fleetrpt()
 		mvaddstr(4,0, "merchant :");
 		mvaddstr(5,0, "x location:");
 		mvaddstr(6,0, "y location:");
-		mvaddstr(7,0,"move left :");
+ 		mvaddstr(7,0, "crew:");
+		mvaddstr(8,0,"move left :");
 
 		position=5;
 		count=0;
@@ -393,7 +406,8 @@ fleetrpt()
 				mvprintw(4,position,"%d",NMER);
 				mvprintw(5,position,"%d",NXLOC);
 				mvprintw(6,position,"%d",NYLOC);
-				mvprintw(7,position,"%d",NMOVE);
+				mvprintw(7,position,"%d",NCREW/(NWAR+NMER));
+				mvprintw(8,position,"%d",NMOVE);
 			}
 			nvynum++;
 		}
@@ -409,11 +423,25 @@ fleetrpt()
 		if (navy=='\n'){
 			mvaddstr(16,0,"WHAT NAVY DO YOU WANT TO CHANGE:");
 			clrtoeol();
+#endif OGOD
 			refresh();
 			nvynum = get_number();
+#ifdef TRADE
+			if (ntn[country].nvy[nvynum].armynum==TRADED) {
+				mvaddstr(23,0,"SORRY - THAT NAVY IS UP FOR TRADE");
+				refresh();
+				getch();
+				if (isgod==TRUE) country=0;
+				return;
+			}
+#endif TRADE
 			if((nvynum<0)||(nvynum>MAXNAVY)) return;
 			mvaddstr(18,0,"1) TRANSFER / MERGE, 2) SPLIT NAVY, 3) DISBAND NAVY:");
+  			clrtoeol();
+#ifdef OGOD
+			if(isgod==TRUE) mvaddstr(19,0,"4) ADJUST SHIPS, 5) LOCATION, 6) CREW");
 			clrtoeol();
+#endif OGOD
 			refresh();
 			switch(getch()){
 			case '1':
@@ -424,6 +452,13 @@ fleetrpt()
 				clrtoeol();
 				refresh();
 				nvynum = get_number();
+#ifdef TRADE
+				if (ntn[country].nvy[nvynum].armynum==TRADED) {
+					mvaddstr(23,0,"SORRY - THAT NAVY IS UP FOR TRADE");
+					refresh();
+					getch();
+				} else
+#endif TRADE
 				if(nvynum==oldnavy) {
 					mvprintw(23,0,"SORRY -- SAME NAVY (%d,%d)",nvynum,oldnavy);
 					refresh();
@@ -505,6 +540,50 @@ fleetrpt()
 				NMER=0;
 				NADJSHP;
 				break;
+			case '4':
+				if (isgod==TRUE) {
+					/* ADJUST SHIPS */
+					mvaddstr(21,0,"HOW MANY WAR SHIPS: ");
+					refresh();
+					wships = get_number();
+					NWAR = wships;
+					mvaddstr(22,0,"HOW MANY MERCHANT SHIPS: ");
+					refresh();
+					mships = get_number();
+					NMER = mships;
+					NADJSHP;
+				}
+				break;
+#ifdef OGOD
+			case '5':
+				if (isgod==TRUE) {
+					/*X LOCATION*/
+					mvaddstr(21,0,"WHAT IS THE NEW X LOC: ");
+					refresh();
+					wships = get_number();
+					if (wships>=0 && wships<MAPX)
+						NXLOC=wships;
+					/*Y LOCATION*/
+					mvaddstr(22,0,"WHAT IS THE NEW Y LOC: ");
+					refresh();
+					wships = get_number();
+					if (wships>=0 && wships<MAPY)
+						NYLOC=wships;
+					NADJLOC;
+				}
+				break;
+			case '6':
+				if (isgod==TRUE) {
+					/* ADJUST CREWSIZE */
+					mvaddstr(21,0,"WHAT VALUE FOR CREW PER SHIP: ");
+					refresh();
+					wships = get_number();
+					if (wships>=0 && wships<=SHIPCREW)
+						NCREW = wships*(NMER+NWAR);
+					NADJCRW;
+				}
+				break;
+#endif OGOD
 			default:
 				mvaddstr(21,0,"ERROR : HIT ANY CHAR TO CONTINUE");
 				clrtoeol();

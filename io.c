@@ -108,8 +108,6 @@ readdata()
 		abrt();
 	}
 	close(fd);
-	verifydata( __FILE__, __LINE__ );
-
 } /* readdata() */
 
 #ifdef ADMIN

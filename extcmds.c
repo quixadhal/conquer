@@ -78,6 +78,10 @@ int armynum, army2;
 	if (armynum < 0 || armynum >= MAXARM ||
 		army2 < 0 || army2 >= MAXARM ||
 		armynum == army2 ||
+#ifdef TRADE
+		ASTAT == TRADED ||
+		ntn[country].arm[army2].stat == TRADED ||
+#endif TRADE
 		ASTAT == SCOUT ||
 		ntn[country].arm[army2].stat == SCOUT ||
 		ATYPE >= MINMONSTER ||
@@ -102,7 +106,11 @@ int armynum, army2;
 change_status(armynum,new_stat)
 int armynum,new_stat;
 {
+#ifdef TRADE
+	if (armynum < 0 || armynum >= MAXARM || ASTAT==SCOUT || ASTAT==TRADED) {
+#else
 	if (armynum < 0 || armynum >= MAXARM || ASTAT==SCOUT) {
+#endif TRADE
 		errormsg("Selected army not legal");
 		return;
 	}
@@ -124,8 +132,11 @@ int armynum,men;
 		errormsg("sorry -- army is monster");
 		return;
 	}
-
-	if(men<0 || armynum < 0 || armynum >= MAXARM || ASOLD < men+25 ) {
+#ifdef TRADE
+	if(men<0 || armynum < 0 || armynum >= MAXARM || ASOLD < men+25 || ASTAT==TRADED) {
+#else 
+	if(men<0 || armynum < 0 || armynum >= MAXARM || ASOLD < men+25) {
+#endif TRADE
 		errormsg("Selected army too small or illegal");
 		return;
 	}

@@ -295,6 +295,7 @@ construct()
 			}
 
 			NCREW += (NWAR+NMER) * mnumber;
+			NADJCRW;
 			if(isgod==TRUE) country=0;
 			return;
 		}

@@ -43,9 +43,9 @@ char *Class[]= { "NPC", "king", "emperor", "wizard", "priest", "pirate",
 "trader", "tyrant", "demon", "dragon", "shadow"};
 char *races[]= { "GOD","ORC","ELF","DWARF","LIZARD",
 "HUMAN","PIRATE","BARBARIAN","NOMAD","UNKNOWN"};
-char *diploname[]= { "UNMET", "CONFEDERACY", "ALLIED", "FRIENDLY",
+char *diploname[]= { "UNMET", "CONFDRCY", "ALLIED", "FRIENDLY",
 "NEUTRAL", "HOSTILE", "WAR", "JIHAD"};
-char *soldname[]= { "","MARCH","SCOUT","ATTACK","DEFEND","GARRISON"};
+char *soldname[]= { "","MARCH","SCOUT","ATTACK","DEFEND","GARRISON","TRADED"};
 
 char *unittype[]= {
 "Militia", "Goblin", "Orc", "Infantry", "Sailor", "Marines", "Archer",
@@ -81,7 +81,6 @@ int unitminsth[]=		/* min strength of a unit */
 175, 150, 500, 500, 1000
 };
 
-#ifdef ADMIN
 int unitattack[]=
 { -25, -15,   0,   0,   0,  25,   0,
 5,  20,  10,  15,  20,  10,  20,
@@ -93,7 +92,6 @@ int unitattack[]=
 5, 20, 50, 40, 50
 };
 #ifdef ADMIN
-#endif ADMIN
 int unitdefend[]=
 {
 -25, -15,   0,   0,   0,  25,  10,
@@ -105,8 +103,6 @@ int unitdefend[]=
 0, 10, 0, 15, 15,
 5, 20, 50, 40, 50
 };
-#ifdef ADMIN
-#endif ADMIN
 /*ten times the move rate of a unit*/
 int unitmove[]=
 {
@@ -165,6 +161,9 @@ char	*npcsfile = "nations";
 char	*helpfile = "help";
 char	*newsfile = "news";
 char	*isonfile = "lock";
+#ifdef TRADE
+char	*tradefile = "commerce";
+#endif TRADE
 
 char	*pwrname[] = {
 "WARRIOR", "CAPTAIN", "WARLORD", "ARCHER", "CAVALRY", "SAPPER",
@@ -174,7 +173,7 @@ char	*pwrname[] = {
 "BREEDER", "URBAN", "STEEL", "NINJA", "SAILOR", "DEMOCRACY", "ROADS",
 /* MAGICAL SKILLS */
 "THE_VOID", "KNOWALL", "DESTROYER", "VAMPIRE",
-"SUMMON", "SUGGEST", "WYZARD", "SORCERER"
+"SUMMON", "WYZARD", "SORCERER", "ERROR"
 };
 
 long	powers[] = {

@@ -611,7 +611,8 @@ fdxyretreat()	/* finds retreat location */
 
 	for(x= xsctr-1; x<=xsctr+1; x++)
 	for(y= ysctr-1; y<=ysctr+1; y++) if(ONMAP){
-		if(tofood(sct[x][y].vegetation,0)==0) continue;
+		if(tofood(sct[x][y].vegetation,
+			sct[x][y].owner == country ? country : 0)==0) continue;
 		if(((sct[x][y].owner == nation)
 		   ||(ntn[sct[x][y].owner].dstatus[nation] < NEUTRAL))
 		||(solds_in_sector( x, y, sct[x][y].owner) == 0)){
@@ -653,8 +654,11 @@ navalcbt()
 	int sailor;
 	char tempmsg[15];
 	int aship=0,dship=0;    /*a's and d's total war ships*/
+	int acrew=0,dcrew=0;    /*a's and d's warship crew*/
 	int asunk=0,dsunk=0;    /*a's and d's losses for the round*/
 	int amsunk=0,dmsunk=0;  /*a's and d's msunks for the round*/
+	int amcapt=0,dmcapt=0;  /*a's and d's mcaptures the the round*/
+	int akcrew=0,dkcrew=0;  /*a's and d's crew losses for the round*/
 	register int done,i,j,k;
 
 	/* determine who is attacker & who is on defenders side?*/
@@ -676,27 +680,39 @@ navalcbt()
 	for(j=0;j<MGKNUM;j++) if(owner[j]!=(-1)){
 		if(side[j]==DFND) {
 			dship+=ntn[owner[j]].nvy[unit[j]].warships;
+			dcrew+=ntn[owner[j]].nvy[unit[j]].crew *
+				ntn[owner[j]].nvy[unit[j]].warships /
+				(ntn[owner[j]].nvy[unit[j]].warships+
+				ntn[owner[j]].nvy[unit[j]].merchant);
 		}
 		else if(side[j]==ATKR) {
 			aship+=ntn[owner[j]].nvy[unit[j]].warships;
+			acrew+=ntn[owner[j]].nvy[unit[j]].crew *
+				ntn[owner[j]].nvy[unit[j]].warships /
+				(ntn[owner[j]].nvy[unit[j]].warships+
+				ntn[owner[j]].nvy[unit[j]].merchant);
 		}
 	}
 
 	/*no bonus currently included in this combat*/
+
+	/*calculate ability of crew*/
+	acrew = 100*acrew/aship*SHIPCREW;
+	dcrew = 100*dcrew/dship*SHIPCREW;
 
 	/*each warship can do damage 40%; once all warships sunk then all*/
 	/*sunk are captured merchant*/
 	sailor=FALSE;
 	for(j=0;j<MGKNUM;j++) if(owner[j]!=(-1)) if(side[j]==ATKR)
 		if(magic(owner[j],SAILOR)==TRUE) sailor=TRUE;
-	if(sailor==TRUE) for(i=0;i<aship;i++) if(rand()%10<=5) dsunk++;
-	else for(i=0;i<aship;i++) if(rand()%10<=3) dsunk++;
+	if(sailor==TRUE) for(i=0;i<aship;i++) if(acrew*(rand()%100)/100<=50) dsunk++;
+	else for(i=0;i<aship;i++) if(acrew*(rand()%100)/100<=30) dsunk++;
 
 	sailor=FALSE;
 	for(j=0;j<MGKNUM;j++) if(owner[j]!=(-1)) if(side[j]==DFND)
 		if(magic(owner[j],SAILOR)==TRUE) sailor=TRUE;
-	if(sailor==TRUE) for(i=0;i<dship;i++) if(rand()%10<=4) asunk++;
-	else for(i=0;i<dship;i++) if(rand()%10<=3) asunk++;
+	if(sailor==TRUE) for(i=0;i<dship;i++) if(dcrew*(rand()%100)/100<=40) asunk++;
+	else for(i=0;i<dship;i++) if(dcrew*(rand()%100)/100<=30) asunk++;
 
 #ifdef HIDELOC
 	fprintf(fnews,"4.\tNaval Battle occurs");
@@ -739,20 +755,32 @@ navalcbt()
 	ntn[owner[0]].nvy[unit[0]].xloc,
 	ntn[owner[0]].nvy[unit[0]].yloc,max(0,dsunk-dship));
 #endif
+	/*calculate crew losses:  all on ships sunk plus percentage*/
+	if (asunk > aship) {
+		akcrew = asunk * SHIPCREW + SHIPCREW*(asunk-aship)*asunk/(asunk+dsunk);
+		amsunk = asunk -aship;
+	} else
+		akcrew = aship * SHIPCREW;
+	if (dsunk > dship) {
+		dkcrew = dsunk * SHIPCREW + SHIPCREW*(dsunk-dship)*dsunk/(dsunk+asunk);
+		dmsunk = dsunk -dship;
+	} else
+		dkcrew = dship * SHIPCREW;
 
+	/*work warship and crew losses per navy*/
 	for(i=0;i<MGKNUM;i++) if(owner[i]!=(-1)){
 		if((asunk>0)&&(side[i]==ATKR)){
+			ntn[owner[i]].nvy[unit[i]].crew -= akcrew * ntn[owner[i]].nvy[unit[i]].warships/aship;
 			if(asunk > aship ) {
 				ntn[owner[i]].nvy[unit[i]].warships=0;
-				amsunk = asunk - aship;
 			} else  {
 				ntn[owner[i]].nvy[unit[i]].warships -= asunk * ntn[owner[i]].nvy[unit[i]].warships/aship;
 			}
 		}
 		else if((dsunk>0)&&(side[i]==DFND)){
+			ntn[owner[i]].nvy[unit[i]].crew -= dkcrew * ntn[owner[i]].nvy[unit[i]].warships/dship;
 			if(dsunk > dship ) {
 				ntn[owner[i]].nvy[unit[i]].warships=0;
-				dmsunk = dsunk -dship;
 			} else  {
 				ntn[owner[i]].nvy[unit[i]].warships -= dsunk * ntn[owner[i]].nvy[unit[i]].warships / dship;
 			}
@@ -763,20 +791,39 @@ navalcbt()
 		if((amsunk>0)&&(side[i]==ATKR)){
 			if(amsunk >= ntn[owner[i]].nvy[unit[i]].merchant ) {
 				amsunk -= ntn[owner[i]].nvy[unit[i]].merchant;
+				amcapt += ntn[owner[i]].nvy[unit[i]].merchant;
 				ntn[owner[i]].nvy[unit[i]].merchant=0;
+				ntn[owner[i]].nvy[unit[i]].crew=0;
 			} else  {
+				ntn[owner[i]].nvy[unit[i]].crew-=SHIPCREW*amsunk;
 				ntn[owner[i]].nvy[unit[i]].merchant-=amsunk;
+				amcapt += amsunk;
 				amsunk=0;
 			}
 		}
 		else if((dmsunk>0)&&(side[i]==DFND)){
 			if(dmsunk >= ntn[owner[i]].nvy[unit[i]].merchant ) {
 				dmsunk -= ntn[owner[i]].nvy[unit[i]].merchant;
+				dmcapt += ntn[owner[i]].nvy[unit[i]].merchant;
 				ntn[owner[i]].nvy[unit[i]].merchant=0;
+				ntn[owner[i]].nvy[unit[i]].crew=0;
 			} else  {
+				ntn[owner[i]].nvy[unit[i]].crew-=SHIPCREW*dmsunk;
 				ntn[owner[i]].nvy[unit[i]].merchant-=dmsunk;
+				dmcapt += dmsunk;
 				dmsunk=0;
 			}
+		}
+	}
+	/*distribute captured ships according to navy sizes*/
+	if (asunk >= aship) dmcapt=0;
+	if (dsunk >= dship) amcapt=0;
+	for (i=0; i<MGKNUM; i++) if (owner[i]!=(-1)){
+		if ((dmcapt>0)&&(side[i]==ATKR)){
+			ntn[owner[i]].nvy[unit[i]].merchant += dmcapt * ntn[owner[i]].nvy[unit[i]].warships / (aship - asunk);
+		}
+		if ((amcapt>0)&&(side[i]==DFND)){
+			ntn[owner[i]].nvy[unit[i]].merchant += amcapt * ntn[owner[i]].nvy[unit[i]].warships / (dship - dsunk);
 		}
 	}
 
@@ -814,7 +861,7 @@ navalcbt()
 			}
 
 			fprintf(fpmsg,"%s RESULT: Attackers lose %d ships, Defenders lose %d ships\n",ntn[owner[j]].name, asunk,dsunk);
-			fprintf(fpmsg,"%s         Attackers capture %d merchants, Defenders capture %d merchants\n",ntn[owner[j]].name, dmsunk,amsunk);
+			fprintf(fpmsg,"%s         Attackers capture %d merchants, Defenders capture %d merchants\n",ntn[owner[j]].name, dmcapt,amcapt);
 			fprintf(fpmsg,"END\n");
 			fclose(fpmsg);
 		}

@@ -100,6 +100,16 @@ main()
 #else
 	fprintf(fp,"s/XORCTAKE/(False)/g\n");
 #endif
+#ifdef HIDELOC
+	fprintf(fp,"s/XHIDELOC/(True) /g\n");
+#else
+	fprintf(fp,"s/XHIDELOC/(False)/g\n");
+#endif
+#ifdef TRADE
+	fprintf(fp,"s/XTRADE/(True) /g\n");
+#else
+	fprintf(fp,"s/XTRADE/(False)/g\n");
+#endif
 	/* map sectors */
 	fprintf(fp,"s/ZMOUNTAIN/MOUNTAIN (%c)/g\n",MOUNTAIN);
 	fprintf(fp,"s/ZHILL/HILL (%c)/g\n",HILL);
@@ -143,6 +153,7 @@ main()
 	fprintf(fp,"s/XFORTCOST/%ld/g\n",FORTCOST);
 	fprintf(fp,"s/XWARSHPCOST/%ld/g\n",WARSHPCOST);
 	fprintf(fp,"s/XMERSHPCOST/%ld/g\n",MERSHPCOST);
+	fprintf(fp,"s/XSHIPCREW/%ld/g\n",SHIPCREW);
 	fprintf(fp,"s/XSHIPHOLD/%d/g\n",SHIPHOLD);
 	fprintf(fp,"s/XCITYLIMIT/%d/g\n",CITYLIMIT);
 	fprintf(fp,"s/XMILRATIO/%d/g\n",MILRATIO);
