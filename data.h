@@ -18,6 +18,11 @@ extern	char	*strcpy(),*strncpy(),*strcat(),*strncat();
 #define	FALSE		0
 #endif
 
+/* definitions for screen redrawing */
+#define	DONE	0
+#define	PART	1
+#define	FULL	2
+
 #define	SCREEN_X_SIZE	(( COLS - 21) / 2)	/* divide by two as only 1/2 
 						   sectors will be shown */
 #define	SCREEN_Y_SIZE	( LINES - 5 )
@@ -606,7 +611,7 @@ extern long	getmagic(), getmagic(), getmgkcost(), score_one();
 extern long	get_number(), solds_in_sector(),defaultunit();
 
 extern int	move_file(), land_2reachp(), land_reachp(), canbeseen();
-extern int	water_reachp(), markok(), is_habitable();
+extern int	water_reachp(), markok(), is_habitable(), parse();
 extern int	units_in_sector(), num_powers(), tofood();
 extern int	get_god(), flightcost(), todigit(), getclass(), startcost();
 extern int	water_2reachp(),tg_ok(), readmap(), avian();
@@ -623,7 +628,7 @@ extern void	getjewel(),getmetal(),loadfleet(),removemgk(),exenewmgk();
 extern struct	s_sector *rand_sector();
 extern void	subgships(),submships(),subwships(),getspace(),sackem();
 extern void	sleep(), whatcansee(), reset_god(), get_nname(), camp_info();
-extern void	main(), makebottom(), parse(), makeside(), check_mail();
+extern void	main(), makebottom(), makeside(), check_mail();
 extern void	checkout(),copyscreen(),bye(),credits(),init_hasseen();
 extern void	combinearmies(),change_status(),reducearmy(),splitarmy();
 extern void	errormsg(), clear_bottom(), addgroup(),ext_cmd();

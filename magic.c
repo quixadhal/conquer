@@ -187,6 +187,10 @@ domagic()
 {
 	int county, countx, done=FALSE, loop=0, i,type;
 	long price,x;
+#ifdef OGOD
+	void god_magk();
+#endif /* OGOD */
+
 	short isgod=0;
 	if(country==0) {
 		isgod=TRUE;
@@ -198,7 +202,7 @@ domagic()
 		clear();
 		county=3;
 		countx=0;
-		redraw=TRUE;
+		redraw=FULL;
 		standout();
 		mvprintw(0,(COLS/2)-15,"MAGIC POWERS FOR %s",curntn->name);
 		mvprintw(county++,30,"1) %d military powers: %ld jewels",
@@ -213,9 +217,6 @@ domagic()
 			price = getmgkcost(M_CIV,country);
 		if(price > getmgkcost(M_MGK,country))
 			price = getmgkcost(M_MGK,country);
-#ifdef OGOD
-		if (isgod==TRUE) price=0;
-#endif OGOD
 
 		standend();
 		county=3;
@@ -236,8 +237,17 @@ domagic()
 		else county++;
 		standout();
 		mvprintw(county++,0,"YOU HAVE %ld JEWELS IN YOUR TREASURY",curntn->jewels);
-		if(price < curntn->jewels){
-		mvaddstr(county++,0,"DO YOU WISH TO BUY A RANDOM NEW POWER (enter y or n):");
+#ifdef OGOD
+		if (isgod==TRUE) {
+			mvaddstr(county++,0,"DO YOU WISH TO CHANGE THIS NATION'S POWERS? [yn]");
+			standend();
+			refresh();
+			if (getch()=='y') god_magk(FALSE);
+		} else
+#endif OGOD
+		if(price <= curntn->jewels){
+
+		mvaddstr(county++,0,"DO YOU WISH TO BUY A RANDOM NEW POWER? [yn]");
 		standend();
 		refresh();
 		if(getch()=='y'){
@@ -247,9 +257,6 @@ domagic()
 			type = getch() - '0';
 			if(type==M_MIL || type==M_CIV || type==M_MGK){
 			price=getmgkcost(type,country);
-#ifdef OGOD
-			if (isgod==TRUE) price=0;
-#endif OGOD
 			if(curntn->jewels>=price) {
 				loop = 0;
 				while(loop++ < 500) if((x=getmagic(type))!=0){
@@ -277,13 +284,6 @@ domagic()
 		if((curntn->race==ORC)&&(curntn->jewels>=ORCTAKE)&&(curntn->spellpts>=TAKEPOINTS))
 			done |= orctake(&county);
 #endif ORCTAKE
-#ifdef OGOD
-		if (isgod==TRUE) {
-			mvaddstr(county++,0,"GOD: REMOVE A MAGIC POWER? (y or n)");
-			refresh();
-			if (getch()=='y') killmagk();
-		}
-#endif OGOD
 	}
 	if(isgod==TRUE) reset_god();
 }
@@ -413,9 +413,12 @@ long newpower;
 	||(newpower==KNOWALL)
 	||(newpower==HIDDEN)
 	||(newpower==THE_VOID)
-	||(newpower==ARCHITECT)
-	||(newpower==MINER))
+	||(newpower==ARCHITECT))
 		return;
+	if(newpower==MINER) {
+		curntn->mine_ability+=25;
+		return;
+	}
 	if(newpower==VAMPIRE) {
 		curntn->aplus-=35;
 		curntn->dplus-=35;
@@ -811,47 +814,86 @@ long oldpower;
 
 #ifdef CONQUER
 #ifdef OGOD
-/* killmagk: this routine removes a magic power */
-killmagk()
+/* godmagk() -- routine to allow god to selectively add or remove magic */
+void
+god_magk()
 {
-	int county,countx,choice,i;
+	int county,countx,choice;
+	int remove,i,done=FALSE;
 
-	clear();
-	county=3;
-	countx=0;
-	standout();
-	mvprintw(0,(COLS/2)-15,"MAGIC POWERS FOR %s",curntn->name);
-	standend();
-	i=0;
-	while( powers[i] != 0 ){
-		if(magic(country,powers[i])==TRUE) {
-			mvprintw(county,countx,"%d: power %s",i+1,*(pwrname+i));
-			county++;
-		}
-		i++;
-		if (county > 18) {
-			county = 3;
-			countx = 40;
-		}
-	}
-	if (countx == 40) {
-	  county = 20;
-	}
-	else county++;
-	standout();
-	mvaddstr(county++,5," Which power to remove? ");
-	standend();
-	refresh();
-	choice=get_number();
-	if(choice > 0) {
-		mvprintw(county++,0," Remove magic #%d? (y or [n])",choice);
+	while (done==FALSE) {
+		clear();
+		county=3;
+		countx=0;
+		standout();
+		mvaddstr(0,0,"Do you wish to (A)dd or (R)emove a power? ");
 		refresh();
-		if (getch()=='y') {
-			if(magic(country,powers[choice-1])) {
-				curntn->powers ^= powers[choice-1];
-				removemgk(powers[choice-1]);
+		while (done==FALSE) {
+			done=TRUE;
+			switch(getch()) {
+			case 'A':
+			case 'a':
+				remove=FALSE;
+				break;
+			case 'R':
+			case 'r':
+				remove=TRUE;
+				break;
+			default:
+				done=FALSE;
+				break;
 			}
 		}
+		move(0,0);
+		clrtoeol();
+		if (remove)
+		mvprintw(0,(COLS/2)-15,"CURRENT POWERS FOR %s",curntn->name);
+		else
+		mvprintw(0,(COLS/2)-15,"LACKING POWERS FOR %s",curntn->name);
+		standend();
+		i=0;
+		while( powers[i] != 0 ){
+			if(magic(country,powers[i])==remove) {
+				mvprintw(county,countx,"%2d: %s Power",i+1,*(pwrname+i));
+				county++;
+			}
+			i++;
+			if (county > LINES-6) {
+				county = 3;
+				countx = COLS/2;
+			}
+		}
+		if (countx == COLS/2) {
+			county = LINES-4;
+		}
+		else county++;
+		standout();
+		if (remove) mvaddstr(county++,0,"Which power to remove? ");
+		else mvaddstr(county++,0,"Which power to add? ");
+		standend();
+		refresh();
+		choice=get_number();
+		if(choice > 0 && choice <= MAXPOWER) {
+			if (magic(country,powers[choice-1])==remove) {
+				if (remove)
+				mvprintw(county++,0,"Remove magic #%d? (y or [n])",choice);
+				else
+				mvprintw(county++,0,"Add magic #%d? (y or [n])",choice);
+				refresh();
+				if (getch()=='y') {
+					curntn->powers ^= powers[choice-1];
+					if (remove) removemgk(powers[choice-1]);
+					else exenewmgk(powers[choice-1]);
+				}
+			} else {
+				if (remove) mvaddstr(county++,0," The nation doesn't have that power.");
+				else mvaddstr(county++,0," The nation already has that power.");
+			}
+		}
+		mvaddstr(county++,0,"Do you wish to add or remove another power?");
+		done=TRUE;
+		refresh();
+		if (getch()=='y') done=FALSE;
 	}
 }
 #endif OGOD

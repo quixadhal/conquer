@@ -35,7 +35,7 @@ short	xoffset=0,yoffset=0;	/*offset of upper left hand corner*/
 /* current cursor postion (relative to 00 in upper corner) */
 /*	position is 2*x,y*/
 short	xcurs=0,ycurs=0;
-short	redraw=TRUE;	/* if TRUE: redraw map		*/
+short	redraw=FULL;	/* if !DONE: redraw map		*/
 int	done=FALSE;	/* if TRUE: you are done	*/
 short	hilmode=HI_OWN;	/* hilight mode */
 short	dismode=DI_DESI;/* display mode			*/
@@ -69,7 +69,7 @@ char	**argv;
 #ifdef SYSMAIL
 	extern char sysmail[];
 #endif SYSMAIL
-	int sflag=FALSE,pflag=FALSE,l;
+	int sflag=FALSE,pflag=FALSE,l,in_ch,old_ch=' ';
 
 	char defaultdir[BIGLTH],tmppass[PASSLTH+1];
 	char cq_opts[BIGLTH];
@@ -392,20 +392,19 @@ char	**argv;
 		xoffset=0;
 		ycurs=COLS/4;
 		yoffset=0;
-		redraw=TRUE;
+		redraw=FULL;
 		/* create gods lock file but do not limit access */
 		(void) aretheyon();
 	} else {
 		if(curntn->active==INACTIVE) {
-			mvprintw(LINES-3,0,"Sorry, for some reason, your country no longer exists.");
-			mvprintw(LINES-2,0,"If there is a problem, please contact %s.",
-				OWNER);
-			mvprintw(LINES-1,0,"To re-enter this campaign please send mail to %s",
-				LOGIN);
+			standout(); 
+			mvprintw(LINES-2,0,"Sorry, for some reason, your country no longer exists.");
+			mvprintw(LINES-1,0,"If there is a problem, please send mail to %s", LOGIN);
 			if (strcmp(LOGIN, ntn[0].leader)!=0) {
 				printw(" or %s",ntn[0].leader);
 			}
 			printw(".");
+			standend();
 			beep();
 			refresh();
 			getch();
@@ -469,13 +468,20 @@ char	**argv;
 		(void) strcpy(sysmail,getenv("MAIL"));
 	}
 #endif SYSMAIL
-
+	mvprintw(LINES-1, COLS-20, "PRESS ANY KEY");
+	refresh();
 	getch();		/* get response from copyscreen */
 
 	while(done==FALSE) {			/*main while routine*/
 		coffmap(); 	/* check if cursor is out of bounds*/
 		check_mail();	/* check for new mail */
-		parse();	/* get commands, make moves and input command*/
+		in_ch = getch();
+		/* get commands */
+		if (in_ch=='!') {
+			parse(old_ch);
+		} else {
+			if (parse(in_ch)) old_ch=in_ch;
+		}
 	}
 
 	if(country==0) writedata();
@@ -532,10 +538,12 @@ makebottom()
 }
 
 /************************************************************************/
-/*	PARSE() - do a command						*/
+/*	PARSE() - interpret entered character				*/
+/*	  return TRUE if command is repeatable FALSE otherwise		*/
 /************************************************************************/
-void
-parse()
+int
+parse(ch)
+	int ch;
 {
 	char	name[LINELTH+1];
 	char	passwd[PASSLTH+1];
@@ -545,14 +553,17 @@ parse()
 #endif /* DEBUG */
 	int	ocountry;
 
-	switch(getch()) {
+	switch(ch) {
 	case EXT_CMD:	/* extended command */
 		ext_cmd( -1 );
 		curntn->tgold -= MOVECOST;
+		return(TRUE);
 		break;
 	case '':	/* redraw the screen */
 		whatcansee();	/* what can they see */
-		redraw=TRUE;
+		centermap();
+		clear();
+		redraw=FULL;
 		break;
 #ifdef DEBUG
 	case '\t':	/* debugging information for god and demi-god */
@@ -563,7 +574,7 @@ parse()
 		break;
 #endif /* DEBUG */
 	case 'a':	/*army report*/
-		redraw=TRUE;
+		redraw=PART;
 		armyrpt(0);
 		curntn->tgold -= MOVECOST;
 		break;
@@ -575,12 +586,12 @@ parse()
 		ycurs++;
 		break;
 	case 'B':	/*budget*/
-		redraw=TRUE;
+		redraw=FULL;
 		budget();
 		curntn->tgold -= MOVECOST;
 		break;
 	case 'c':	/*change nation stats*/
-		redraw=TRUE;
+		redraw=FULL;
 		change();
 		curntn->tgold -= MOVECOST;
 		break;
@@ -597,9 +608,10 @@ parse()
 		draft();
 		curntn->tgold -= MOVECOST;
 		makebottom();
+		return(TRUE);
 		break;
 	case 'f': /*report on ships and load/unload*/
-		redraw=TRUE;
+		redraw=PART;
 		curntn->tgold -= MOVECOST;
 		fleetrpt();
 		break;
@@ -607,7 +619,7 @@ parse()
 		navygoto();
 		break;
 	case 'g':	/*group report*/
-		redraw=TRUE;
+		redraw=PART;
 		curntn->tgold -= MOVECOST;
 		armyrpt(1);
 		break;
@@ -627,7 +639,7 @@ parse()
 		break;
 	case 'I':	/*campaign information*/
 		camp_info();
-		redraw=TRUE;
+		redraw=FULL;
 		break;
 	case 'J':	/*scroll down*/
 		pager=0;
@@ -665,16 +677,10 @@ parse()
 	case 'm':	/*move selected item to new x,y */
 		mymove();
 		curntn->tgold -= MOVECOST;
-		makebottom();
-		prep(country,FALSE,TRUE);
-		if (hilmode == HI_ARMY || hilmode == HI_YARM) {
-			redraw = TRUE;
-		}
-		pager=0;
-		selector=0;
+		return(TRUE);
 		break;
 	case 'M':	/*magic*/
-		redraw=TRUE;
+		redraw=FULL;
 		curntn->tgold -= MOVECOST;
 		domagic();
 		break;
@@ -686,7 +692,7 @@ parse()
 		xcurs++;
 		break;
 	case 'N':	/*read newspaper */
-		redraw=TRUE;
+		redraw=PART;
 		curntn->tgold -= MOVECOST;
 		newspaper();
 		break;
@@ -715,7 +721,7 @@ parse()
 		}
 		break;
 	case 'P':	/*production*/
-		redraw=TRUE;
+		redraw=FULL;
 		curntn->tgold -= MOVECOST;
 		produce();
 		break;
@@ -731,32 +737,33 @@ parse()
 		break;
 		/*list*/
 	case 'R':	/*Read Messages*/
-		redraw=TRUE;
+		redraw=PART;
 		curntn->tgold -= MOVECOST;
 		rmessage();
 		refresh();
 		break;
 	case 's':	/*score*/
-		redraw=TRUE;
+		redraw=FULL;
 		curntn->tgold -= MOVECOST;
 		showscore();
 		break;
 	case 'S':	/*diplomacy screens*/
 		diploscrn();
 		curntn->tgold -= MOVECOST;
-		redraw=TRUE;
+		redraw=FULL;
 		break;
 	case 't':	/*fleet loading*/
 		loadfleet();
 		curntn->tgold -= MOVECOST;
 		makeside(FALSE);
 		makebottom();
+		return(TRUE);
 		break;
 #ifdef TRADE
 	case 'T':	/*go to commerce section*/
 		trade();
 		curntn->tgold -= MOVECOST;
-		redraw=TRUE;
+		redraw=FULL;
 		break;
 #endif TRADE
 	case '9':
@@ -774,14 +781,15 @@ parse()
 		break;
     	case 'v':	/* version credits */
 		credits();
-		redraw=TRUE;
+		redraw=FULL;
 		break;
 	case 'w':	/* spell casting */
 		wizardry();
 		curntn->tgold -= MOVECOST;
+		return(TRUE);
 		break;
 	case 'W':	/*message*/
-		redraw=TRUE;
+		redraw=FULL;
 		curntn->tgold -= MOVECOST;
 		wmessage();
 		break;
@@ -808,7 +816,7 @@ parse()
 		    ((pwent=getpwnam(ntn[0].leader))==NULL || owneruid != pwent->pw_uid )) break;
 #endif
 		clear();
-		redraw=TRUE;
+		redraw=PART;
 		if(country != 0) {
 		fprintf(fexe,"L_NGOLD\t%d \t%d \t%ld \t0 \t0 \t%s\n",
 			XNAGOLD ,country,curntn->tgold,"null");
@@ -862,6 +870,7 @@ parse()
 
 		fclose(fexe);
 		/* open output for future printing*/
+		sprintf(fison,"%s%d",isonfile,country);
 	 	sprintf(name,"%s%d",exefile,country);
 	 	if ((fexe=fopen(name,"a"))==NULL) {
 			beep();
@@ -898,15 +907,19 @@ parse()
 			}
 		}
 		whatcansee();
-		redraw=TRUE;
+		redraw=PART;
 		break;
 	case '?':	/*display help screen*/
-		redraw=TRUE;
+		redraw=PART;
 		help();
+		break;
+	case ' ': /*ignore, and don't beep*/
 		break;
 	default:
 		beep();
+		break;
 	}
+	return(FALSE);
 }
 
 #ifdef DEBUG
@@ -1287,7 +1300,7 @@ copyscreen()
 		fclose(timefp);
 	}
 #endif /* TIMELOG */
-	mvprintw(LINES-1, COLS-20, "PRESS ANY KEY");
+	mvprintw(LINES-1, COLS-20, "PLEASE WAIT");
 	refresh();
 }
 

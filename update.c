@@ -10,9 +10,10 @@
  *							Ed
  */
 
+#include <ctype.h>
+#include <sys/file.h>
 #include "header.h"
 #include "data.h"
-#include <ctype.h>
 
 extern FILE *fnews;
 
@@ -237,7 +238,8 @@ int armynum;
 
 	if(P_ASTAT>=NUMSTATUS) return(takesctr);
 	if(P_AMOVE==0) return(takesctr);
-	/* if leader w/o group */
+
+	/* if leader w/o a group, set leadflag */
 	if((P_ATYPE>=MINLEADER)&&(P_ATYPE<MINMONSTER)&&(P_ASTAT!=GENERAL)) {
 		leadflag=TRUE;
 		/* the king stays in capitol on RULE */
@@ -250,15 +252,16 @@ int armynum;
 	}
 
 	sum=0;
-	if(leadflag) {		/* find unattached soldiers & move anywhere */
+	if(leadflag) {		/* Move based on unattached soldiers */
 		for(i=0;i<MAXARM;i++)
 		if(( curntn->arm[i].unittyp<MINLEADER )
 		&&( curntn->arm[i].stat!=MILITIA )
 		&&( curntn->arm[i].stat!=ONBOARD )
+		&&( curntn->arm[i].stat!=GARRISON )
 		&&( curntn->arm[i].stat!=TRADED )
 		&&( curntn->arm[i].stat<NUMSTATUS ))
 			sum+=curntn->arm[i].sold;
-	} else	{
+	} else	{		/* not leader w/o group */
 		/* use menok as a temp vbl now == men in army */
 		menok=0;
 		if((P_ATYPE>=MINLEADER)
@@ -282,7 +285,7 @@ int armynum;
 		}
 	}
 
-	if(sum==0) {
+	if(sum==0) {		/* nowhere to go */
 		P_AXLOC=curntn->capx;
 		P_AYLOC=curntn->capy;
 		P_ASTAT=DEFEND;
@@ -291,6 +294,7 @@ int armynum;
 		for(x=0;x<MAXARM;x++)
 		if((curntn->arm[x].unittyp<MINLEADER )
 		&&( curntn->arm[x].stat!=MILITIA )
+		&&( curntn->arm[x].stat!=GARRISON )
 		&&( curntn->arm[x].stat!=ONBOARD )
 		&&( curntn->arm[x].stat!=TRADED )
 		&&( curntn->arm[x].stat<NUMSTATUS )){
@@ -305,7 +309,9 @@ int armynum;
 			&&( curntn->arm[x].stat<NUMSTATUS )
 			&&( curntn->arm[x].sold>=0 )
 			&&( curntn->arm[x].stat!=MILITIA )
+			&&( curntn->arm[x].stat!=GARRISON )
 			&&( curntn->arm[x].stat!=SIEGED )
+			&&( curntn->arm[x].stat!=SCOUT )
 			&&( curntn->arm[x].stat!=ONBOARD )
 			&&( curntn->arm[x].stat!=TRADED )
 			&&( curntn->arm[x].unittyp!=A_ZOMBIE )
@@ -316,7 +322,7 @@ int armynum;
 				break;
 			}
 		}
-	} else {
+	} else {	/* move a normal unit */
 		where=rand()%sum;
 		/* range of 4 if menok is FALSE else 2 */
 		for(x=(int)P_AXLOC-4+menok*2;x<=(int)P_AXLOC+4-menok*2;x++)
@@ -335,7 +341,7 @@ int armynum;
 					P_AYLOC=curntn->capy;
 				}
 
-				/* CHANGE SO ARMIES MOVE PSEUDO INDEPENDANTLY */
+				/* ARMIES MOVE PSEUDO INDEPENDANTLY */
 				if((sct[x][y].designation != DCITY)
 				&&(sct[x][y].designation != DCAPITOL)
 				&&(sct[x][y].designation != DTOWN)
@@ -434,8 +440,20 @@ cheat()
 {
 	int x,y;
 	int bonus=0, count=0, npcavg, pcavg, avgscore=0;
+	char realnpc[NTOTAL],tempc[LINELTH];
+
+	/* take inventory of countries */
+	for(x=1;x<NTOTAL;x++) {
+		sprintf(tempc,"%s%d", exefile, x);
+		if (isnpc(ntn[x].active) && access(tempc,F_OK)==0) {
+			realnpc[x]=TRUE;
+		} else {
+			realnpc[x]=FALSE;
+		}
+	}
+
 	/* add gold */
-	for(x=1;x<NTOTAL;x++) if(isnpc(ntn[x].active)) {
+	for(x=1;x<NTOTAL;x++) if(realnpc[x]==TRUE) {
 		if((ntn[x].tgold<ntn[x].tciv)
 		&&( rand()%5==0)){
 			ntn[x].tgold+=10000;
@@ -444,7 +462,7 @@ cheat()
 	}
 
 	for(x=1;x<NTOTAL;x++)
-		if(ispc(ntn[x].active))  {
+		if(realnpc[x]==FALSE)  {
 			bonus+=ntn[x].aplus+ntn[x].dplus;
 			avgscore+=ntn[x].score;
 			count++;
@@ -458,14 +476,14 @@ cheat()
 	bonus=0;
 	count=0;
 	for(x=1;x<NTOTAL;x++) 
-		if(isnpc(ntn[x].active))  {
+		if(realnpc[x]==TRUE)  {
 			bonus+=ntn[x].aplus+ntn[x].dplus;
 			count++;
 		}
 	if(count==0) return;
 	npcavg = bonus / count;
 	for(x=1;x<NTOTAL;x++) 
-	if(isnpc(ntn[x].active ) 
+	if((realnpc[x]==TRUE)
 	&&(ntn[x].score < avgscore)
 	&&(ntn[x].race != ORC )
 	&&(rand()%100 < (pcavg-npcavg))) {
@@ -476,8 +494,8 @@ cheat()
 
 	/* cheat by making npc's frendlier to each other if they are */
 	/* of the same race */
-	for(x=1;x<NTOTAL;x++) if(isnpc(ntn[x].active))
-		for(y=1;y<NTOTAL;y++) if(isnpc(ntn[y].active))
+	for(x=1;x<NTOTAL;x++) if(realnpc[x]==TRUE)
+		for(y=1;y<NTOTAL;y++) if(realnpc[x]==TRUE)
 			if((ntn[x].dstatus[y]!=TREATY)
 			&&(ntn[x].dstatus[y]!=UNMET)){
 				if(ntn[x].race == ntn[y].race){

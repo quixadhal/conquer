@@ -46,9 +46,12 @@ combat()
 	register int i,j;
 	char	**fought; 		/* TRUE if already fought in sctr */
 	int	temp,ctry;
+	int	initialized=FALSE;	/* TRUE if arrays initialized */
 	short	armynum,nvynum;
 	int	valid;
 	int	count=0;
+	struct  s_nation *nptr;
+	struct  army	 *aptr;
 
 	fought = (char **) m2alloc(MAPX,MAPY,sizeof(char));
 
@@ -61,25 +64,29 @@ combat()
 
 	for(ctry=NTOTAL-1;ctry>0;ctry--) if(isactive(ntn[ctry].active)) {
 
+		nptr = &ntn[ctry];
+
 		/*army combat*/
-		for(j=0;j<MAXARM;j++)
-			if((ntn[ctry].arm[j].sold>0)
-			&&(ntn[ctry].arm[j].stat>=ATTACK)
-			&&(ntn[ctry].arm[j].stat<=SORTIE
-			  ||ntn[ctry].arm[j].stat>=NUMSTATUS)
-			&&(fought[ntn[ctry].arm[j].xloc][ntn[ctry].arm[j].yloc]==0)){
+		for(j=0;j<MAXARM;j++) {
+			aptr = &nptr->arm[j];
+			if((aptr->sold>0)
+			&&(aptr->stat>=ATTACK)
+			&&(aptr->stat<=SORTIE||aptr->stat>=NUMSTATUS)
+			&&(!fought[aptr->xloc][aptr->yloc])){
 
 			/* someone can initiate combat in xspot,yspot */
-			xspot=ntn[ctry].arm[j].xloc;
-			yspot=ntn[ctry].arm[j].yloc;
+			xspot=aptr->xloc;
+			yspot=aptr->yloc;
 			fought[xspot][yspot]=TRUE;
 
 			/*initialize matrix*/
-			for(temp=0;temp<MGKNUM;temp++){
-				unit[temp]=(-1);
-				owner[temp]=(-1);
-				side[temp]=NTRL;
-				troops[temp]=0;
+			if( !initialized ) {
+				for(temp=0;temp<MGKNUM;temp++){
+					unit[temp]=owner[temp]=(-1);
+					side[temp]=NTRL;
+					troops[temp]=0;
+				}
+				initialized=TRUE;
 			}
 
 			/*check all armies in sector and add to matrix*/
@@ -95,7 +102,7 @@ combat()
 			&&(AYLOC==yspot)
 			&&(count<MGKNUM)) {
 				if((country!=ctry)
-				&&(ntn[ctry].dstatus[country]>HOSTILE)) {
+				&&(nptr->dstatus[country]>HOSTILE)) {
 					valid=TRUE;
 					if( sct[xspot][yspot].owner==ctry ) {
 						dnation=ctry;
@@ -114,25 +121,31 @@ combat()
 				count++;
 			}
 
-			if(valid==TRUE) fight();
+			if(valid==TRUE) {
+				fight();
+				initialized=FALSE;
+			}
+		}
 		}
 
 		/*navy combat*/
 		for(j=0;j<MAXNAVY;j++)
-		if((ntn[ctry].nvy[j].warships!=0)
-&&(fought[ntn[ctry].nvy[j].xloc][ntn[ctry].nvy[j].yloc]==0)
-&&(sct[ntn[ctry].nvy[j].xloc][ntn[ctry].nvy[j].yloc].altitude==WATER)){
+		if((nptr->nvy[j].warships!=0)
+		&&(fought[nptr->nvy[j].xloc][nptr->nvy[j].yloc]==0)
+		&&(sct[nptr->nvy[j].xloc][nptr->nvy[j].yloc].altitude==WATER)){
 
-			xspot=ntn[ctry].nvy[j].xloc;
-			yspot=ntn[ctry].nvy[j].yloc;
+			xspot=nptr->nvy[j].xloc;
+			yspot=nptr->nvy[j].yloc;
 			fought[xspot][yspot]=1;
 
 			/*initialize matrix*/
-			for(temp=0;temp<MGKNUM;temp++){
-				unit[temp]=(-1);
-				owner[temp]=(-1);
-				side[temp]=NTRL;
-				troops[temp]=0;
+			if( !initialized ){
+				for(temp=0;temp<MGKNUM;temp++){
+					unit[temp]= owner[temp]=(-1);
+					side[temp]=NTRL;
+					troops[temp]=0;
+				}
+				initialized=TRUE;
 			}
 
 			/*check all fleets in 2 sector range and add to matrix*/
@@ -149,7 +162,7 @@ combat()
 			&&(count<MGKNUM)) {
 				fought[NXLOC][NYLOC]=1;
 				if((country!=ctry)
-				&&(ntn[ctry].dstatus[country]>HOSTILE)){
+				&&(nptr->dstatus[country]>HOSTILE)){
 					valid=TRUE;
 					anation=ctry;
 					dnation=country;
@@ -158,7 +171,10 @@ combat()
 				owner[count]=country;
 				count++;
 			}
-			if(valid==TRUE) navalcbt();
+			if(valid==TRUE) {
+				navalcbt();
+				initialized=FALSE;
+			}
 		}
 	}
 	free(fought);

@@ -423,7 +423,13 @@ loadfleet()
 			}
 			P_ASTAT=DEFEND;
 			P_NARMY=MAXARM;
-			P_NMOVE=0;
+			if ((sct[XREAL][YREAL].designation!=DCITY
+			&& sct[XREAL][YREAL].designation!=DCAPITOL)
+			|| P_NMOVE < N_CITYCOST) {
+				P_NMOVE=0;
+			} else {
+				P_NMOVE-= N_CITYCOST;
+			}
 			NADJMOV;
 			NADJHLD;
 			AADJSTAT;
@@ -445,7 +451,13 @@ loadfleet()
 				sct[XREAL][YREAL].people += amount;
 				P_NPEOP=(unsigned char)((mhold*P_NPEOP-amount)/mhold);
 				NADJHLD;
-				P_NMOVE=0;
+				if ((sct[XREAL][YREAL].designation!=DCITY
+				&& sct[XREAL][YREAL].designation!=DCAPITOL)
+				|| P_NMOVE < N_CITYCOST) {
+					P_NMOVE=0;
+				} else {
+					P_NMOVE-= N_CITYCOST;
+				}
 				NADJMOV;
 				SADJCIV;
 			}
@@ -483,7 +495,13 @@ loadfleet()
 				P_ASTAT=ONBOARD;
 				P_AMOVE=0;
 				P_NARMY=armynum;
-				P_NMOVE=0;
+				if ((sct[XREAL][YREAL].designation!=DCITY
+				&& sct[XREAL][YREAL].designation!=DCAPITOL)
+				|| P_NMOVE < N_CITYCOST) {
+					P_NMOVE=0;
+				} else {
+					P_NMOVE-= N_CITYCOST;
+				}
 				NADJMOV;
 				NADJHLD;
 				AADJMOV;
@@ -503,7 +521,13 @@ loadfleet()
 				sct[XREAL][YREAL].people -= amount;
 				P_NPEOP += (unsigned char)(amount / mhold);
 				SADJCIV;
-				P_NMOVE=0;
+				if ((sct[XREAL][YREAL].designation!=DCITY
+				&& sct[XREAL][YREAL].designation!=DCAPITOL)
+				|| P_NMOVE < N_CITYCOST) {
+					P_NMOVE=0;
+				} else {
+					P_NMOVE-= N_CITYCOST;
+				}
 				NADJMOV;
 				NADJHLD;
 			}

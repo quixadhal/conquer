@@ -91,7 +91,7 @@ get_display_mode(dmode,hmode,odmode,ohmode)
 	mvaddstr(LINES-1,COLS-25,odmode!=NULL?"what display?:":"display?:");
 	standend();
 	refresh();
-	redraw=TRUE;
+	redraw=PART;
 	switch(getch()) {
 	case '/':
 		if (odmode !=NULL)
@@ -179,7 +179,7 @@ get_display_mode(dmode,hmode,odmode,ohmode)
 	default:
 	error:
 		beep();
-		redraw=FALSE;
+		redraw=DONE;
 	}
 }
 
@@ -412,11 +412,16 @@ coffmap()
 	||((ycurs>=SCREEN_Y_SIZE-1))||((XREAL)>=MAPX)
 	 ||((YREAL)>=MAPY)) offmap();
 	
-	if( redraw==TRUE) {
-		clear();
-		makemap();	 /* update map */
+	if(redraw!=DONE) {
+		if (redraw==FULL) {
+			clear();	/* clear real screen */
+		} else {
+			move(0,0);	/* clear curses screen but not real screen */
+			clrtobot();
+		}
+		makemap();	/* update map */
 		makebottom();
-		redraw=FALSE;
+		redraw=DONE;
 	}
 	move(ycurs,2*xcurs);
 	makeside(FALSE);  /*update side*/
@@ -461,16 +466,16 @@ whatcansee()
 
 	for(nvynum=0;nvynum<MAXNAVY;nvynum++)
 	if((P_NMSHP!=0)||(P_NWSHP!=0)||(P_NGSHP!=0))
-		for(i=(int)P_NXLOC-xoffset-NAVYSEE;i<=(int)P_NXLOC-xoffset+NAVYSEE;i++)
-		for(j=(int)P_NYLOC-yoffset-NAVYSEE;j<=(int)P_NYLOC-yoffset+NAVYSEE;j++)
+		for(i=(int)P_NXLOC-xoffset-NAVYSEE;i!=1+(int)P_NXLOC-xoffset+NAVYSEE;i++)
+		for(j=(int)P_NYLOC-yoffset-NAVYSEE;j!=1+(int)P_NYLOC-yoffset+NAVYSEE;j++)
 			if(ONMAP(i+xoffset,j+yoffset) && i>=0 && j>=0
 			&& i<SCREEN_X_SIZE && j<SCREEN_Y_SIZE)
 				HAS_SEEN(i,j)=TRUE;
 
 	for(armynum=0;armynum<MAXARM;armynum++)
 		if(P_ASOLD>0)
-		for(i=(int)P_AXLOC-xoffset-ARMYSEE;i<=(int)P_AXLOC-xoffset+ARMYSEE;i++)
-		for(j=(int)P_AYLOC-yoffset-ARMYSEE;j<=(int)P_AYLOC-yoffset+ARMYSEE;j++)
+		for(i=(int)P_AXLOC-xoffset-ARMYSEE;i!=1+(int)P_AXLOC-xoffset+ARMYSEE;i++)
+		for(j=(int)P_AYLOC-yoffset-ARMYSEE;j!=1+(int)P_AYLOC-yoffset+ARMYSEE;j++)
 		if(ONMAP(i+xoffset,j+yoffset) && i>=0 && j>=0
 		&& i<SCREEN_X_SIZE && j<SCREEN_Y_SIZE)
 			HAS_SEEN(i,j)=TRUE;

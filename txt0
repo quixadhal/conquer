@@ -17,7 +17,7 @@
 'S': diplomacy status        MISC COMMANDS         'a': army report
                            'q': quit and save      'f': fleet report
       VISUAL               'v': version credits    'g': group army report
-'d': change display        'Q': quit and save      'w': wizardry commands
+'d': change display        '!': repeat unit cmd    'w': wizardry commands
 'cntrl-L': redraw          '?': help screens     'ESC': extra commands
 END
                       CONQUER EXTENDED COMMANDS
@@ -65,10 +65,11 @@ END
 
       To facilitate the use of conquer, the environment variable
 XCONQENV has been added to conquer to allow settings of default options
-to conquer.  Just add a line to your .cshrc or .login file with the
-following format:
+to conquer.  Just add a line to your .cshrc or .login (BSD) or .profile (SYSV)
+file with the following format:
 
-setenv XCONQENV "G,nation=MyLand,datadir=this_game"
+setenv XCONQENV "G,nation=MyLand,datadir=this_game" (BSD)
+XCONQENV="G,nation=MyLand,datadir=this_game" (SYSV)
 
       If you then type just 'conquer' to enter conquer, it will be
 equivalent to typing 'conquer -G -n MyLand -d this_game'.

@@ -45,6 +45,7 @@ main()
 	fprintf(fp,"s/XMAXNAVY/%d/g\n",MAXNAVY);
 	fprintf(fp,"s/XBREAKJIHAD/%ld/g\n",BREAKJIHAD);
 	fprintf(fp,"s/XCONQENV/%s/g\n",ENVIRON_OPTS);
+	fprintf(fp,"s/XNCITYCOST/%d/g\n",N_CITYCOST);
 
 	/* check all the defined options */
 #ifdef OGOD

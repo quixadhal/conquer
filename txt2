@@ -192,8 +192,8 @@ Light           One             +(2*XSIZESPD)        1 x Base
 Medium          Two             +XSIZESPD            2 x Base
 Heavy           Three           +0            3 x Base
 
-Ship maintenance will cost XSHIPMAINT per holding space
-on each update.
+Ship maintenance will cost XSHIPMAINT per holding space on each update.
+(Un)loading costs XNCITYCOST movement in cities, full movement elsewhere.
 END
                            SHIP INFORMATION
 

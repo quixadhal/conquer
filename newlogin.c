@@ -26,7 +26,7 @@ int  Classcost[]= { 0, 0, 0, 4, 2, 2, 2, 6, 4, 4, 2 };
 long Classpow[]= { 0x0L, 0x0L, 0x0L, SUMMON, RELIGION, SAILOR,
 	URBAN, 0x000000007L, DESTROYER, 0x00000700L, THE_VOID };
 
-char *Mprompt[]= { "<<--", "-->>" };
+char *Mprompt[]= { "<ADD", "SUB>" };
 char *LType[]={ "Random", "Fair", "Great" };
 
 char *Mlabels[]= { "Population", "Treasury", "Location",
@@ -194,9 +194,9 @@ void
 newerror(str)
 	char *str;
 {
-	mvaddstr(LINES-1,0,str);
+	mvaddstr(LINES-1, 0, str);
 	clrtoeol();
-	mvaddstr(LINES-1,COLS-13,"Hit Any Key");
+	mvaddstr(LINES-1, COLS-16, "PRESS ANY KEY");
 	beep();
 	refresh();
 	getch();
@@ -283,7 +283,7 @@ showitem(line,item)
 	sprintf(tempc,"%ld jewels & metal",
 		   spent[CH_RAWGOODS]*NLJEWELS);
 	mvprintw(line,0,"%38s",tempc);
-	mvprintw(line,COLS/2+10,"%ld jewels & metal",NLJEWELS);
+	mvprintw(line,COLS/2+13,"%ld jewels & metal",NLJEWELS);
 #else
 	sprintf(tempc,"%ld jewels",
 		   spent[CH_RAWGOODS]*NLJEWELS);
@@ -292,7 +292,7 @@ showitem(line,item)
 	nsprintf(tempc,"%ld metal",
 		    spent[CH_RAWGOODS]*NLMETAL);
 	mvprintw(line,0,"%38s",tempc);
-	mvprintw(line,COLS/2+10,"%ld metals",NLMETAL);
+	mvprintw(line,COLS/2+13,"%ld metals",NLMETAL);
 #endif
 }
 
@@ -457,7 +457,7 @@ newlogin()
 		valid=FALSE;
 		while(valid==FALSE) {
 			valid=TRUE;
-			mvprintw(2,0,"Enter the name of your country's leader (Ex. The_Ed, Gandalf, Conan)");
+			mvprintw(2,0,"Enter the name of your country's leader (Ex. The Ed, Gandalf, Conan)");
 			clrtoeol();
 			mvprintw(3,0,"    [maximum %d characters]: ",LEADERLTH);
 			refresh();
@@ -481,7 +481,7 @@ newlogin()
 			case 'D':
 			case 'd':
 				/*MINER POWER INATE TO DWARVES*/
-				newerror("Dwarves have MINING skills");
+				newmsg("Dwarves have MINING skills");
 				mvprintw(3,0,"National Race: Dwarf");
 				clrtoeol();
 				curntn->powers=MINER;
@@ -502,7 +502,7 @@ newlogin()
 				break;
 			case 'E':
 			case 'e':
-				newerror("Elves are magically cloaked (VOID power)");
+				newmsg("Elves are magically cloaked (VOID power)");
 				mvprintw(3,0,"National Race: Elf");
 				clrtoeol();
 				curntn->powers=THE_VOID;
@@ -524,7 +524,7 @@ newlogin()
 			case 'O':
 			case 'o':
 				/*MINOR MONSTER POWER INATE TO ORCS*/
-				newerror("Your leader is a Monster!");
+				newmsg("Your leader is a Monster!");
 				mvprintw(3,0,"National Race: Orc");
 				clrtoeol();
 				curntn->powers=MI_MONST;
@@ -546,7 +546,7 @@ newlogin()
 			case 'H':
 			case 'h':
 				curntn->race=HUMAN;
-				newerror("Humans have the combat skill of a WARRIOR");
+				newmsg("Humans have the combat skill of a WARRIOR");
 				mvprintw(3,0,"National Race: Human");
 				clrtoeol();
 				curntn->powers = WARRIOR;
@@ -640,18 +640,18 @@ newlogin()
 
 		ypos = 6;
 		mvprintw(ypos,0,"  %-13s       %s", "ITEM", "CURRENTLY HAVE" );
-		mvprintw(ypos++,COLS/2+5,"%4s %s", "COST", "AMOUNT" );
+		mvprintw(ypos++,COLS/2+5,"%4s    %s", "COST", "AMOUNT" );
 		for(i=0; i<CH_NUMBER; i++) {
 			mvprintw(ypos,0,"%-15s", Mlabels[i]);
 			showitem(ypos,i);
 			if (i==CH_LOCATE) {
-				mvprintw(ypos,COLS/2+5,"%3d  %s", Mcost[i],
+				mvprintw(ypos,COLS/2+5,"%3d     %s", Mcost[i],
 					    "Better Location");
 			} else {
 				if (curntn->race==ORC) {			
 					switch(i) {
 					case CH_MOVEMENT:
-						mvprintw(ypos++,COLS/2+5,"  -  --------");
+						mvprintw(ypos++,COLS/2+5,"  -     --------");
 						continue;
 					case CH_REPRO:
 						x = 2*Munits[i]*Mvalues[i];
@@ -664,10 +664,10 @@ newlogin()
 						x = Munits[i]*Mvalues[i];
 						break;
 					}
-					mvprintw(ypos,COLS/2+5,"%3d ", Mcost[i]);
+					mvprintw(ypos,COLS/2+5,"%3d for",Mcost[i]);
 					printw(" %ld %s", x, Mitems[i]);
 				} else {
-					mvprintw(ypos,COLS/2+5,"%3d ", Mcost[i]);
+					mvprintw(ypos,COLS/2+5,"%3d for",Mcost[i]);
 					printw(" %ld %s", Munits[i]*Mvalues[i], Mitems[i]);
 				}
 			}
@@ -682,7 +682,7 @@ newlogin()
 		valid = FALSE;
 		clr = 1;
 		standout();
-		mvaddstr(LINES-4,0,"  ESC: Exit  ?: Info  <,+,h: left  >,+,l: right  k: up  j: down  ' ': ADD/SUB");
+		mvaddstr(LINES-4,2,"DONE=ESC  EXEC=SPACE  INFO=\"?\"  ADD=\"<+h\"  SUBtract=\">+l\"  UP=\"k\"  DOWN=\"j\"");
 		standend();
 
 		while(valid==FALSE) {
@@ -1274,9 +1274,11 @@ int	isupd;	/* true if update, false if interactive */
 	long x;
 
 	/* determine number of leaders you want */
-	if((tmp == C_TRADER) || (tmp <= C_WIZARD))
-		spent[CH_LEADERS] = 5;
-	else	spent[CH_LEADERS] = 7;
+	if((tmp == C_TRADER) || (tmp <= C_WIZARD)) {
+		numleaders = spent[CH_LEADERS] = 5;
+	} else {
+		numleaders = spent[CH_LEADERS] = 7;
+	}
 
 	/* assign the powers */
 	x=Classpow[tmp];

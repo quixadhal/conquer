@@ -788,7 +788,7 @@ help()
 
 	/* quick exit on invalid entry */
 	if (i<0 || i>MAXHELP) {
-		redraw=FALSE;
+		redraw=DONE;
 		makebottom();
 		return;
 	}
@@ -863,23 +863,29 @@ newspaper()
 {
 	int lineno;
 	FILE *fp, *fopen();
-	int newpage,choice,done=FALSE;
-	short pagenum=1;
+	int newpage,choice,done;
+	short pagenum,subpage;
 	int i,ydist,xdist;
 	char line[LINELTH],name[FILELTH];
-
+	int readold;
+	int c;
+	
 	/* check to make sure that there are newspapers */
 	if (TURN==0) {
 		clear_bottom(0);
 		errormsg("no news to read");
-		redraw=FALSE;
+		redraw=DONE;
 		makebottom();
 		return;
 	}
 
+	/* set to 1 if news already read and redraw is needed */
+	readold=0;
+	readoldp:   /* label to jump if reading old pages */
 	clear_bottom(0);
 	ydist=LINES-3;
 	xdist=0;
+
 	/* check for all newspapers up until the current turn */
 	for (i=TURN-1;i>=0 && i>=TURN-MAXNEWS;i--) {
 		sprintf(line,"   %d) %s of Year %d",TURN-i,
@@ -895,41 +901,60 @@ newspaper()
 	mvaddstr(LINES-4,0,"Read Which Newspaper:");
 	standend();
 	refresh();
+
 	/* get the choice */
 	choice = getch() - '0';
 	/* make sure the choice is valid */
 	if (choice<1 || choice > MAXNEWS) {
+	        if (readold)
+	               return;
 		makebottom();
-		redraw=FALSE;
+		redraw=DONE;
 		return;
 	}
-
+	/* select page to read */
+	pagenum=1;
+	backpage:    /* label for reading previous pages. pagenum set to page */
 	sprintf(name,"%s%d",newsfile,TURN-choice);
 	if ((fp=fopen(name,"r"))==NULL) {
 		clear_bottom(0);
 		sprintf(line,"unable to open news file <%s>",name);
 		errormsg(line);
-		redraw=FALSE;
+		if (readold)
+		  return;
+		redraw=DONE;
 		makebottom();
 		return;
 	}
 
 	/*open and read one page */
+     forpage:  /* label for reading forward pages. pagenum set to page */
+	subpage=1;
 	newpage=FALSE;
 	line[0]='\0';
 	strcpy(name,"");
-
-	/*clear out any proceeding blanks*/
-	while(done==FALSE && strlen(name)==0)
+	/* reading to correct page */
+	i=0;
+	done=FALSE;
+	while(done==FALSE && i<pagenum) {
 		if(fgets(name,80,fp)==NULL) done=TRUE;
+		if(name[0]!='\0' && name[1]!='.' && name[1]!=':')
+			i=todigit(name[0]);
+	}
+	if (i!=pagenum) {
+		errormsg("Page not found");
+		pagenum=1;
+	} else {
+		pagenum=i;
+	}
 
-	while(done==FALSE){
+	do {
 		if(newpage==FALSE){
 			clear();
 			lineno=5;
 			newpage=TRUE;
 			standout();
-			mvprintw(0,23,"CONQUER NEWS REPORT  page %d",pagenum);
+			mvprintw(0,21,"CONQUER NEWS REPORT  Page %d.%d",pagenum,subpage++);
 			mvprintw(1,28,"%s of Year %d",PSEASON(TURN-choice),YEAR(TURN-choice));
 			mvprintw(3,37-strlen(name)/2,"%s",name+2);
 			standend();
@@ -940,14 +965,16 @@ newspaper()
 			}
 		} else if(fgets(line,80,fp)==NULL) done=TRUE;
 		else {
-			if(line[1]!='.') {
+			if(line[1]!='.'  && line[1]!=':') {
 				strcpy(name,line);
 				newpage=FALSE;
-				pagenum++;
+				pagenum=todigit(line[0]);
+				subpage=1;
 			} else {
 				if(todigit(line[0])!=pagenum) {
 					newpage=FALSE;
 					pagenum=todigit(line[0]);
+					subpage=1;
 				}
 				else if(lineno>LINES-4) newpage=FALSE;
 				else if(strlen(line)>2) {
@@ -959,12 +986,60 @@ newspaper()
 		if(newpage==FALSE||done==TRUE){
 			standout();
 			/* constants since news is 80 col format */
-			mvaddstr(LINES-2,24,"HIT ANY KEY TO CONTINUE");
-			mvaddstr(LINES-1,25,"TO END NEWS HIT SPACE");
+			mvaddstr(LINES-2,4,"N=next page, P=previous page, 1-5=jump to page, O=Read other news");
+			mvaddstr(LINES-1,12,"ANY OTHER KEY TO ADVANCE -- TO END NEWS HIT SPACE");
 			standend();
 			refresh();
-			if(getch()==' ') done=TRUE;
+			stayhere:
+			c=getch();
+			switch (c) {
+			case 'N':
+			case 'n':
+				/* go forward a page */
+				if (subpage!=1 && done!=TRUE) {
+					pagenum++;
+					if (pagenum>5) pagenum=5;
+					goto forpage;
+				} else if (done==TRUE) {
+					goto stayhere;
+				}
+				break;
+			case 'P':
+			case 'p':
+				/* go backward a page */
+				if (subpage==1) pagenum--;
+				pagenum--;
+				if (pagenum<1) pagenum=1;
+				fclose(fp);
+				goto backpage;
+				break;
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+				/* goto a specific page */
+				i=todigit(c);
+				if (i<=pagenum) {
+					pagenum=i;
+					fclose(fp);
+					goto backpage;
+				} else {
+					pagenum=i;
+					goto forpage;
+				}
+				break;
+			case ' ':
+				done=TRUE;
+				break;
+			case 'O':
+			case 'o':
+				readold=1;
+				fclose(fp);
+				goto readoldp;
+				break;
+			}
 		}
-	}
+	} while (done==FALSE);
 	fclose(fp);
 }

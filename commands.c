@@ -241,11 +241,11 @@ redesignate()
 		}
 	}
 
+	clear_bottom(0);
 	if((SOWN!=country)&&(isgod==FALSE)) {
 		errormsg("Hey!  You don't own that sector!");
 		return;
 	}
-	clear_bottom(0);
 
 	mvaddstr(LINES-4,0,"Possible sector designations: ");
 	x = 30;
@@ -984,7 +984,7 @@ draft()
 			clrtoeol();
 		}
 		errormsg("");
-		redraw=TRUE;
+		redraw=PART;
 	} else {
 		P_AYLOC=YREAL;
 		P_AXLOC=XREAL;
@@ -1039,7 +1039,7 @@ rmessage()
 		clear_bottom(0);
 		sprintf(mesgfile,"error: %s open",tempfile);
 		errormsg(mesgfile);
-		redraw=FALSE;
+		redraw=DONE;
 		makebottom();
 		return;
 	}
@@ -1050,14 +1050,14 @@ rmessage()
 		clear_bottom(0);
 		errormsg("no messages");
 		makebottom();
-		redraw=FALSE;
+		redraw=DONE;
 		return;
 	}
 
 	/*read in file a line at at time*/
 	if(fgets(line,LINELTH,mesgfp)==NULL) {
 		done=TRUE;
-		redraw=FALSE;
+		redraw=DONE;
 		clear_bottom(0);
 		errormsg("no messages");
 		makebottom();
@@ -1226,34 +1226,33 @@ moveciv()
 
 	clear_bottom(0);
 	if(sct[XREAL][YREAL].owner!=country){
-		errormsg("you do not own");
-		makebottom();
+		errormsg("Sorry, you don't own that sector.");
 		return;
 	}
 	else if(sct[XREAL][YREAL].people==0){
-		errormsg("nobody lives here!!!");
-		makebottom();
+		errormsg("Nobody lives there!!!");
 		return;
 	}
 
 	mvprintw(LINES-4,0,"Sector contains %d people [cost 50 per civilian]",sct[XREAL][YREAL].people);
-	mvaddstr(LINES-3,0,"how many people to move?");
+	mvaddstr(LINES-3,0,"How many people to move?");
 	clrtoeol();
 	refresh();
 	people = get_number();
 	if (people <= 0) {
 		return;
 	}
-	if((people>sct[XREAL][YREAL].people)
-	||(people*50>curntn->tgold)){
-		errormsg("Sorry...Input error or you do not have the gold talons");
-		makebottom();
+	if (people>sct[XREAL][YREAL].people) {
+		errormsg("Sorry, not that many people live there.");
+	}
+	if (people*50>curntn->tgold) {
+		errormsg("Sorry, you do not have enough gold talons.");
 		return;
 	}
 
-	mvprintw(LINES-4,0,"sector location is x=%d, y=%d",XREAL,YREAL);
+	mvprintw(LINES-4,0,"Sector location is x=%d, y=%d",XREAL,YREAL);
 	clrtoeol();
-	mvaddstr(LINES-3,0,"what x location to move to?");
+	mvaddstr(LINES-3,0,"What X location to move to?");
 	clrtoeol();
 	refresh();
 	i = get_number();
@@ -1262,12 +1261,11 @@ moveciv()
 	}
 
 	if((i-(XREAL))>2||(i-(XREAL))<-2) {
-		errormsg("sorry, can only move two sectors");
-		makebottom();
+		errormsg("Sorry, your people refuse to move more than two sectors.");
 		return;
 	}
 
-	mvaddstr(LINES-2,0,"what y location to move to?");
+	mvaddstr(LINES-2,0,"What Y location to move to?");
 	clrtoeol();
 	refresh();
 	j = get_number();
@@ -1275,23 +1273,19 @@ moveciv()
 		return;
 	}
 	if((j-(YREAL)>2)||((YREAL)-j>2)) {
-		errormsg("sorry, can only move two sectors");
-	}
-	else if(sct[i][j].owner!=country){
-		errormsg("sorry, you dont own it...");
-	}
-	/*need to check move cost > 0 for sector*/
-	else if(movecost[i][j]<0){
-		errormsg("you can't enter there...");
-	}
-	else if ((i!=XREAL)||(j!=YREAL)){
+		errormsg("Sorry, your people refuse to move more than two sectors.");
+	} else if(sct[i][j].owner!=country){
+		errormsg("Sorry, you don't own that sector.");
+	} else if(movecost[i][j]<0){
+		/*need to check move cost > 0 for sector*/
+		errormsg("Sorry, your people refuse to enter that sector.");
+	} else if ((i!=XREAL)||(j!=YREAL)){
 		curntn->tgold-=50*people;
 		sct[XREAL][YREAL].people-=people;
 		SADJCIV;
 		sct[i][j].people+=people;
 		SADJCIV2;
 	}
-	makebottom();
 }
 
 int

@@ -171,8 +171,10 @@ pr_desg()
 	for(Y=0;Y<MAPY;Y++) {
 		for(X=0;X<MAPX;X++) {
 			if (mapseen[X][Y]==TRUE) {
-				if (country==0 || magic(sct[X][Y].owner,NINJA)==TRUE
-				    || magic(sct[X][Y].owner,THE_VOID)!=TRUE) {
+				if ((country == 0)
+				  || (sct[X][Y].owner == country)
+				  || (magic (country, NINJA) == TRUE)
+				  || (magic (sct[X][Y].owner, THE_VOID) != TRUE)) {
 					if(sct[X][Y].designation==DNODESIG)
 						putc(sct[X][Y].altitude,stdout);
 					else putc(sct[X][Y].designation,stdout);
@@ -274,7 +276,7 @@ readdata()
 		abrt();
 	}
 #ifdef DEBUG
-	printf("reading %d bytes of world data\n",sizeof(struct s_world));
+	fprintf(stderr,"reading %d bytes of world data\n",sizeof(struct s_world));
 #endif DEBUG
 
 	getspace();
@@ -288,7 +290,7 @@ readdata()
 		abrt();
 	}
 #ifdef DEBUG
-	printf("reading %d bytes of sector data\n",n_read);
+	fprintf(stderr,"reading %d bytes of sector data\n",n_read);
 #endif DEBUG
 	if((n_read=read(fd,ntn,NTOTAL*sizeof(struct s_nation))) == -1)
 		printf("error reading s_nation data (ntn)\n");
@@ -298,7 +300,7 @@ readdata()
 		abrt();
 	}
 #ifdef DEBUG
-	printf("reading %d bytes of nation data\n",n_read);
+	fprintf(stderr,"reading %d bytes of nation data\n",n_read);
 #endif DEBUG
 	close(fd);
 } /* readdata() */
@@ -317,14 +319,14 @@ offmap()
 			xcurs=0;
 		}
 		else {
-			redraw=TRUE;
+			redraw=PART;
 			xoffset-=15;
 			xcurs+=15;
 		}
 	}
 	else if(xcurs >= (COLS-23)/2){
 		if(XREAL<MAPX) {
-			redraw=TRUE;
+			redraw=PART;
 			xoffset+=15;
 			xcurs-=15;
 		}
@@ -339,7 +341,7 @@ offmap()
 		xcurs=0;
 	}
 	else if(xcurs >= (COLS-23)/2) {
-		redraw=TRUE;
+		redraw=PART;
 		xoffset+=15;
 		xcurs-=15;
 	}
@@ -350,14 +352,14 @@ offmap()
 			ycurs=0;
 		}
 		else {
-			redraw=TRUE;
+			redraw=PART;
 			ycurs+=15;
 			yoffset-=15;
 		}
 	}
 	else if(ycurs >= SCREEN_Y_SIZE-1){
 		if(YREAL<MAPY) {
-			redraw=TRUE;
+			redraw=PART;
 			yoffset+=15;
 			ycurs-=15;
 		}
@@ -372,11 +374,31 @@ offmap()
 		ycurs=0;
 	}
 	else if(ycurs >= SCREEN_Y_SIZE-1) {
-		redraw=TRUE;
+		redraw=PART;
 		yoffset+=15;
 		ycurs-=15;
 	}
 	whatcansee();
+}
+
+/************************************************************************/
+/*	CENTERMAP()	- redraws screen so that cursor is centered	*/
+/************************************************************************/
+void
+centermap()
+{
+  int xx,yy;
+  xx=XREAL;
+  yy=YREAL;
+  xoffset = xx - (SCREEN_X_SIZE/2);
+  yoffset = yy - (SCREEN_Y_SIZE/2);
+  if (xoffset<0)
+      xoffset=0;
+  if (yoffset<0)
+      yoffset=0;
+  xcurs= xx-xoffset;
+  ycurs= yy-yoffset;
+  whatcansee();
 }
 
 /************************************************************************/

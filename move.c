@@ -55,7 +55,7 @@ mymove()
 		clrtoeol();
 		if((P_NMOVE==0)) {
 			errormsg("That Fleet is Not Able Move Any Farther");
-			redraw=FALSE;
+			redraw=DONE;
 			armornvy=AORN;
 			return;
 		}
@@ -65,7 +65,7 @@ mymove()
 		clrtoeol();
 		if(P_AMOVE==0){
 			errormsg("That Unit is Not Able to Move");
-			redraw=FALSE;
+			redraw=DONE;
 			armornvy=AORN;
 			return;
 		}
@@ -76,7 +76,7 @@ mymove()
 			refresh();
 			if( getch() == 'y' )  P_ASTAT=ATTACK;
 			else {
-				redraw=FALSE;
+				redraw=DONE;
 				armornvy=AORN;
 				return;
 			}
@@ -153,7 +153,9 @@ mymove()
 			break;
 		case '':		/* redraw map */
 			valid=FALSE;
-			redraw=TRUE;
+			centermap();
+			clear();
+			redraw=PART;
 			coffmap();
 			/*see within one sector of unit*/
 			if(hilmode==3) {
@@ -488,6 +490,7 @@ mymove()
 			  ||(sct[P_AXLOC][P_AYLOC].designation==DCAPITOL)
 			  ||(sct[P_AXLOC][P_AYLOC].designation==DCITY))){
 				mvaddstr(LINES-2,0,"Entering Town/City sector");
+				clrtoeol();
 				refresh();
 				sleep(2);
 			} else if((SOWN!=country)
@@ -572,9 +575,13 @@ mymove()
 		getch();
 	}
 	whatcansee();
-	redraw=FALSE;
+	redraw=DONE;
+	prep(country,FALSE,TRUE);
 	makemap();
 	armornvy=AORN;
+	makebottom();
+	pager=0;
+	selector=0;
 }
 
 /************************************************************************/

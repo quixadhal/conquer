@@ -156,6 +156,35 @@
 108. made sure that NPCs do not group or disband ZOMBIES.
 109. added a NOSCORE compiler option to allow only god to see full score list.
 110. changed the class name NPC to monster.
+===4.0 patch number four released => 4.4 ===========================
+111. fixed bug with scouts being grouped by NPCs.
+112. fixed bug that did not provide NPCs with leaders.
+113. reworked cexecute.c to allow multiple magic initializations.
+114. touched up newlogin() and makeworld().
+115. installed routines to limit NPCs by following the VOID and HIDDEN
+	powers.  []
+116. altered the killmagk() routine to allow addition and removal: god_magk().
+117. commented out some nations from the nations file.
+118. tinkered with makeworl.c again.
+119. added in the conqps functions by Martin Forrsen.
+120. rewrote cheat() routine to verify that nation hadn't been touched by
+	a player during that turn.
+121. made a 'PLEASE WAIT' message appear on login, since response of some
+	computers is slower than expected during startup. [T. Kivinen]
+122. made sure fison was changed properly during 'z' command. [T. Kivinen]
+123. changed monster capture statements to go to end of page. [T. Kivinen]
+124. altered newpaper() to allow quick scaning. [T. Kivenen]
+125. added a rudimentary repeat command to repeat last unit affecting command.
+126. altered the 'reading ....' statements in DEBUG mode to go to stderr.
+127. ships now lose only N_CITYCOST movepoints when unloading in cities.
+128. shifted movement below xloc,yloc in army reports for readability.
+129. fixed the redrawing of sectors after movement.
+130. added a patch to avoid a compiler bug in display.c [Richard Caley]
+131. improved screen clearing routine installed. [T. Kivinen]
+132. revamped display under the move people command.
+133. added fix to make sure '-p' command checks void properly. [D. Caplinger]
+134. inserted a check for allowing extra clear when redrawing.
+135. renamed all of the conqps source files to 'psmap'.
 
 -------------------------------------------------------------------------
 | 2.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V4             |

@@ -21,6 +21,44 @@ extern	short country;
 extern	int **attr;     	/*sector attactiveness*/
 extern	int	dissarray;	/* has nation lost its leader */
 int	peace;	/*is 8 if at peace, 12 if at war*/
+static	int	Avg_food;
+static	int	Avg_soldiers[NTOTAL];
+static	int Avg_tradegood;
+
+/* macros that indicate what the country can see */
+#ifdef	NPC_SEE_SECTORS
+#define		SEE_SECTOR(x,y,country)			TRUE
+#else	NPC_SEE_SECTORS
+#define     SEE_SECTOR(x,y,country) \
+                ( (magic(sct[x][y].owner,THE_VOID)!=TRUE) \
+                  || (magic(country,NINJA)==TRUE) )
+#endif	NPC_SEE_SECTORS
+
+#ifdef	NPC_SEE_CITIES
+#define		SEE_CITIES(city_nation,country)		TRUE
+#else	NPC_SEE_CITIES
+#define     SEE_CITIES(city_nation,country) \
+                ( (magic(city_nation,THE_VOID)!=TRUE) \
+                  || (magic(country,NINJA)==TRUE) )
+#endif	NPC_SEE_CITIES
+
+#ifdef	NPC_COUNT_ARMIES
+#define		COUNT_ARMIES(army_nation,country)	TRUE
+#else	NPC_COUNT_ARMIES
+#define     COUNT_ARMIES(army_nation,country) \
+                ( ( (magic(army_nation,THE_VOID)!=TRUE) \
+                    && (magic(army_nation,HIDDEN)!=TRUE) \
+                   ) || (magic(country,NINJA)==TRUE) )
+#endif	NPC_COUNT_ARMIES
+
+/* When a sector cannot be seen by an npc nation because of
+ * THE_VOID, a value must still be given to the
+ * sector, because there MIGHT be something there.
+ * The following unseen (UNS_) value represents this.  
+ */
+#define	UNS_CITY_VALUE	10	/* If there is an under-defended City
+				 * the value is 500
+				 */
 
 void
 prtattr()
@@ -131,7 +169,7 @@ do_nomad()
 			if( ((sct[x][y].owner) == 0
 			|| solds_in_sector( x, y, sct[x][y].owner) == 0 )
 			&& (ntn[sct[x][y].owner].active!=NPC_NOMAD) ) {
-				fprintf(fnews,"3.\tnomads capture sector %d,%d\n",x,y);
+				fprintf(fnews,"3:\tnomads capture sector %d,%d\n",x,y);
 				if(sct[x][y].owner!=0) flee(x,y,1,FALSE);
 				sct[x][y].owner=country;
 				DEVASTATE(x,y);
@@ -180,7 +218,7 @@ do_savage()
 			if( ((sct[x][y].owner == 0)
 			|| (solds_in_sector( x, y, sct[x][y].owner) == 0))
 			&& (ntn[sct[x][y].owner].active != NPC_SAVAGE)) {
-				fprintf(fnews,"3.\tsavages capture sector %d,%d\n",x,y);
+				fprintf(fnews,"3:\tsavages capture sector %d,%d\n",x,y);
 				if(P_ATYPE<MINLEADER) {
 					if(sct[x][y].owner!=0) flee(x,y,1,FALSE);
 					sct[x][y].owner=country;
@@ -657,28 +695,27 @@ redomil()
 			}
 		}
 		if((free==TRUE)) {
-			/* want to add ideal troops */
-			ideal = sct[x][y].people/MILINCITY - P_ASOLD;
-			ideal = min(ideal, 250);
-			if (P_ASOLD < 50)	/* make the militia at least 50 */
-				ideal = max(ideal,50-P_ASOLD);
-			if (P_ASOLD + ideal < 50) /*don't let ideal bring it below 50*/
-				continue;
+			/* want to have ideal troops */
+			ideal = sct[x][y].people/MILINCITY;
+
+			if(ideal < 50)	/* make the militia at least 50 */
+				ideal = 50;
+
 			if(ideal>0){
 			if(magic(country,WARRIOR)==TRUE){ /* WARRIOR power */
 				curntn->tgold-=
-					(ideal* *(u_encost+P_ATYPE))/2;
+					((ideal-P_ASOLD)* *(u_encost+P_ATYPE))/2;
 			} else {
 				curntn->tgold-=
-					ideal* *(u_encost + P_ATYPE);
+					(ideal-P_ASOLD)* *(u_encost + P_ATYPE);
 			}
 			}
-			P_ASOLD+=ideal;
+#ifdef DEBUG
+		printf("\tadding %ld troops to %s army %d (now %ld men - populace %ld)\n",ideal-P_ASOLD,unittype[P_ATYPE],armynum,ideal,sct[x][y].people);
+#endif DEBUG
+			P_ASOLD=ideal;
 			P_ATYPE=A_MILITIA;
 			P_ASTAT=MILITIA;
-#ifdef DEBUG
-		printf("\tadding %ld troops to %s army %d (now %ld men - populace %ld)\n",ideal,unittype[P_ATYPE],armynum,P_ASOLD,sct[x][y].people);
-#endif DEBUG
 		}
 	}
 	check();
@@ -824,6 +861,63 @@ getdstatus()
 	}
 }
 
+	
+/* Find the average world food value per sector
+ * and the average tradegood value per sector.
+ * This is used for unseen sectors and unseen
+ * armies.													*/
+static void
+find_avg_sector ()
+{
+				int			armynum;
+				int			i;
+				int			nation;
+				int			repeat;
+	struct		s_sector	*sptr;		/*	used to speed up this function	*/
+	register	int			x,y;
+	register	long		total_food   = 0;
+				int			total_sectors;
+	register	long		total_tg     = 0;
+	register	long		useable_land = 0;
+
+	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {
+		sptr = &sct[x][y];	
+		if(( sptr->altitude!=WATER )&&( sptr->altitude!=PEAK )) {
+			useable_land++;
+			total_food += tofood(sptr,country);
+			if(sptr->tradegood != TG_none) {
+				if(sptr->metal != 0) total_tg +=500;
+				else if(sptr->jewels != 0) total_tg +=500;
+				else total_tg +=300;
+			}
+		}
+	}
+	Avg_food = total_food / useable_land;
+	Avg_tradegood = total_tg / useable_land;
+
+	for(nation=1;nation<NTOTAL;nation++) {
+		if(isntn(ntn[nation].active)
+		&& !COUNT_ARMIES(nation,country)) { 
+			/* Count the number of sectors which are occupied by each
+			 * nation's armies.											*/
+			total_sectors = 0;
+			for(armynum=1;armynum<MAXARM;armynum++)
+				if(ntn[nation].arm[armynum].sold > 0) {
+					x = ntn[nation].arm[armynum].xloc;
+					y = ntn[nation].arm[armynum].yloc;
+					repeat = FALSE;
+					for (i=1; (i<armynum) && !repeat; ++i) 
+						if((ntn[nation].arm[i].xloc == x)
+						&& (ntn[nation].arm[i].yloc == y)) 
+						repeat = TRUE;	
+					if (!repeat) 
+						total_sectors++;
+				}
+
+			Avg_soldiers[nation] = ntn[nation].tmil / total_sectors;
+		}
+	}
+}
 void
 nationrun()
 {
@@ -863,6 +957,8 @@ nationrun()
 	}
 
 	getdstatus();
+
+	find_avg_sector ();
 
 #ifdef SPEW
 	for(x=1;x<NTOTAL;x++) if(isntn( ntn[x].active )) {
@@ -1141,19 +1237,25 @@ n_unowned()
 	for(x=(int)curntn->capx-4;x<=(int)curntn->capx+4;x++){
 		for(y=(int)curntn->capy-4;y<=(int)curntn->capy+4;y++){
 			if((ONMAP(x,y))&&(sct[x][y].owner==0)) {
-				attr[x][y] += 700;
+				attr[x][y] += 450;
 			}
 		}
 	}
 
 	for(x=stx;x<endx;x++) {
 		for(y=sty;y<endy;y++) {
-			/* add if metal high */
-			if(sct[x][y].tradegood != TG_none) {
-				if(sct[x][y].metal != 0) attr[x][y]+=500;
-				else if(sct[x][y].jewels != 0) attr[x][y]+=500;
-				else attr[x][y]+=300;
+			if (SEE_SECTOR(x,y,country)) {
+				/* add if metal high */
+				if(sct[x][y].tradegood != TG_none) {
+					if(sct[x][y].metal != 0) attr[x][y]+=500;
+					else if(sct[x][y].jewels != 0) attr[x][y]+=500;
+					else attr[x][y]+=300;
+				}
 			}
+			else
+			/*give some value: tradegood MIGHT be there*/
+				attr[x][y] += Avg_tradegood;
+
 			/*add to attractiveness for unowned sectors*/
 			if(sct[x][y].owner == 0) {
 				attr[x][y]+=300;
@@ -1161,7 +1263,11 @@ n_unowned()
 			if(ntn[sct[x][y].owner].active == NPC_NOMAD)
 				attr[x][y]+=100;
 			}
-			attr[x][y] += 50*tofood(&sct[x][y],country); 
+			if (SEE_SECTOR(x,y,country)) 
+				attr[x][y] += 50*tofood(&sct[x][y],country); 
+			else
+			/* give some value: there is probably average food there	*/ 
+				attr[x][y] += 50*Avg_food;
 
 			if(!is_habitable(x,y)) {
 #ifdef XENIX
@@ -1175,18 +1281,44 @@ n_unowned()
 		}
 	}
 }
+
 void
 n_defend(natn)
 register short natn;
 {
-	int x,y;
+	register	int		i,j;
+				int		repeat;
+	register	int		x,y;
 
-	/* add 1/10th of their soldiers in sector */
-	for(x=1;x<MAXARM;x++) if(ntn[natn].arm[x].sold > 0)
-		if(sct[ntn[natn].arm[x].xloc][ntn[natn].arm[x].yloc].owner==country)
-			attr[ntn[natn].arm[x].xloc][ntn[natn].arm[x].yloc] +=
-				ntn[natn].arm[x].sold/10;
+	if (COUNT_ARMIES(natn,country)) {
+		/* add 1/10th of their soldiers in sector */
+		for(x=1;x<MAXARM;x++) if(ntn[natn].arm[x].sold > 0)
+			if(sct[ntn[natn].arm[x].xloc][ntn[natn].arm[x].yloc].owner==country)
+				attr[ntn[natn].arm[x].xloc][ntn[natn].arm[x].yloc] +=
+					ntn[natn].arm[x].sold/10;
+	}
+	else {
+		/* For every of this country's sectors that has a 'natn' army
+		 * in it, add 1/10 of the average number of soldiers in that
+		 * 'natn' army.
+		 */
+		for(j=1;j<MAXARM;j++) if(ntn[natn].arm[j].sold > 0) {
+			x = ntn[natn].arm[j].xloc;
+			y = ntn[natn].arm[j].yloc;
+			if(sct[x][y].owner==country) {
+				/* insure the average soldiers is only added
+				 * once per sector								*/
+				repeat = FALSE;
+				for (i=1; (i<j) && !repeat; ++i) 
+					if((ntn[natn].arm[i].xloc == x)
+					&& (ntn[natn].arm[i].yloc == y)) 
+						repeat = TRUE;	
 
+				if (!repeat) 
+					attr[x][y] += Avg_soldiers[natn]/10;
+			}
+		}
+	}
 	/*plus 80 if near your capitol */
 	for(x=(int)curntn->capx-1;x<=(int)curntn->capy+1;x++){
 		for(y=(int)curntn->capy-1;y<=(int)curntn->capy+1;y++){
@@ -1218,18 +1350,31 @@ register short nation;
 	long	solds;	/* solds within 1 of capitol or city */
 
 	for(x=stx;x<endx;x++) for(y=sty;y<endy;y++){
-		if((sct[x][y].owner==nation)&&
-		((sct[x][y].designation==DCITY)
-		||(sct[x][y].designation==DCAPITOL)
-		||(sct[x][y].designation==DTOWN))){
-			solds=0;
-			for(armynum=1;armynum<MAXARM;armynum++) 
-				if((ntn[country].arm[armynum].sold > 0)
-				&&(abs(AXLOC-x)<=1)
-				&&(abs(AYLOC-y)<=1)) solds+=ASOLD;
-
-			if(solds_in_sector(x,y,nation)*2 < 3*solds)
-				attr[x][y]+=500;
+		if(sct[x][y].owner==nation) {
+			if(SEE_CITIES(nation,country)) {
+				if (((sct[x][y].designation==DCITY)
+				||(sct[x][y].designation==DCAPITOL)
+				||(sct[x][y].designation==DTOWN))){
+					solds=0;
+					for(armynum=1;armynum<MAXARM;armynum++) 
+						if((ntn[country].arm[armynum].sold > 0)
+						&&(abs(AXLOC-x)<=1)
+						&&(abs(AYLOC-y)<=1)) solds+=ASOLD;
+		
+					if (COUNT_ARMIES(nation,country)) {
+						if(solds_in_sector(x,y,nation)*2 < 3*solds)
+							attr[x][y]+=500;
+					}
+					else {
+						if((solds_in_sector(x,y,nation) != 0)
+						&&(Avg_soldiers[nation]*2 < 3*solds))
+							attr[x][y]+=400;
+					}
+				}
+			}
+			else
+			/* Give some value: the sector MIGHT be an under-defended city	*/
+				attr[x][y] += UNS_CITY_VALUE;
 		}
 	}
 }
@@ -1273,6 +1418,9 @@ int nation;
 {
 	int x1,x2,y1,y2,x,y;
 
+	if (SEE_CITIES(nation,country)==FALSE)
+		return;
+
 	/*plus if strategic blocking sector*/
 
 	/*+60 if between the two capitol*/
@@ -1304,8 +1452,11 @@ int nation;
 void
 n_survive()
 {
+	int i;
 	int nation,armynum;
 	int capx,capy;
+	int	repeat;
+	int x,y;
 
 	capx=curntn->capx;
 	capy=curntn->capy;
@@ -1315,21 +1466,54 @@ n_survive()
 	}
 
 	/*defend your capitol if occupied, +50 more if with their army*/
-	for(nation=1;nation<NTOTAL;nation++)
+	for(nation=1;nation<NTOTAL;nation++) 
 	if((isntn(ntn[nation].active))
 	&&((ntn[nation].dstatus[country]>=WAR)
 	  ||(curntn->dstatus[nation]>=WAR))){
-		for(armynum=1;armynum<MAXARM;armynum++)
-		if((ntn[nation].arm[armynum].sold > 0) 
-		&&( ntn[nation].arm[armynum].xloc<=capx+2)
-		&&( ntn[nation].arm[armynum].xloc>=capx-2)
-		&&( ntn[nation].arm[armynum].yloc<=capy+2)
-		&&( ntn[nation].arm[armynum].yloc>=capy-2)){
-			if((ntn[nation].arm[armynum].xloc==capx)
-			&&(ntn[nation].arm[armynum].yloc==capy)){
-				attr[capx][capy]+=2*ntn[nation].arm[armynum].sold;
-			} else {
-				attr[ntn[nation].arm[armynum].xloc][ntn[nation].arm[armynum].yloc]+=ntn[nation].arm[armynum].sold;
+		if (COUNT_ARMIES(nation,country)) {
+			for(armynum=1;armynum<MAXARM;armynum++)
+			if((ntn[nation].arm[armynum].sold > 0) 
+			&&( ntn[nation].arm[armynum].xloc<=capx+2)
+			&&( ntn[nation].arm[armynum].xloc>=capx-2)
+			&&( ntn[nation].arm[armynum].yloc<=capy+2)
+			&&( ntn[nation].arm[armynum].yloc>=capy-2)){
+				if((ntn[nation].arm[armynum].xloc==capx)
+				&&(ntn[nation].arm[armynum].yloc==capy)){
+					attr[capx][capy]+=2*ntn[nation].arm[armynum].sold;
+				}
+				else {
+					attr[ntn[nation].arm[armynum].xloc][ntn[nation].arm[armynum].yloc]+=ntn[nation].arm[armynum].sold;
+				}
+			}
+		} else {
+		/* The next line might be more accurate to take into account
+		 * the actual number of armies that natn has, but I don't
+		 * think that VOID or HIDDEN should allow that to be known.
+		 */
+			for(armynum=1;armynum<MAXARM;armynum++)
+			if(ntn[nation].arm[armynum].sold > 0) {
+				x = ntn[nation].arm[armynum].xloc;
+				y = ntn[nation].arm[armynum].yloc;
+				if((capx-2<=x && x<=capx+2)
+				&&( capy-2<=y && y<=capy+2)){
+				/* insure the average soldiers is only added
+				 * once per sector
+				 */
+					repeat = FALSE;
+					for (i=1; (i<armynum) && !repeat; ++i) 
+						if((ntn[nation].arm[i].xloc == x)
+						&& (ntn[nation].arm[i].yloc == y)) 
+						repeat = TRUE;	
+					if (!repeat) {
+						if((ntn[nation].arm[armynum].xloc==capx)
+						&&(ntn[nation].arm[armynum].yloc==capy)){
+							attr[capx][capy]+=2* Avg_soldiers[nation];
+						} 
+						else {
+							attr[ntn[nation].arm[armynum].xloc][ntn[nation].arm[armynum].yloc]+= Avg_soldiers[nation];
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1399,6 +1583,7 @@ pceattr()
 #ifdef DEBUG
 	printf("pceattr()\n");
 #endif DEBUG
+	n_unowned();
 	n_unowned();
 	n_unowned();
 	n_trespass();

@@ -30,6 +30,22 @@ NULL	= 2>/dev/null
 #	Flags to lint
 LTFLG   = -h -lcurses
 
+#	Options for the postscript map printing program.
+#	The file 'conqps.ps' will be installed in the EXEDIR
+#	directory which is determined below.
+#
+#	To avoid building this program, remove $(PSPROG) from
+#	both the 'all:' list and the 'install:' list
+PSPROG  = conqps
+PSSRC   = psmap.c
+PSHEAD  = psmap.h
+PSDATA  = psmap.ps
+#	Default Pagesize Setting:
+#		A4 for European page size.
+#		LETTER for American page size.
+#		OTHER for Local page size.  [edit conqps.h]
+PSPAGE  = LETTER
+
 #	Options for shar program, SHARLIM is limit of each shar
 #	file created in kilobytes and SHARNAM is the prefix for
 #	SHARFILE name.
@@ -75,7 +91,7 @@ EXEDIR = /usr4/acm/stud/adb/games
 CDEFS  = -DDEFAULTDIR=\"$(DEFAULT)\" -DEXEDIR=\"$(EXEDIR)\"
 
 #	Options flag used for non-debugging purposes
-OPTFLG  = -O
+OPTFLG  = -O 
 
 #	Options flag used for debugging purposes
 #	[make sure to comment out 'strip' commands in install section]
@@ -124,11 +140,12 @@ HELPSCR=sed
 
 HEADERS=header.h data.h newlogin.h patchlevel.h
 SUPT1=nations Makefile $(HELP)[0-5] README run man.pag rules
-SUPT2=execute messages news commerce
+SUPT2=execute messages news commerce CONQPS.INFO
 ALLFILS=$(SUPT1) $(HEADERS) $(AFILS) commands.c forms.c main.c move.c \
-reports.c display.c extcmds.c newhelp.c sort.c getopt.c
+reports.c display.c extcmds.c newhelp.c sort.c getopt.c \
+$(PSSRC) $(PSHEAD) $(PSDATA)
 
-all:	$(ADMIN) $(GAME) $(SORT) helpfile
+all:	$(ADMIN) $(GAME) $(SORT) $(PSPROG) helpfile
 	@echo YAY! make new_game to set up permissions, zero appropriate
 	@echo initial files, move $(GAME) and $(ADMIN) to 
 	@echo $(EXEDIR), and set up the world.
@@ -160,30 +177,44 @@ $(SORT):	sort.c
 	strip $(SORT)
 
 clobber:
-	$(RM) *.o $(HELPOUT)[0-5] $(SORT) newhelp in$(GAME) in$(SORT) in$(ADMIN) $(HELPSCR).[12] lint[aghs] conquer.doc $(GAME) $(ADMIN) $(NULL)
+	-$(RM) *.o $(HELPOUT)[0-5] $(PSPROG) $(SORT) $(NULL)
+	-$(RM) newhelp in$(GAME) in$(SORT) in$(ADMIN) in$(PSPROG) $(NULL)
+	-$(RM) $(HELPSCR).[12] lint[ag] conquer.doc $(GAME) $(ADMIN) $(NULL)
 
 clean:
-	$(RM) *.o lint[aghs] conquer.doc $(NULL)
+	$(RM) *.o lint[ag] conquer.doc $(NULL)
 
 in$(GAME):	$(GAME)
 	-$(RM) $(EXEDIR)/$(GAME)
-	$(CP) $(GAME) $(EXEDIR)
+	mv $(GAME) $(EXEDIR)
 	chmod 4751 $(EXEDIR)/$(GAME)
+	touch $(GAME)
 	touch in$(GAME)
 
 in$(ADMIN):	$(ADMIN)
 	-$(RM) $(EXEDIR)/$(ADMIN)
-	$(CP) $(ADMIN) $(EXEDIR)
+	mv $(ADMIN) $(EXEDIR)
 	chmod 4751 $(EXEDIR)/$(ADMIN)
+	touch $(ADMIN)
 	touch in$(ADMIN)
 
 in$(SORT):	$(SORT)
 	-$(RM) $(EXEDIR)/$(SORT)
-	$(CP) $(SORT) $(EXEDIR)
+	mv $(SORT) $(EXEDIR)
 	chmod 751 $(EXEDIR)/$(SORT)
+	touch $(SORT)
 	touch in$(SORT)
 
-install:	in$(GAME) in$(ADMIN) in$(SORT) insthelp
+in$(PSPROG):	$(PSPROG)
+	-$(RM) $(EXEDIR)/$(PSPROG)
+	mv $(PSPROG) $(EXEDIR)
+	$(CP) $(PSDATA) $(EXEDIR)
+	chmod 751 $(EXEDIR)/$(PSPROG)
+	chmod 644 $(EXEDIR)/$(PSDATA)
+	touch $(PSPROG)
+	touch in$(PSPROG)
+
+install:	in$(GAME) in$(ADMIN) in$(SORT) in$(PSPROG) insthelp
 	@echo ""
 	@echo "Installation complete"
 
@@ -194,9 +225,10 @@ new_game:	all insthelp
 	-mkdir $(DEFAULT)/$(GAMEID) $(NULL)
 	chmod 755 $(EXEDIR)
 	chmod 750 $(DEFAULT)/$(GAMEID) $(DEFAULT)
-	$(CP) $(GAME) $(ADMIN) $(SORT) $(EXEDIR)
+	$(CP) $(GAME) $(ADMIN) $(SORT) $(PSPROG) $(PSDATA) $(EXEDIR)
 	chmod 4755 $(EXEDIR)/$(GAME) $(EXEDIR)/$(ADMIN)
-	chmod 0755 $(EXEDIR)/$(SORT)
+	chmod 0755 $(EXEDIR)/$(SORT) $(EXEDIR)/$(PSPROG)
+	chmod 0644 $(EXEDIR)/$(PSDATA)
 	chmod 0600 nations
 	chmod 0700 run
 	$(CP) nations rules $(DEFAULT)/$(GAMEID)
@@ -256,7 +288,16 @@ $(HELPSCR).2:	newhelp
 	newhelp
 
 newhelp:	dataG.o	newhelp.o
-	$(CC) dataG.o newhelp.o -o newhelp
+	$(CC) $(OPTFLG) dataG.o newhelp.o -o newhelp
+	strip newhelp
+#
+#	postscript map program
+PSOPTS  = -DPSFILE=\"$(EXEDIR)/$(PSDATA)\" -D$(PSPAGE)
+#
+$(PSPROG):	$(PSSRC) $(PSDATA) $(PSHEAD)
+	$(CC) $(OPTFLG) $(PSOPTS) $(PSSRC) -o $(PSPROG)
+#	comment out the next line if debugging
+	strip $(PSPROG)
 
 lint:
 	lint $(LTFLG) $(CDEFS) -DCONQUER $(GFILS) > lintg
@@ -297,15 +338,15 @@ $(GOBJS):	data.h header.h
 
 $(AOBJS):	data.h header.h
 
-ioG.o:	data.h header.h patchlevel.h
+ioG.o:	data.h header.h patchlevel.h io.c
 
-ioA.o:	data.h header.h patchlevel.h
+ioA.o:	data.h header.h patchlevel.h io.c
 
-newlogin.o:	data.h header.h newlogin.h patchlevel.h
+newlogin.o:	data.h header.h newlogin.h patchlevel.h newlogin.c
 
-main.o:	data.h header.h patchlevel.h
+main.o:	data.h header.h patchlevel.h main.c
 
-newhelp.c:	data.h header.h patchlevel.h
+newhelp.o:	data.h header.h patchlevel.h newhelp.c
 
 #	Clear suffixes
 .SUFFIXES:	

@@ -12,15 +12,23 @@
 		new software shall, for now, be the perogative of the author.
 	3) loss or damage caused by this software shall not be
 		the responsibility of the author.
-	4) Ed Barlow shall be notified of enhancements to this software via
-		electronic mail and, if there is no response, via US mail to:
+	4) Ed Barlow or Adam Bryant shall be notified of enhancements to this 
+		software via electronic mail and, if there is no response, via 
+		US mail to:
 
 			Ed Barlow
-			562 Clubhouse Dr,
-			Middletown NJ 07748
+			115 E 34ths St.
+			NY, NY 10016
 
-		My home phone is 201-671-2896. Use it sparingly and call
-		before 11PM if it is important.
+		My home phone is 212-679-1439. Use it sparingly and call
+		before 11PM if it is important.  Note that I no longer have
+		access to the arpanet and cant really support conquer like
+		I used to.  If somebody knows of a cheap (free) way of getting
+		a login somewhere where there is network access - HELP ME!!!!
+		Since i am "volunteering" my time for this project, I am not 
+		about to spend millions of dollars to buy network access...  
+		I can get a modem for my PC if somebody will help me get
+		something to call into. -ED-
 	5) no attempt shall be made to make any money from this game or to
 		use any portion of this code to make any money without the
 		authors permission.
@@ -83,6 +91,16 @@
 #define CHEAT		/* npcs will cheat to keep up - this is a very weak
 			   form of cheating.  I use good npc algorithms 
 			   (i think... comments)			*/
+/*#define NPC_COUNT_ARMIES   /* defined if NPC nations can always count armies
+			   This makes them to cheat by seeing even VOID and
+			   HIDDEN armies when counting enemy units.	*/
+/*#define NPC_SEE_SECTORS    /* defined if NPC nations can always see sectors
+			   This allows them to cheat by being allowed to see
+			   all sector attributes of even VOID sectors.	*/
+#define	NPC_SEE_CITIES	     /* defined if NPC nations can always see cities
+			   This allows them to cheat by being able to see
+			   if a VOID sector is a city/town.  Simulates the
+			   players ability to tell cities via movement.	*/
 #define STORMS		/* have storms strike fleets			*/
 #define VULCANIZE	/* add in volcano eruptions....			*/
 #define PVULCAN 20	/* % chance of eruption each round (see above)	*/
@@ -146,7 +164,8 @@
 #define WARSHPCOST	20000L	/* cost to build one light warship	*/
 #define MERSHPCOST	25000L	/* cost to build one light merchant	*/
 #define GALSHPCOST	25000L	/* cost to build one light galley	*/
-#define	SHIPCREW	100	/* full strength crew on a ship		*/
+#define N_CITYCOST	4	/* move lost in (un)loading in cities	*/
+#define SHIPCREW	100	/* full strength crew on a ship		*/
 #define SHIPHOLD	100L	/* storage space of a ship unit		*/
 #define CITYLIMIT	8L	/* % of npc pop in sctr before => city	*/
 #define CITYPERCENT	20L	/* % of npc pop able to be in cities	*/

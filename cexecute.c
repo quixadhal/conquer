@@ -248,7 +248,11 @@ int	isupdate;	/* 0 if not update, 1 if update */
 			printf("\nERROR ON MAGIC READ country=%d %ld != %ld (or of %ld)",country,longvar,curntn->powers,long2var);
 			getchar();
 			}
-			exenewmgk(long2var);
+			for(armynum=0;armynum<=MAXPOWER;armynum++) {
+				longvar = 1L << armynum;
+				if (longvar & long2var)
+					exenewmgk(longvar);
+			}
 			long2var=0;
 			break;
 		}

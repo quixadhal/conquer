@@ -12,7 +12,6 @@
 
 /*Create a world*/
 
-/*DEFINE TEMPORARY VARIABLES FROM MAKEFILE*/
 #include <ctype.h>
 #include <stdio.h>
 #include <pwd.h>
@@ -90,20 +89,20 @@ int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 	mvaddstr(2,5,"Genesis begins...  Your super user login will be 'god'.");
 	mvaddstr(3,0,"Non-player countries will be read in from the file 'nations',");
 	mvaddstr(4,0,"and will have the same password as god, which you will soon set.");
-	mvaddstr(5,0,"     To add players after building:  conqrun -a");
+	mvaddstr(5,0,"     To add players after world creation:  conqrun -a");
 	if (strcmp(datadir,"[default]")!=0)
 		printw(" -d %s", datadir);
 	addch('.');
 
-	newmsg("..Zero out extraneous files from prior games");
+	newerror("..Zero out extraneous files from prior games");
 	/* flush out beginning input */
-	while(getch()!='\n') ;
 	sprintf(newstring,"rm -f %s* %s* %s* %s* %s %s 2> /dev/null",
 		exefile, msgfile, newsfile, isonfile, tradefile, timefile);
 	system(newstring);
-	newerror("....Initialize the nation structures");
+	newmsg("....Initialize the nation structures");
 	zeroworld();
-	newerror("Initialization complete:  And there was light....");
+	newmsg("Initialization complete:  And there was light....");
+	sleep(1);
 
 	valid=FALSE;
 	while(valid==FALSE) {			/* password routine */
@@ -130,14 +129,16 @@ int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 	strncpy(ntn[0].passwd,crypt(passwd,SALT),PASSLTH);
 	
 	/* finally ask for the secondary administrator */
-	mvaddstr(7,0,"You may now designate an alternate ruler for this world.");
+	mvaddstr(7,0,"You may designate an other user as an alternate \"god\" for this world.");
+	mvaddstr(8,0,"Enter System Login of alternate user or hit return to continue.");
 	while(TRUE) {
-		mvaddstr(8,0,"What demi-god shall rule this world? ");
+		mvaddstr(9,0,"What demi-god shall co-rule this world: ");
 		clrtoeol();
 		refresh();
 		get_nname( newstring );
 		if (strlen(newstring)==0) {
-			newerror("God blesses this world with his presense!");
+			newmsg("God will personally rule this world!!!");
+			sleep(1);
 			(void) strcpy(ntn[0].leader,LOGIN);
 			mvaddstr(7,0,"Demi-God: [none]");
 			clrtoeol();
@@ -145,7 +146,7 @@ int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 		} else if (strlen(newstring) <= LEADERLTH) {
 			if (getpwnam(newstring)!=NULL) {
 				sprintf(tempc,"The demi-god %s may administrate this new world.",newstring);
-				newerror(tempc);
+				newmsg(tempc);
 				(void) strncpy(ntn[0].leader,newstring,LEADERLTH);
 				mvprintw(7,0,"Demi-God: %s",ntn[0].leader);
 				clrtoeol();
@@ -252,7 +253,8 @@ createworld()	/* create world */
 	mvaddstr(14,0,"known as god) decreed 'conqrun -m'!!!");
 
 	/*initialize variables */
-	newerror("Day 1... And the variables were initialized.");
+	newmsg("Day 1... And the variables were initialized.");
+	sleep(1);
 	move(11,0);
 	clrtoeol();
 	move(12,0);
@@ -426,9 +428,10 @@ createworld()	/* create world */
 	for(X=0;X<MAPX;X++) for(Y=0;Y<MAPY;Y++)
 		if(type[X][Y] == WATER) chance++;
 
-	mvprintw(10,0,"Water: %d / %d sectors",chance,NUMSECTS);
+	mvprintw(10,0,"Water .................  %d out of %d sectors",chance,NUMSECTS);
 	clrtoeol();
-	newerror("Day 2... God added water to the world");
+	newmsg("Day 2... God added water to the world");
+	sleep(1);
 
 	/*Newly added code to smooth the world out*/
 	for(X=1;X<MAPX-1;X++) for(Y=1;Y<MAPY-1;Y++) {
@@ -443,9 +446,10 @@ createworld()	/* create world */
 	for(X=0;X<MAPX;X++) for(Y=0;Y<MAPY;Y++)
 		if(type[X][Y] == WATER) chance++;
 
-	mvprintw(10,0,"Water: %d / %d sectors",chance,NUMSECTS);
+	mvprintw(10,0,"Water .................  %d out of %d sectors",chance,NUMSECTS);
 	clrtoeol();
-	newerror("But God was not pleased... and smoothed the oceans.");
+	newmsg("But God was not pleased... and smoothed the oceans.");
+	sleep(1);
 
 	/*Adjust world given sectors as land or sea, place vegetation,
 	designation, and altitude */
@@ -459,8 +463,9 @@ createworld()	/* create world */
 	avvalue	/= 10000;
 	nmountains	= NUMSECTS * avvalue;
 	
-	mvprintw(11,0,"Hills and Mountains: %d",nmountains);
-	newerror("Day 3... God created hills and mountains");
+	mvprintw(11,0,"Hills and Mountains....  %d out of %d sectors",nmountains,NUMSECTS);
+	newmsg("Day 3... God created hills and mountains");
+	sleep(1);
 
 	/* heuristic says that 5 is cutoff number to stop placing ranges */
 	/* and 1 third of mountains are placed as random hills		*/
@@ -658,7 +663,8 @@ rawmaterials() 		 /*PLACE EACH SECTOR'S RAW MATERIALS */
 	nmountains = 10 * (END_NORMAL+1);
 	for(i=0;i<=END_NORMAL;i++) nmountains -= ( *(tg_value+i) - '0');
 
-	newerror("Day 4... God placed the world's raw materials");
+	newmsg("Day 4... God placed the world's raw materials");
+	sleep(1);
 	for(y=0;y<MAPY;y++) for(x=0;x<MAPX;x++) {
 
 		sptr = &sct[x][y];
@@ -720,7 +726,8 @@ rawmaterials() 		 /*PLACE EACH SECTOR'S RAW MATERIALS */
 	mvprintw(14,0,"fat ones, skinny ones, orange ones, turquois ones, bright blue ones.");
 	mvprintw(15,0,"WAIT!!!  God has suddenly realized that smurfs were taking things");
 	mvprintw(16,0,"too far and stopped creating new ones, and placed everybody on the map...");
-	newerror("Day 5... God decreed that world would be populated");
+	newmsg("Day 5... God decreed that world would be populated");
+	sleep(1);
 	move(14,0);
 	clrtoeol();
 	move(15,0);
@@ -731,8 +738,10 @@ rawmaterials() 		 /*PLACE EACH SECTOR'S RAW MATERIALS */
 	MERCMEN = ST_MMEN;
 	MERCATT = ST_MATT;
 	MERCDEF = ST_MDEF;
-	newerror("Day 6... God, believing in long weekends, went and got smashed");
-	newerror("Day 7... God rested (to get rid of that stupid hangover)");
+	newmsg("Day 6... God, believing in long weekends, went and got smashed");
+	sleep(1);
+	newmsg("Day 7... God rested (to get rid of that stupid hangover)");
+	sleep(1);
 	sprintf(newstring," ...Log in via 'conquer -n god");
 	if (strcmp(datadir,"[default]")!=0) {
 		strcat(newstring," -d ");
@@ -920,8 +929,7 @@ populate()
 			} else	if(nnomads < MAXARM )	nnomads++;
 			break;
 	}
-	mvprintw(13,0,"Placing %d lizards, %d pirates, %d savages, and %d nomads",
-		nlizards,npirates,nbarbarians,nnomads);
+	mvprintw(13,0,"Placing %d lizard cities, %d pirates, %d savages, and %d nomad tribes",nlizards,npirates,nbarbarians,nnomads);
 	clrtoeol();
 	refresh();
 
@@ -1090,7 +1098,8 @@ populate()
 		}
 	}
 
-	newerror("... All random population and monsters placed");
+	newmsg("... All random population and monsters placed");
+	sleep(1);
 #endif MONSTER
 
 	for (i=0;i<MAXHELP;i++) {
@@ -1108,7 +1117,8 @@ populate()
 	refresh();
 	while( ((i=getch()) != 'y')&&(i != 'n') ) ;
 	if( i!='y' ) {
-		newerror("OK; no NPC nations used");
+		newmsg("OK; no NPC nations used");
+		sleep(1);
 		return;
 	}
 	if((fp=fopen(npcsfile,"r"))==NULL) {
@@ -1121,18 +1131,19 @@ populate()
 			if ((fp=fopen(line,"r"))==NULL) {
 				newerror("Cannot read nation file... no NPCs added");
 				return;
-			} else newerror("OK; default nations used");
+			} else newmsg("OK; default nations used");
 		} else {
-			newerror("OK; no NPC nations used");
+			newmsg("OK; no NPC nations used");
+			sleep(1);
 			return;
 		}
 	}
 
 	cnum=1;
-	mvprintw(14,0,"ADDING NATIONS:");
+	mvprintw(15,0,"ADDING NATIONS:");
 	refresh();
 	xpos = 16;
-	ypos = 14;
+	ypos = 15;
 	while(fgets(line,LINELTH,fp)!=NULL) {
 		/*read and parse a new line*/
 		if(line[0]!='#') {
@@ -1223,6 +1234,7 @@ populate()
 		}
 	}
 	att_base();	/* get nation attributes */
-	newerror("All NPC nations placed");
+	newmsg("All NPC nations placed");
+	sleep(1);
 #endif NPC
 }

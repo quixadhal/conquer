@@ -320,7 +320,7 @@ char *str;
 {
 	mvaddstr(LINES-1, 0, str);
 	clrtoeol();
-	mvaddstr(LINES-1, COLS-20, "PRESS ANY KEY");
+	mvaddstr(LINES-1, COLS-16, "PRESS ANY KEY");
 	beep();
 	refresh();
 	getch();

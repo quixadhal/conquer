@@ -58,7 +58,7 @@ armyrpt(repnum)
 				(P_AXLOC==XREAL && P_AYLOC==YREAL)))
 				men=TRUE;
 		if (!men) {
-			redraw=FALSE;
+			redraw=DONE;
 			clear_bottom(0);
 			errormsg("no armies to display");
 			makebottom();
@@ -78,9 +78,9 @@ armyrpt(repnum)
 				if (count%MAXINROW==0) {
 					/* diplay header information */
 					mvaddstr(ypos+1,0,"soldiers  :");
-					mvaddstr(ypos+2,0,"movement  :");
-					mvaddstr(ypos+3,0,"x location:");
-					mvaddstr(ypos+4,0,"y location:");
+					mvaddstr(ypos+2,0,"x location:");
+					mvaddstr(ypos+3,0,"y location:");
+					mvaddstr(ypos+4,0,"movement  :");
 					mvaddstr(ypos+5,0,"status    :");
 					mvaddstr(ypos+6,0,"unit type :");
 					mvaddstr(ypos+7,0,"cost/turn :");
@@ -90,9 +90,9 @@ armyrpt(repnum)
 				mvprintw(ypos,xpos,"%d:",armynum);
 				standend();
 				mvprintw(ypos+1,xpos,"%ld",P_ASOLD);
-				mvprintw(ypos+2,xpos,"%d",P_AMOVE);
-				mvprintw(ypos+3,xpos,"%d",(int)P_AXLOC);
-				mvprintw(ypos+4,xpos,"%d",(int)P_AYLOC);
+				mvprintw(ypos+2,xpos,"%d",(int)P_AXLOC);
+				mvprintw(ypos+3,xpos,"%d",(int)P_AYLOC);
+				mvprintw(ypos+4,xpos,"%d",P_AMOVE);
 				if(P_ASTAT>=NUMSTATUS)
 				mvprintw(ypos+5,xpos,"group %d",P_ASTAT-NUMSTATUS);
 				else
@@ -491,7 +491,7 @@ fleetrpt()
 		if(count==0){
 			clear_bottom(0);
 			errormsg("no navies");
-			redraw=FALSE;
+			redraw=DONE;
 			makebottom();
 			return;
 		}

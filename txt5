@@ -114,7 +114,7 @@ changed for each trade good.  Thus, an wool sector designated as a farm
 produces 3 points of popularity.  Special display and redesignation options
 will help you redesignate sectors to use the tradegood you desire.
 
-popularity     fur(1,any),wool(3,farm),beer(3,farm),cloth(3,farm),wine(5,farm)
+popularity     fur(2,any),wool(5,farm),beer(6,farm),cloth(6,farm),wine(9,farm)
 communications mules(1,town),horses(5,town),pigeons(7,town),griffons(9,town)
 spoilrate      pottery(1,town),salt(3,mine),timber(1,lumberyard),
                granite(1,mine),pine(3,lumberyd),oak(5,lumberyd),nails(7,town)
@@ -204,6 +204,7 @@ poverty     : is funny.  You can give charity to the poor to lower the poverty
               100-wealth/4.  Charity is a user paramter, which indicates the
               percent of your NET income to go to the poor.  Giving twice your
               population in talons will reduce poverty by one.
+wealth      : see elsewhere.
 END
                 ADDITIONAL MODIFIERS TO NATIONAL ATTRIBUTES
 
