@@ -18,10 +18,35 @@
   9. merged do_lizard() and updlizard().  [used name do_lizard()].
  10. fixed bug with getchar querys in makeworl.c.
  11. fixed bug with y < MAPX mistype in randeven.c.
+===4.0 patch number one released => 4.1 ==========================
+ 12. fixed underflow problems with unsigned chars xloc,yloc,xcap,ycap.
+ 13. misc.c(834): changed "owner=DCAPITOL" to "designation=DCAPITOL".
+ 14. npc.c(171,172): changed rand()%2-1 to rand()%3-1.
+ 15. randeven.c: put #ifdef MONSTER around nomad raid section.
+ 16. reports.c(618): changed flthold() to fltmhold().
+ 17. combat.c(488,510): changed "-=0" to "=0".
+ 18. newlogin.c(507): changed temp < points to temp > points.
+ 19. newlogin.c(795): added  "& MAPY > 24".
+ 20. extcmds.c(365): fixed check on same location for merging groups.
+ 21. newhelp.c(163): added #ifdef for RANEVENT to newhelp.c.
+ 22. altered map printing routines to send to stdout, and have stderr be
+	for communicating with the user.  so now "conqrun -p > foo" works.
+ 23. removed password checking under -p option. would only be useful if
+	OGOD was defined, and if that was the case, only god could get
+	to that point anyway.
+ 24. made copyright screen variable with screen size.
+ 25. added TIMELOG feature to use system date command to show last update time.
+ 26. made errormsg display on COLS-20 instead of 60.  fixed up display bugs.
+ 27. added more names to rebel name list.
+ 28. worked on Makefile.  [made sure of parallelism; ready to distribute]
+ 29. reworded treasury display on budget screen for clarity.
 
 -------------------------------------------------------------------------
 | 1.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V4		|
 -------------------------------------------------------------------------
+o make land capture only occur during update.
+o make the create world routine interactive with curses display.
+o make the newlogin routine interactive with curses display.
 o fix the helpfiles to reflect current changes in game as noted later in this
 	file.
 o there is some overflow somewhere, which creates a huge amount of gold
@@ -32,12 +57,8 @@ o work on reputation and other nation attributes... they might not work as
 o adjust spew.c and write new rules files for
 	1) random npc mail
 	2) npc delcarations of war
-o Treaty war delcarations only last one turn ????  It seems to revert sometimes.
+o Treaty war delcarations only last one turn ???? It seems to revert sometimes.
 o reward for killing monsters 10K Gold and 1K Jewels per 50 men-equivalent.
-o implement sacking of capitol instead of destruction of nation.  This
-	should award all iron, gold and jewels to the successor, but leave
-	food (or a good portion of it) with the nation owner.  This should
-	be implemented on all nations, including pcs.
 o implement new method for detection of captured lands.  if any allies of
 	sector owner in sector, prevent taking of sector;  otherwise, award
 	sector to nation with more troops if troops are twice the remaining
@@ -57,7 +78,6 @@ o Ruling leaders work to the benefit of the nation.  Each leader in ruling
   in a city will have a 50% (+5% for added leader) chance of stopping a bad 
   event.
 o All units should have loyalty ratings, and can revolt.  
-o Newlogin setup should be revamped to use curses display.  Better control.
 o Revamp user help interface to allow searching through help files.
 o leader experience.  mail to nation if happen.  This has untold impacts on
 	combat... and i dont want to touch it yet. sorry.

@@ -27,28 +27,26 @@
  * Initial Revision:		(adb@bucsf.bu.edu)
  *     Tuesday March 21th, 1989 - Began the program at 23:26 EST
  *     Wednesday March 22nd, 1989 - Finished the initial version 11:29 EST
+ *     Wednesday July 5th, 1989 - Stopped use of sysexits.h 7:22 EST
  */
 
 #include <stdio.h>
-#ifndef HPUX
-#include <sysexits.h>
-#endif HPUX
 #include <ctype.h>
 
 /* system definitions just in case */
 #ifndef FALSE
 #define FALSE (0)
 #define TRUE  (1)
-#endif
+#endif /* FALSE */
 
-/* check for system exit definitions */
+/* system exit definitions from sysexits.h on BSD machines */
 #ifndef EX_OK
 #define EX_OK             0   /* successful termination */
 #define EX_USAGE          64  /* invalid command line format */
 #define EX_NOINPUT        66  /* could not open input file */
 #define EX_SOFTWARE       70  /* software error; couldn't malloc */
 #define EX_CANTCREAT      73  /* could not create output file */
-#endif
+#endif /* EX_OK */
 
 /* number of characters to compare by default */
 #define DEFAULT_COMP 2

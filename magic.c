@@ -377,8 +377,8 @@ long newpower;
 	if(newpower==DESTROYER) {
 /* this ifdef is so that destroyer only takes place in an update */
 #ifdef ADMIN
-		for(x=curntn->capx-3;x<=curntn->capx+3;x++) {
-			for(y=curntn->capy-3;y<=curntn->capy+3;y++){
+		for(x=(int)curntn->capx-3;x<=(int)curntn->capx+3;x++) {
+			for(y=(int)curntn->capy-3;y<=(int)curntn->capy+3;y++){
 				if((ONMAP(x,y))
 				&&(sct[x][y].altitude!=WATER)
 #ifdef DERVDESG
@@ -723,8 +723,8 @@ long oldpower;
 		return;
 	}
 	if(oldpower==DESTROYER) {
-		for(x=curntn->capx-3;x<=curntn->capx+3;x++) {
-			for(y=curntn->capy-3;y<=curntn->capy+3;y++){
+		for(x=(int)curntn->capx-3;x<=(int)curntn->capx+3;x++) {
+			for(y=(int)curntn->capy-3;y<=(int)curntn->capy+3;y++){
 				if((ONMAP(x,y))
 				&&(sct[x][y].altitude!=WATER)
 				&&((x!=curntn->capx)

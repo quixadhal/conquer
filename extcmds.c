@@ -269,8 +269,8 @@ int armynum,men;
 		return;
 	}
 
-	oldx=P_AXLOC;
-	oldy=P_AYLOC;
+	oldx=(int)P_AXLOC;
+	oldy=(int)P_AYLOC;
 	army2=armynum;
 
 	armynum=(-1);
@@ -317,7 +317,7 @@ char *str;
 {
 	mvaddstr(LINES-1, 0, str);
 	clrtoeol();
-	mvaddstr(LINES-1, 60, "PRESS ANY KEY");
+	mvaddstr(LINES-1, COLS-20, "PRESS ANY KEY");
 	beep();
 	refresh();
 	getch();
@@ -362,7 +362,7 @@ int	armynum;
 		return;
 	}
 	if((P_AXLOC != curntn->arm[group].xloc)
-	&&(P_AXLOC != curntn->arm[group].xloc)){
+	||(P_AYLOC != curntn->arm[group].yloc)){
 		errormsg("units are not in same sector");
 		return;
 	}

@@ -900,7 +900,8 @@ extern	char	scenario[];
 extern	int	unitmove[], unitattack[], unitdefend[];
 
 /*	file name definitions	*/
-extern	char *sortname,*exefile,*datafile,*msgfile,*helpfile,*newsfile,*isonfile;
+extern	char *sortname,*exefile,*datafile,*msgfile;
+extern	char *helpfile,*newsfile,*isonfile,*timefile;
 
 #ifdef CONQUER
 extern	int	conq_mail_status;

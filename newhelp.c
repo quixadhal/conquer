@@ -160,7 +160,11 @@ main()
 	fprintf(fp,"s/ZSTOCKCOST/%d/g\n",STOCKCOST);
 	
 	/* other defines */
+#ifdef RANEVENT
 	fprintf(fp,"s/XNORANDEVENTS/%d/g\n",RANEVENT);
+#else
+	fprintf(fp,"s/XNORANDEVENTS/0/g\n");
+#endif
 	fprintf(fp,"s/XLANDSEE/%d/g\n",LANDSEE);
 	fprintf(fp,"s/XNAVYSEE/%d/g\n",NAVYSEE);
 	fprintf(fp,"s/XARMYSEE/%d/g\n",ARMYSEE);

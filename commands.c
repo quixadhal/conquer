@@ -875,7 +875,8 @@ draft()
 		if(isgod==TRUE) reset_god();
 		return;
 	} else if(i_cost > curntn->metals) {
-		mvprintw(LINES-2,0,"You don't have %ld metal",i_cost);
+		mvprintw(LINES-1,0,"You don't have %ld metal",i_cost);
+		mvprintw(LINES-1,COLS-20,"PRESS ANY KEY");
 		clrtoeol();
 		refresh();
 		getch();
@@ -959,7 +960,7 @@ draft()
 			P_AYLOC = ntn[i].capy;
 			P_AXLOC = ntn[i].capx;
 			mvprintw(LINES-2,0,"The Spy Starts in %s's Capitol (%d,%d)",
-				ntn[i].name,P_AXLOC,P_AYLOC);
+				ntn[i].name,(int)P_AXLOC,(int)P_AYLOC);
 			clrtoeol();
 		} else {
 			clear_bottom(0);
@@ -973,7 +974,8 @@ draft()
 			P_AYLOC = YREAL;
 			P_AXLOC = XREAL;
 			mvprintw(LINES-2,0,"Intelligence indicates that %s lies to the %s",ntn[i].name,
-				  *(directions+compass(P_AXLOC,P_AYLOC,ntn[i].capx,ntn[i].capy)));
+				*(directions+compass((int)P_AXLOC,(int)P_AYLOC,
+				  (int)ntn[i].capx,(int)ntn[i].capy)));
 			clrtoeol();
 		}
 		errormsg("");
@@ -1294,8 +1296,8 @@ armygoto()
 		if(P_ASOLD <= 0) return(0);
 	}
 	/*move to correct location*/
-	xcurs = P_AXLOC - xoffset;
-	ycurs = P_AYLOC - yoffset;
+	xcurs = (int)P_AXLOC - xoffset;
+	ycurs = (int)P_AYLOC - yoffset;
 	coffmap();
 
 	/*select correct unit*/

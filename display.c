@@ -408,15 +408,15 @@ whatcansee()
 
 	for(nvynum=0;nvynum<MAXNAVY;nvynum++)
 		if((P_NMSHP!=0)||(P_NWSHP!=0)||(P_NGSHP!=0))
-		for(i=P_NXLOC-xoffset-NAVYSEE;i<=P_NXLOC-xoffset+NAVYSEE;i++)
-		for(j=P_NYLOC-yoffset-NAVYSEE;j<=P_NYLOC-yoffset+NAVYSEE;j++)
+		for(i=(int)P_NXLOC-xoffset-NAVYSEE;i<=(int)P_NXLOC-xoffset+NAVYSEE;i++)
+		for(j=(int)P_NYLOC-yoffset-NAVYSEE;j<=(int)P_NYLOC-yoffset+NAVYSEE;j++)
 		if(i>=0 && j>=0 && i<SCREEN_X_SIZE && j<SCREEN_Y_SIZE)
 			HAS_SEEN(i,j)=TRUE;
 
 	for(armynum=0;armynum<MAXARM;armynum++)
 		if(P_ASOLD>0)
-		for(i=P_AXLOC-xoffset-ARMYSEE;i<=P_AXLOC-xoffset+ARMYSEE;i++)
-		for(j=P_AYLOC-yoffset-ARMYSEE;j<=P_AYLOC-yoffset+ARMYSEE;j++)
+		for(i=(int)P_AXLOC-xoffset-ARMYSEE;i<=(int)P_AXLOC-xoffset+ARMYSEE;i++)
+		for(j=(int)P_AYLOC-yoffset-ARMYSEE;j<=(int)P_AYLOC-yoffset+ARMYSEE;j++)
 		if(i>=0 && j>=0 && i<SCREEN_X_SIZE && j<SCREEN_Y_SIZE)
 			HAS_SEEN(i,j)=TRUE;
 

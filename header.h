@@ -49,6 +49,7 @@
 #define SPOOLDIR "/usr/spool/mail"	/* location of mail spool	*/
 /* #define FILELOCK	/* if your system supports BSD flock()		*/
 			/* other file locking is not well implemented	*/
+#define TIMELOG	/* if your system has the date command		*/
 
 #define NTOTAL 25	/* max # of nations ( player + npc + monster )	*/
 #define MAXPTS	65	/* points for players to buy stuff with at start*/

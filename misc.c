@@ -831,7 +831,7 @@ int country;
 	} else if(isnpc(curntn->active)) {
 		if(sct[curntn->capx][curntn->capy].owner==country) {
 			/* reset capitol for npcs */
-			sct[curntn->capx][curntn->capy].owner=DCAPITOL;
+			sct[curntn->capx][curntn->capy].designation=DCAPITOL;
 			if(sct[curntn->capx][curntn->capy].fortress<1)
 				sct[curntn->capx][curntn->capy].fortress=1;
 		}

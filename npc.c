@@ -29,15 +29,15 @@ prtattr()
 	int x,y;
 /*	FOR TESTING OF WHAT THE ATTRACTIVENESS ENDS UP LIKE  */
 	printf("Attractiveness for sectors around CAPITAL at %d %d veg alt des\n",curntn->capx,curntn->capy);
-	for(y=curntn->capy-3;y<curntn->capy+4;y++) {
+	for(y=(int)curntn->capy-3;y<(int)curntn->capy+4;y++) {
 		printf("\n");
-		for(x=curntn->capx-3;x<curntn->capx+4;x++) if(ONMAP(x,y)) {
+		for(x=(int)curntn->capx-3;x<(int)curntn->capx+4;x++) if(ONMAP(x,y)) {
 			if( sct[x][y].altitude != WATER ) {
 				printf("[%2d,%2d]   ",x,y);
 			}
 		}
 		printf("\n");
-		for(x=curntn->capx-3;x<curntn->capx+4;x++) if(ONMAP(x,y)) {
+		for(x=(int)curntn->capx-3;x<(int)curntn->capx+4;x++) if(ONMAP(x,y)) {
 			if( sct[x][y].altitude != WATER ) {
 				printf("%5d %c%c%c "
 					,attr[x][y]
@@ -111,8 +111,8 @@ do_nomad()
 		}
 		count=0;
 		while( TRUE ) {
-			x=P_AXLOC+rand()%5-2;
-			y=P_AYLOC+rand()%5-2;
+			x=(int)P_AXLOC+rand()%5-2;
+			y=(int)P_AYLOC+rand()%5-2;
 
 			if( count++ > 100 ) {
 				P_ASOLD=0;
@@ -122,7 +122,8 @@ do_nomad()
 			if(( x==P_AXLOC && y==P_AYLOC )
 			||(!ONMAP(x,y)
 			||(!is_habitable(x,y))) 
-			||(!land_reachp(P_AXLOC,P_AYLOC,x,y,curntn->maxmove,country))) continue;
+			||(!land_reachp((int)P_AXLOC,(int)P_AYLOC,
+				x,y,curntn->maxmove,country))) continue;
 
 			P_AXLOC=x;
 			P_AYLOC=y;
@@ -167,10 +168,10 @@ do_barbarian()
 			P_ASOLD /= 100;
 		}
 		P_AMOVE=(curntn->maxmove * *(unitmove+P_ATYPE%UTYPE))/10;
-		x=P_AXLOC+rand()%2-1;
-		y=P_AYLOC+rand()%2-1;
+		x=(int)P_AXLOC+rand()%3-1;
+		y=(int)P_AYLOC+rand()%3-1;
 		if(ONMAP(x,y)&&(is_habitable(x,y)) 
-		&&(land_reachp(P_AXLOC,P_AYLOC,x,y,P_AMOVE,country))){
+		&&(land_reachp((int)P_AXLOC,(int)P_AYLOC,x,y,P_AMOVE,country))){
 			P_AXLOC=x;
 			P_AYLOC=y;
 			/*if owned & unoccupied you take & people flee*/
@@ -244,8 +245,8 @@ do_pirate()
 		for(y=0;y<MAXNAVY;y++)
 		if(ntn[x].nvy[y].warships!=0 || ntn[x].nvy[y].merchant!=0 
 		  || ntn[x].nvy[y].galleys!=0) {
-			if((abs(ntn[x].nvy[y].xloc-P_NXLOC)<=PRTZONE)
-			&&(abs(ntn[x].nvy[y].yloc-P_NYLOC)<=PRTZONE)) {
+			if((abs((int)ntn[x].nvy[y].xloc-(int)P_NXLOC)<=PRTZONE)
+			&&(abs((int)ntn[x].nvy[y].yloc-(int)P_NYLOC)<=PRTZONE)) {
 				P_NXLOC= ntn[x].nvy[y].xloc;
 				P_NYLOC= ntn[x].nvy[y].yloc;
 			}
@@ -359,8 +360,8 @@ redomil()
 	for(armynum=1;armynum<MAXARM;armynum++) if(P_ASOLD>0){
 		/* move army back if too far out */
 		ok = 0;
-		for(x=P_AXLOC-3;x<=P_AXLOC+3;x++)
-			for(y=P_AYLOC-3;y<=P_AYLOC+3;y++)
+		for(x=(int)P_AXLOC-3;x<=(int)P_AXLOC+3;x++)
+			for(y=(int)P_AYLOC-3;y<=(int)P_AYLOC+3;y++)
 				if((ONMAP(x,y))&&(sct[x][y].owner==country)) ok=1;
 		if(ok==0){
 			P_AXLOC=curntn->capx;
@@ -727,8 +728,9 @@ getdstatus()
 			hostile-=20;
 		}
 		/* if next to capitol, they dont like you */
-		for(X=curntn->capx-1;X<=curntn->capx+1;X++)
-		for(Y=curntn->capy-1;Y<=curntn->capy+1;Y++) if(ONMAP(X,Y)) {
+		for(X=(int)curntn->capx-1;X<=(int)curntn->capx+1;X++)
+		for(Y=(int)curntn->capy-1;Y<=(int)curntn->capy+1;Y++)
+		if(ONMAP(X,Y)) {
 			if(sct[X][Y].owner == x) {
 				friendly-=10;
 				hostile +=10;
@@ -840,16 +842,16 @@ nationrun()
 		endy=MAPY;
 	} else {
 		if( curntn->capx > NPCTOOFAR )
-			stx=curntn->capx-NPCTOOFAR;
+			stx=(int)curntn->capx-NPCTOOFAR;
 		else	stx=0;
 		if( curntn->capy > NPCTOOFAR )
-			sty=curntn->capy-NPCTOOFAR;
+			sty=(int)curntn->capy-NPCTOOFAR;
 		else	sty=0;
-		if( curntn->capx + NPCTOOFAR < MAPX )
-			endx=curntn->capx+NPCTOOFAR;
+		if( (int)curntn->capx + NPCTOOFAR < MAPX )
+			endx=(int)curntn->capx+NPCTOOFAR;
 		else	endx=MAPX;
-		if( curntn->capy + NPCTOOFAR < MAPY )
-			endy=curntn->capy+NPCTOOFAR;
+		if( (int)curntn->capy + NPCTOOFAR < MAPY )
+			endy=(int)curntn->capy+NPCTOOFAR;
 		else	endy=MAPY;
 	}
 
@@ -1099,8 +1101,8 @@ n_trespass()
 	for(x=stx;x<endx;x++) for(y=sty;y<endy;y++)  {
 		if((sct[x][y].owner != country )
 		&&( sct[x][y].owner != 0 )
-		&&( abs(x-curntn->capx)>2 )
-		&&( abs(y-curntn->capy)>2 )
+		&&( abs(x-(int)curntn->capx)>2 )
+		&&( abs(y-(int)curntn->capy)>2 )
 		&&( ntn[country].dstatus[sct[x][y].owner]<WAR)
 		&&( ntn[sct[x][y].owner].dstatus[country]<WAR)
 		&&( ntn[country].dstatus[sct[x][y].owner]>ALLIED))
@@ -1126,8 +1128,8 @@ n_unowned()
 	register int x,y;
 
 	/* around capitol */
-	for(x=curntn->capx-4;x<=curntn->capx+4;x++){
-		for(y=curntn->capy-4;y<=curntn->capy+4;y++){
+	for(x=(int)curntn->capx-4;x<=(int)curntn->capx+4;x++){
+		for(y=(int)curntn->capy-4;y<=(int)curntn->capy+4;y++){
 			if((ONMAP(x,y))&&(sct[x][y].owner==0)) {
 				attr[x][y] += 700;
 			}
@@ -1167,8 +1169,8 @@ register short natn;
 				ntn[natn].arm[x].sold/10;
 
 	/*plus 80 if near your capitol */
-	for(x=curntn->capx-1;x<=curntn->capy+1;x++){
-		for(y=curntn->capy-1;y<=curntn->capy+1;y++){
+	for(x=(int)curntn->capx-1;x<=(int)curntn->capy+1;x++){
+		for(y=(int)curntn->capy-1;y<=(int)curntn->capy+1;y++){
 			if(ONMAP(x,y)) attr[x][y]+=80;
 		}
 	}

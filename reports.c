@@ -91,8 +91,8 @@ armyrpt(repnum)
 				standend();
 				mvprintw(ypos+1,xpos,"%ld",P_ASOLD);
 				mvprintw(ypos+2,xpos,"%d",P_AMOVE);
-				mvprintw(ypos+3,xpos,"%d",P_AXLOC);
-				mvprintw(ypos+4,xpos,"%d",P_AYLOC);
+				mvprintw(ypos+3,xpos,"%d",(int)P_AXLOC);
+				mvprintw(ypos+4,xpos,"%d",(int)P_AYLOC);
 				if(P_ASTAT>=NUMSTATUS)
 				mvprintw(ypos+5,xpos,"group %d",P_ASTAT-NUMSTATUS);
 				else
@@ -328,7 +328,7 @@ budget()
 	standout();
 	mvprintw(3,0,  "nation name is......%s",curntn->name);
 	standend();
-	mvprintw(4,0,  "talons in treasury.$%ld",startgold);
+	mvprintw(4,0,  "starting treasury..$%ld",startgold);
 	mvprintw(5,0,  "number of sectors...%d",spread.sectors);
 	if(curntn->tfood<2*curntn->tciv) standout();
 	mvprintw(7,0,  "granary holds.....%8ld",curntn->tfood);
@@ -355,9 +355,9 @@ budget()
 	money=spread.gold - curntn->tgold - money;	/* net income */
 	standend();
 	mvprintw(17,COLS-50,"NET INCOME....................%8ld",money);
-	mvprintw(16,COLS-50,"CHARITY.......................%8ld",max((money*curntn->charity)/100,0));
+	mvprintw(16,COLS-50,"CHARITY.......................%8ld",max((money*(long)curntn->charity)/100L,0L));
 	standout();
-	mvprintw(18,COLS-50,"NEXT SEASON'S TREASURY........%8ld",(startgold + money)*(100-curntn->charity)/100);
+	mvprintw(18,COLS-50,"NEXT SEASON'S TREASURY........%8ld",(startgold + money)*(100L-(long)curntn->charity)/100L);
 
 	mvaddstr(LINES-3,(COLS/2)-15,"HIT 'P' TO SEE PRODUCTION SCREEN");
 	mvaddstr(LINES-2,(COLS/2)-15,"HIT 'C' FOR CHANGE NATION SCREEN");
@@ -408,7 +408,7 @@ produce()
 	standout();
 	mvprintw(4,0,  "nation name is....%s",curntn->name);
 	standend();
-	mvprintw(5,0,  "talons in treasury..$%ld",startgold);
+	mvprintw(5,0,  "talons in treasury..$%ld",curntn->tgold);
 	mvaddstr(7,0,  "FOOD PRODUCTION");
 	mvprintw(9,0,  "granary now holds.........%8ld tons",curntn->tfood);
 	mvprintw(10,0, "%8ld people in farms..%8ld tons",spread.infarm,spread.food - curntn->tfood);
@@ -615,7 +615,7 @@ fleetrpt()
 					crew = flthold(nvynum)*P_NCREW;
 					people = fltmhold(nvynum)*P_NPEOP;
 					crew += flthold(newnavy)*curntn->nvy[newnavy].crew;
-					people += flthold(newnavy)*curntn->nvy[newnavy].people;
+					people += fltmhold(newnavy)*curntn->nvy[newnavy].people;
 					for(i=N_LIGHT;i<=N_HEAVY;i++) {
 						(void) addwships(newnavy,i,P_NWAR(i));
 						(void) addmships(newnavy,i,P_NMER(i));

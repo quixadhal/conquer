@@ -504,7 +504,7 @@ newlogin()
 				printf("how many purchasing points to spend?:");
 				scanf("%d",&temp);
 				putchar('\n');
-				if(temp < points) {
+				if(temp > points) {
 					printf("You don't have enough points left");
 				} else if (temp < 0) {
 					printf("Negative, huh?  Who you trying to kid?");
@@ -792,7 +792,7 @@ int	xloc,yloc;	/* if not -1,-1 should place in this spot */
 				&&( sct[i][j].owner!=0)) placed=0;
 				}
 			} else {
-				if(MAPX>24){
+				if(MAPX>24 && MAPY>24){
 					x = rand()%(MAPX-24)+12;
 					y = rand()%(MAPY-24)+12;
 				}else {

@@ -178,18 +178,14 @@ char **argv;
 		unlink(string);
 		exit(SUCCESS);
 	} else if (pflag) {	/* print a map of the game */
-#ifdef OGOD
-		if(strncmp(crypt(getpass("\nwhat is conquer super user password:"),SALT),ntn[0].passwd,PASSLTH)!=0) {
-			printf("sorry, must be super user to get map\n");
-			exit(FAIL);
-		}
-#endif OGOD
-		printf("For Convienience, output is to stderr\n");
-		printf("what type of map\noptions are\n");
-		printf("\t1) altitudes\n\t2) vegetations\n");
-		printf("\t3) nations\n\n");
-		printf("\tINPUT:");
-		scanf("%hd",&dismode);
+		fprintf(stderr,"\nFor convenience, this output is to stderr,\n");
+		fprintf(stderr,"while the maps will be sent to stdout.\n\n");
+		fprintf(stderr,"\tThe valid options are,\n");
+		fprintf(stderr,"\t\t1) altitudes\n\t\t2) vegetations\n");
+		fprintf(stderr,"\t\t3) nations\n\n");
+		fprintf(stderr,"\tWhat type of map? ");
+		scanf("%hd", &dismode);
+		fprintf(stderr,"\n");
 		if(dismode==1) printele();
 		else if(dismode==2) printveg();
 		else pr_ntns();
@@ -222,6 +218,10 @@ char **argv;
 		update();
 		writedata();
 		unlink(string);
+#ifdef TIMELOG
+		sprintf(string, "date > %s", timefile);
+		system(string);
+#endif /* TIMELOG */
 		exit(SUCCESS);
 	}
 	printf("error: must specify an option\n");

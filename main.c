@@ -211,21 +211,20 @@ char	**argv;
 	}
 
 	initscr();		/* SET UP THE SCREEN */
-	copyscreen();		/* copyright screen */
-				/* note the getch() later - everything between
-					now and then is non-interactive */
-	init_hasseen();		/* now we know how big the screen is, 
-					we can init that array!	*/
-
 	/* check terminal size */
 	if (COLS<80 || LINES<24) {
 		fprintf(stderr,"%s: terminal should be at least 80x24\n",argv[0]);
 		fprintf(stderr,"please try again with a different setup\n");
 		beep();
-		refresh();
 		getch();
 		bye(FALSE);
 	}
+
+	copyscreen();		/* copyright screen */
+				/* note the getch() later - everything between
+					now and then is non-interactive */
+	init_hasseen();		/* now we know how big the screen is, 
+					we can init that array!	*/
 
 	strcpy(fison,"START");	/* just in case you abort early */
 	crmode();		/* cbreak mode */
@@ -263,14 +262,14 @@ char	**argv;
 #endif TRADE
 		if(curntn->capx>15) {
 			xcurs=15;
-			xoffset= (curntn->capx-15);
+			xoffset= ((int)curntn->capx-15);
 		} else {
 			xcurs= curntn->capx;
 			xoffset= 0;
 		}
 		if(curntn->capy>10) {
 			ycurs=10;
-			yoffset= (curntn->capy-10);
+			yoffset= ((int)curntn->capy-10);
 		} else {
 			yoffset= 0;
 			ycurs= curntn->capy;
@@ -692,14 +691,14 @@ parse()
 		} else {
 			if(curntn->capx>15) {
 				xcurs=15;
-				xoffset= (curntn->capx-15);
+				xoffset= ((int)curntn->capx-15);
 			} else {
 				xcurs= curntn->capx;
 				xoffset= 0;
 			}
 			if(curntn->capy>10) {
 				ycurs=10;
-				yoffset= (curntn->capy-10);
+				yoffset= ((int)curntn->capy-10);
 			} else {
 				yoffset= 0;
 				ycurs= curntn->capy;
@@ -1012,18 +1011,30 @@ aretheyon()
 void
 copyscreen()
 {
+#ifdef TIMELOG
+	FILE *timefp, *fopen();
+	char string[80];
+#endif /* TIMELOG */
+
 	clear();
 	standout();
-	mvprintw(8,28,"Conquer %s.%d",VERSION,PATCHLEVEL);
+	mvprintw(8,COLS/2-12,"Conquer %s.%d",VERSION,PATCHLEVEL);
 	standend();
-	mvaddstr(10,19, "Copyright (c) 1988 by Edward M Barlow");
-	mvaddstr(11,18,"Written Edward M Barlow and Adam Bryant");
-	mvaddstr(12,26,"All Rights Reserved");
-	mvaddstr(LINES-7,19,"This version is for personal use only");
-	mvaddstr(LINES-5,8,"It is expressly forbidden port this software to any form of");
-	mvaddstr(LINES-4,8,"Personal Computer or to redistribute this software without");
-	mvaddstr(LINES-3,14,"the permission of Edward Barlow or Adam Bryant");
-	mvprintw(LINES-1, 60, "PRESS ANY KEY");
+	mvaddstr(10,COLS/2-21, "Copyright (c) 1988 by Edward M Barlow");
+	mvaddstr(11,COLS/2-22,"Written Edward M Barlow and Adam Bryant");
+	mvaddstr(12,COLS/2-12,"All Rights Reserved");
+	mvaddstr(LINES-8,COLS/2-21,"This version is for personal use only");
+	mvaddstr(LINES-6,COLS/2-32,"It is expressly forbidden port this software to any form of");
+	mvaddstr(LINES-5,COLS/2-32,"Personal Computer or to redistribute this software without");
+	mvaddstr(LINES-4,COLS/2-26,"the permission of Edward Barlow or Adam Bryant");
+#ifdef TIMELOG
+	if ((timefp=fopen(timefile,"r"))!=NULL) {
+		fgets(string, 50, timefp);
+		mvprintw(LINES-1, 0, "Last Update: %s", string);
+		fclose(timefp);
+	}
+#endif /* TIMELOG */
+	mvprintw(LINES-1, COLS-20, "PRESS ANY KEY");
 	refresh();
 }
 

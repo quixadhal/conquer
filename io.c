@@ -47,7 +47,7 @@ void
 printele()
 {
 	register int X, Y;
-	printf("doing print of altitude\n");
+	fprintf(stderr,"doing print of altitude\n");
 	for(Y=0;Y<MAPY;Y++) {
 		for(X=0;X<MAPX;X++) putc(sct[X][Y].altitude,stdout);
 		putc('\n',stdout);
@@ -62,14 +62,14 @@ void
 pr_ntns()
 {
 	register int X, Y;
-	printf("doing print of nations\n");
+	fprintf(stderr,"doing print of nations\n");
 	for(Y=0;Y<MAPY;Y++) {
 		for(X=0;X<MAPX;X++) {
 			if(sct[X][Y].owner==0)
-				putc(sct[X][Y].altitude,stderr);
-			else putc(ntn[sct[X][Y].owner].mark,stderr);
+				putc(sct[X][Y].altitude,stdout);
+			else putc(ntn[sct[X][Y].owner].mark,stdout);
 		}
-		putc('\n',stderr);
+		putc('\n',stdout);
 	}
 }
 #endif ADMIN
@@ -124,7 +124,7 @@ readdata()
 
 	/*read in existing nation army and navy data*/
 	/*check if file openable*/
-	printf("reading data file\n");
+	fprintf(stderr,"reading data file\n");
 	if( (fd = open(datafile,0)) < 0 ) {
 		fprintf( stderr, "can not open %s \n", datafile );
 		fprintf( stderr, "for help with conquer, type conquer -h\n");
@@ -176,10 +176,10 @@ void
 printveg()
 {
 	register int X, Y;
-	printf("doing print of vegetation\n");
+	fprintf(stderr,"doing print of vegetation\n");
 	for(Y=0;Y<MAPY;Y++) {
-		for(X=0;X<MAPX;X++) putc(sct[X][Y].vegetation,stderr);
-		putc('\n',stderr);
+		for(X=0;X<MAPX;X++) putc(sct[X][Y].vegetation,stdout);
+		putc('\n',stdout);
 	}
 }
 #endif ADMIN
@@ -268,9 +268,20 @@ printscore()
 {
 	int i;
 	int nationid; 	/*current nation id */
+#ifdef TIMELOG
+	FILE *timefp, *fopen();
+	char timestr[80];
+#endif /* TIMELOG */
 
 	printf("Conquer %s.%d: %s of Year %d, Turn %d\n",VERSION,PATCHLEVEL,
 		PSEASON(TURN),YEAR(TURN), TURN);
+#ifdef TIMELOG
+	if ((timefp=fopen(timefile,"r"))!=NULL) {
+		fgets(timestr, 50, timefp);
+		printf("Last Update: %s", timestr);
+		fclose(timefp);
+	}
+#endif /* TIMELOG */
 	printf("id      name   race    class    align  score    talons military  civilians sect\n");
 	for (nationid=1; nationid<NTOTAL; nationid++) {
 		if(!isntn(ntn[nationid].active)) continue;

@@ -181,6 +181,7 @@ int unitmaint[]= {
 char	*exefile =  "exec";
 char	*datafile = "data";
 char	*msgfile =  "mesg";
+char *timefile = "timelog";
 char	*sortname = "conqsort";
 
 #ifdef ADMIN

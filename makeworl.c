@@ -45,7 +45,7 @@ makeworld(rflag)
 int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 {
 	char passwd[PASSLTH+1],*getpass();
-	char newstring[100];
+	char newstring[200];
 	FILE *fopen();
 
 	/*abort if datafile currently exists*/
@@ -70,7 +70,8 @@ printf("\n**********************************************************************
 
 	printf("First, we must zero extraneous files from prior games\n");
 	printf("\tignore any errors this causes\n");
-	sprintf(newstring,"rm -f %s* %s* %s* %s* %s 2> /dev/null",exefile,msgfile,newsfile,isonfile,tradefile);
+	sprintf(newstring,"rm -f %s* %s* %s* %s* %s %s 2> /dev/null",
+		exefile, msgfile, newsfile, isonfile, tradefile, timefile);
 	printf("\t%s\n",newstring);
 	system(newstring);
 	printf("OK This has been done, Now to set up a new world\n\n");

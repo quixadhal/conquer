@@ -5,10 +5,10 @@
 #include	"data.h"
 
 #ifdef RANEVENT
-#ifdef ADMIN
 char	*names[] = {		/* must end in single character name */
 	"groo","brok","vul","poin","srop","hoga","nobi","bonz","gail",
-	"lynn","zorb","theed","urda","X"
+	"lynn","zorb","theed","urda","anima","bedlam","delos","quin",
+	"xynd","putz","erde","clym","fanz","ilth","X"
 };
 
 extern FILE *fnews;
@@ -556,6 +556,7 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 			curntn->jewels+=longval;
 			break;
 		case 25:
+#ifdef MONSTER
 			/*nomad raid -- put large nomad army in area*/
 			for( holdval=1;holdval<NTOTAL;holdval++ )
 				if( ntn[holdval].active==NPC_NOMAD ) break;
@@ -591,6 +592,7 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 			}
 			done=TRUE;
 			break;
+#endif MONSTER
 		case 26:
 			/*town burns -- reduce fort and redesignate*/
 			holdval=0;
@@ -1105,5 +1107,4 @@ void
 weather()
 {
 }
-#endif ADMIN
 #endif RANEVENT

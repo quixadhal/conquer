@@ -484,8 +484,8 @@ printf("I AM VERY CONFUSED - PLEASE HELP... combat.c\n");
 				Aloss+=loss;
 				ntn[owner[i]].arm[unit[i]].sold-=loss;
 				if((ntn[owner[i]].arm[unit[i]].unittyp==A_MILITIA)&&(retreatside==ATKR)) {
-				sct[ntn[owner[i]].arm[unit[i]].xloc][ntn[owner[i]].arm[unit[i]].yloc].people += ntn[owner[i]].arm[unit[i]].sold;
-				ntn[owner[i]].arm[unit[i]].sold-=0;
+					sct[ntn[owner[i]].arm[unit[i]].xloc][ntn[owner[i]].arm[unit[i]].yloc].people += ntn[owner[i]].arm[unit[i]].sold;
+					ntn[owner[i]].arm[unit[i]].sold=0;
 				}
 			}
 		} else if(side[i]==DFND){
@@ -506,8 +506,8 @@ printf("I AM VERY CONFUSED - PLEASE HELP... combat.c\n");
 				Dloss+=loss;
 				ntn[owner[i]].arm[unit[i]].sold-=loss;
 				if((ntn[owner[i]].arm[unit[i]].unittyp==A_MILITIA)&&(retreatside==DFND)) {
-				sct[ntn[owner[i]].arm[unit[i]].xloc][ntn[owner[i]].arm[unit[i]].yloc].people += ntn[owner[i]].arm[unit[i]].sold;
-				ntn[owner[i]].arm[unit[i]].sold-=0;
+					sct[ntn[owner[i]].arm[unit[i]].xloc][ntn[owner[i]].arm[unit[i]].yloc].people += ntn[owner[i]].arm[unit[i]].sold;
+					ntn[owner[i]].arm[unit[i]].sold=0;
 				}
 			}
 		}

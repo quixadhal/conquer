@@ -165,11 +165,11 @@ mymove()
 				}
 				for(i=0;i<MAXARM;i++) if(curntn->arm[i].sold>0){
 					standout();
-					see(curntn->arm[i].xloc-xoffset,curntn->arm[i].yloc-yoffset);
+					see((int)curntn->arm[i].xloc-xoffset,(int)curntn->arm[i].yloc-yoffset);
 				}
 					for(i=0;i<MAXNAVY;i++) if(curntn->nvy[i].merchant+curntn->nvy[i].warships+curntn->nvy[i].galleys!=0){
 					standout();
-					see(curntn->nvy[i].xloc-xoffset,curntn->nvy[i].yloc-yoffset);
+					see((int)curntn->nvy[i].xloc-xoffset,(int)curntn->nvy[i].yloc-yoffset);
 
 				}
 			} else for(i=XREAL-xoffset-1;i<=XREAL-xoffset+1;i++){

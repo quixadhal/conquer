@@ -271,10 +271,13 @@ int armynum;
 		||( P_ATYPE>=MINLEADER)) menok=TRUE;
 		else menok=FALSE;
 		/* range of 4 if menok is FALSE else 2 */
-		for(x=P_AXLOC-4+menok*2;x<=P_AXLOC+4-menok*2;x++)
-		for(y=P_AYLOC-4+menok*2;y<=P_AYLOC+4-menok*2;y++) if(ONMAP(x,y))
-			if( menok==TRUE || ISCITY(sct[x][y].designation) )
-				sum+=attr[x][y];
+		for(x=(int)P_AXLOC-4+menok*2;x<=(int)P_AXLOC+4-menok*2;x++)
+		for(y=(int)P_AYLOC-4+menok*2;y<=(int)P_AYLOC+4-menok*2;y++) {
+			if(ONMAP(x,y)) {
+				if( menok==TRUE || ISCITY(sct[x][y].designation) )
+					sum+=attr[x][y];
+			}
+		}
 	}
 
 	if(sum==0) {
@@ -313,14 +316,15 @@ int armynum;
 	} else {
 		where=rand()%sum;
 		/* range of 4 if menok is FALSE else 2 */
-		for(x=P_AXLOC-4+menok*2;x<=P_AXLOC+4-menok*2;x++)
-		for(y=P_AYLOC-4+menok*2;y<=P_AYLOC+4-menok*2;y++) if(ONMAP(x,y)){
+		for(x=(int)P_AXLOC-4+menok*2;x<=(int)P_AXLOC+4-menok*2;x++)
+		for(y=(int)P_AYLOC-4+menok*2;y<=(int)P_AYLOC+4-menok*2;y++)
+		if(ONMAP(x,y)){
 			if( menok==TRUE || ISCITY(sct[x][y].designation) )
 				where -= attr[x][y];
 			if( (where < 0 )
 			&& movecost[x][y]>=1
 			&& movecost[x][y]<=P_AMOVE
-			&&(land_reachp(P_AXLOC,P_AYLOC,x,y,P_AMOVE,country))){
+			&&(land_reachp((int)P_AXLOC,(int)P_AYLOC,x,y,P_AMOVE,country))){
 				P_AXLOC=x;
 				P_AYLOC=y;
 				if(P_ATYPE == getleader(curntn->class)-1 ){
@@ -355,7 +359,8 @@ int armynum;
 
 		/*do again - have this block if lots of bad terrain*/
 		/*what could happen is that it won't find a move first time*/
-		for(x=P_AXLOC-2;x<=P_AXLOC+2;x++) for(y=P_AYLOC-2;y<=P_AYLOC+2;y++) {
+		for(x=(int)P_AXLOC-2;x<=(int)P_AXLOC+2;x++)
+		for(y=(int)P_AYLOC-2;y<=(int)P_AYLOC+2;y++) {
 			if(!ONMAP(x,y))
 				continue;
 
@@ -613,8 +618,8 @@ printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
 		}
 
 		/*if near capitol add to attr*/
-		for(x=curntn->capx-2;x<=curntn->capx+2;x++)
-			for(y=curntn->capy-2;y<=curntn->capy+2;y++)
+		for(x=(int)curntn->capx-2;x<=(int)curntn->capx+2;x++)
+			for(y=(int)curntn->capy-2;y<=(int)curntn->capy+2;y++)
 				if((ONMAP(x,y))&&(attr[x][y]>0)) attr[x][y]+=20;
 
 /*MOVE CIVILIANS based on the ratio of attractivenesses
@@ -695,8 +700,8 @@ do_lizard()
 			/* try to relieve sieges */
 			if(P_ASTAT!=SIEGED
 			&& ntn[country].arm[armynum-1].stat!=SIEGED) {
-			for(i=ntn[country].arm[armynum-1].xloc-1;i<=ntn[country].arm[armynum-1].xloc+1;i++) {
-				for(j=ntn[country].arm[armynum-1].yloc-1;j<=ntn[country].arm[armynum-1].yloc+1;j++) {
+			for(i=(int)ntn[country].arm[armynum-1].xloc-1;i<=ntn[country].arm[armynum-1].xloc+1;i++) {
+				for(j=(int)ntn[country].arm[armynum-1].yloc-1;j<=ntn[country].arm[armynum-1].yloc+1;j++) {
 					if(ONMAP(i,j)
 					&&(sct[i][j].altitude!=WATER) 
 					&&(sct[i][j].altitude!=PEAK) 
@@ -804,14 +809,14 @@ updcapture()
 						fprintf(fm,"Message from Conquer\n\n");
 						fprintf(fm,"\tYour Scouting Unit %d was captured\n");
 						fprintf(fm,"\t  by %s military in sector %d,%d\n",
-							ntn[occval].name,P_AXLOC,P_AYLOC);
+							ntn[occval].name,(int)P_AXLOC,(int)P_AYLOC);
 						mailclose();
 					}
 					if (ispc(ntn[occval].active)) {
 						mailopen(occval);
 						fprintf(fm,"Message from Conquer\n\n");
 						fprintf(fm,"\tA Scout from nation %s was captured\n",curntn->name);
-						fprintf(fm,"\t  in sector %d,%d.\n",P_AXLOC,P_AYLOC);
+						fprintf(fm,"\t  in sector %d,%d.\n",(int)P_AXLOC,(int)P_AYLOC);
 						mailclose();
 					}
 				}
