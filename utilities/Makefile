@@ -1,14 +1,14 @@
 #
 SHELL=/bin/sh
-SHAR=/usr/local/bin/shar
-MAKE=/bin/make
+SHAR=/usr/bin/shar
+MAKE=/usr/bin/make
 
 #
 # Will most likely have to edit the location of the
 # X Libraries.
 #
 Libs_sun= -lpixrect
-Libs_x= -L/usr/lib -lX
+Libs_x= -L/usr/lib -lX11
 
 WHICHconqrast: WHICHconqrast.o error.o WHICHstuff.o file.o util.o
 	cc $(CFLAGS) -o WHICHconqrast WHICHconqrast.o WHICHstuff.o file.o\

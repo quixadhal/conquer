@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
 
-int errno;
-char *sys_errlist[];
+/* int errno; */
+/* char *sys_errlist[]; */
 
 char *myname="Someone";
 

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <strings.h>
+#include <string.h>
 #include "../header.h"
 #include "file.h"
 #include HEADERFILE
@@ -538,7 +539,7 @@ char *argv[];
 
     if(live)			/* if live do it on the screen */
 	{
-	if ((pr=get_screen_bitmap(screen))==NULL)
+	if ((pr=get_screen_bitmap(screen))==(bitmap)NULL)
 	    ioerror("Can't open screen %s",screen_name);
 	}
     else			/* otherwise in memory */
