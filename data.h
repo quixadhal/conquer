@@ -252,6 +252,7 @@ extern	char	occ[ MAPX ][ MAPY ];
 #define	XALOC		4
 #define	XNLOC		5
 #define	XNASHP		6
+#define	XNACREW		7
 #define	XECNAME		8
 #define	XECPAS		9
 #define EDSPL		10
@@ -276,6 +277,7 @@ extern	char	occ[ MAPX ][ MAPY ];
 #define	I_DPLUS fprintf(fexe,"INC_DPLUS \t%d \t%hd \t0 \t0 \t0 \t%s\n",INCDPLUS,country,"null")
 #define	AADJSTAT fprintf(fexe,"A_STAT \t%d \t%hd \t%d \t%d \t0 \t%s\n",XASTAT,country,armynum,ntn[country].arm[armynum].stat,"null")
 #define	AADJMEN	fprintf(fexe,"L_ADJMEN \t%d \t%hd \t%d \t%d \t%d \t%s\n",XAMEN ,country,armynum,ASOLD,ATYPE,"null")
+#define	NADJCRW	fprintf(fexe,"N_ASHP \t%d \t%hd \t%d \t%d \t%d \t%s\n",XNACREW,country,nvynum,ntn[country].nvy[nvynum].crew,ntn[country].nvy[nvynum].armynum,"null" )
 #define	NADJSHP	fprintf(fexe,"N_ASHP \t%d \t%hd \t%d \t%d \t%d \t%s\n",XNASHP ,country,nvynum,ntn[country].nvy[nvynum].merchant,ntn[country].nvy[nvynum].warships,"null" )
 #define	AADJLOC	fprintf(fexe,"A_LOC \t%d \t%hd \t%d \t%d \t%d \t%s\n",XALOC ,country,armynum,ntn[country].arm[armynum].xloc,ntn[country].arm[armynum].yloc,"null")
 #define	NADJLOC	fprintf(fexe,"N_LOC \t%d \t%hd \t%d \t%d \t%d \t%s\n",XNLOC ,country,nvynum,ntn[country].nvy[nvynum].xloc,ntn[country].nvy[nvynum].yloc ,"null")

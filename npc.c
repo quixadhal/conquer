@@ -254,6 +254,9 @@ redomil()
 	}
 	ntn[country].tmil -= militia;
 
+	for(armynum=1;armynum<MAXARM;armynum++)
+	if((ASOLD>0)&&(ATYPE==A_INFANTRY)) ASTAT = DEFEND;
+
 	/*make sure enough men in army 0 -- garrison duty in capitol*/
 	armynum=0;
 	ASTAT=GARRISON;
@@ -441,7 +444,6 @@ printf("\tnot enough soldiers - build new army %d with %d men\n",armynum,ASOLD);
 				&&(i!=armynum)&&(free==0)){
 					free=1;
 					ntn[country].arm[i].sold += ASOLD;
-					ntn[country].arm[i].unittyp=A_INFANTRY;
 					ASOLD=0;
 				}
 			}
@@ -485,7 +487,6 @@ printf("\tnot enough soldiers - build new army %d with %d men\n",armynum,ASOLD);
 		}
 		if(free==FALSE) {	 /* draft a new militia army */
 			for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD==0){
-				ATYPE=A_MILITIA;
 				AXLOC=x;
 				AYLOC=y;
 				free=TRUE;
@@ -506,9 +507,9 @@ printf("\tnot enough soldiers - build new army %d with %d men\n",armynum,ASOLD);
 			}
 			}
 			ASOLD+=ideal;
+			ATYPE=A_MILITIA;
 			ASTAT=GARRISON;
 #ifdef DEBUG
-		if(ATYPE!=A_MILITIA) printf("ERROR - NOT MILITIA\n");
 		printf("\tadding %d troops to %s army %d (now %d men - populace %d)\n",ideal,unittype[ATYPE],armynum,ASOLD,sct[x][y].people);
 #endif DEBUG
 		}

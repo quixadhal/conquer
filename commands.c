@@ -345,7 +345,7 @@ construct()
 			return;
 		}
 
-		if( sct[XREAL][YREAL].people < (wnumber+mnumber) * mnumber ){
+		if( sct[XREAL][YREAL].people < (wnumber+mnumber) * SHIPCREW ){
 			errormsg("NOT ENOUGH CIVILIANS IN SECTOR");
 			if(isgod==TRUE) country=0;
 			return;
@@ -353,9 +353,9 @@ construct()
 
 		if((nvynum>=0)&&(nvynum<MAXNAVY)) {
 			clear_bottom(0);
-			mvprintw(LINES-4,0,"constructing %hd warships and %hd merchant",wnumber,mnumber);
-
 			NCREW += (wnumber+mnumber) * SHIPCREW;
+			mvprintw(LINES-4,0,"constructing %hd warships and %hd merchants (crew now %d)",wnumber,mnumber,NCREW);
+
 			sct[XREAL][YREAL].people -= (wnumber+mnumber)*SHIPCREW;
 
 			ntn[country].tgold -= cost;
@@ -365,6 +365,8 @@ construct()
 			NWAR+=wnumber;
 			NMER+=mnumber;
 			NMOVE=0;
+			SADJCIV;
+			NADJCRW;
 			NADJSHP;
 			NADJLOC;
 			NADJMOV;

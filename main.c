@@ -679,8 +679,8 @@ makeside()
 				/*print a navy*/
 				mvaddch((nfound%5)*2,COLS-21,'>');
 				if(selector==(nfound%5)*2) standout();
-				mvprintw((nfound%5)*2,COLS-20,"navy %d: move %d",nvynum,NMOVE);
-				mvprintw((nfound%5)*2+1,COLS-20," war:%d mer:%d",NWAR,NMER);
+				mvprintw((nfound%5)*2,COLS-20,"nvy %d: war:%d mv:%d",nvynum,NWAR,NMOVE);
+				mvprintw((nfound%5)*2+1,COLS-20," mer %d crew %d",NMER,NCREW);
 				standend();
 			}
 			nfound++;

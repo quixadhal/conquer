@@ -83,6 +83,10 @@ execute()
 			ntn[country].nvy[armynum].xloc=x;
 			ntn[country].nvy[armynum].yloc=y;
 			break;
+		case XNACREW: 
+			ntn[country].nvy[armynum].crew=x;
+			ntn[country].nvy[armynum].armynum=y;
+			break;
 		case XNASHP: /*nadjshp*/
 			ntn[country].nvy[armynum].merchant=x;
 			ntn[country].nvy[armynum].warships=y;
