@@ -1,8 +1,8 @@
-/*conquer is copyrighted 1986 by Ed Barlow.
- *  I spent a long time writing this code & I hope that you respect this.  
+/*conquer : Copyright (c) 1988 by Ed Barlow.
+ *  I spent a long time writing this code & I hope that you respect this.
  *  I give permission to alter the code, but not to copy or redistribute
- *  it without my explicit permission.  If you alter the code, 
- *  please document changes and send me a copy, so all can have it.  
+ *  it without my explicit permission.  If you alter the code,
+ *  please document changes and send me a copy, so all can have it.
  *  This code, to the best of my knowledge works well,  but it is my first
  *  'C' program and should be treated as such.  I disclaim any
  *  responsibility for the codes actions (use at your own risk).  I guess
@@ -25,6 +25,20 @@ extern short country;
 int area_map[MAXX][MAXY];/*Value Map of Areas*/
 int type[MAPX][MAPY];
 
+#define TOHILL(x,y)	{ \
+sct[(x)][(y)].altitude=HILL; \
+nmountains--; \
+}
+#define TOMT(x,y)	{ \
+sct[(x)][(y)].altitude=MOUNTAIN; \
+nmountains--; \
+}
+#define TOPEAK(x,y)	{ \
+sct[(x)][(y)].altitude=PEAK; \
+nmountains--; \
+}
+
+void
 makeworld()
 {
 	register int i,j;
@@ -34,62 +48,62 @@ makeworld()
 	int number[5]; /*Number of sectors with type=[0-4]*/
 	char passwd[12];
 	int alloc = NUMAREAS * 2;/*Value Allocated*/
-	int place[MAXX][MAXY] ;/*Temporary matrix to see if an area is placed*/
-	int X, Y;
+	int tplace[MAXX][MAXY] ;/*Temporary matrix to see if an area is placed*/
+	int X, Y, chance;
 	int X1,Y1;
 	int X2,Y2;
 	int valid;
-	int nranges;
+	int nmountains;
 	int rnd;
 	int tempfd;
 	char newstring[40];
 
 	/*abort if datafile currently exists*/
-	if(tempfd=open(datafile,0)!=-1) {
+	if((tempfd=open(datafile,0))!=-1) {
 		printf("ABORTING: File %s exists\n",datafile);
 		printf("\tthis means that a game is in progress. To proceed, you must remove \n");
 		printf("\tthe existing data file. This will, of course, destroy that game.\n\n");
-		exit(1);
+		exit(FAIL);
 	}
 	printf("\n**********************WELCOME TO CONQUER**********************");
 	printf("\nThe world will now be created...Your super user login will be 'god'.");
-	printf("\nNon player countries will be read from data stored in the nations file"); 
+	printf("\nNon player countries will be read from data stored in the nations file");
 	printf("\n& will have the same password as god (about to be entered). Add player");
 	printf("\nnations with the command <conquer -a>.  Have fun!!!\n");
 	printf("\nRemember to check the world out before playing to make sure");
 	printf("\nno nations are in bad positions (surrounded by water... )");
-	printf("******************************************************************\n\n");
+	printf("\n******************************************************************\n\n");
 
 	printf("First, we must zero extraneous files from prior games\n");
-	sprintf(newstring,"rm %s*\n",exefile);
-	printf("\t%s",newstring);
+	sprintf(newstring,"rm %s* 2> /dev/null",exefile);
+	printf("\t%s\n",newstring);
 	system(newstring);
-	sprintf(newstring,"rm %s*\n",msgfile);
-	printf("\t%s",newstring);
+	sprintf(newstring,"rm %s* 2> /dev/null",msgfile);
+	printf("\t%s\n",newstring);
 	system(newstring);
-	sprintf(newstring,"> %s",newsfile);
+	sprintf(newstring,"> %s 2> /dev/null",newsfile);
 	printf("\t%s\n",newstring);
 	system(newstring);
 	printf("OK This has been done, Now to set up a new world\n\n");
 
-	printf("please enter new super user password (remember this!):");
+	printf("please enter new conquer super user password (remember this!):");
 	scanf("%s",passwd);
 	getchar();
-	printf("please reenter password:");
+	printf("please reenter conquer password:");
 	scanf("%s",ntn[0].passwd);
 	getchar();
 	if((strlen(ntn[0].passwd)<2)
 	||(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
 		printf("\ninvalid super user password\n");
-		exit(1);
+		exit(FAIL);
 	}
 	strncpy(ntn[0].passwd,crypt(passwd,SALT),PASSLTH);
 
 	printf("\n\ncreating world\n");
 	/*initialize variables */
-	avvalue = (((float) PWATER/25.0)); /*Average water tvalue of sectors*/
+	avvalue = (((float) (100-PWATER)/25.0)); /*Average water tvalue of sectors*/
 	for(i=0;i<MAXX;i++) for(j=0;j<MAXY;j++) {
-		place[i][j]=0;
+		tplace[i][j]=0;
 		area_map[i][j]=0;
 	}
 	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++) sct[i][j].vegetation=NONE;
@@ -125,61 +139,61 @@ makeworld()
 		/*place a full land sector anywhere but on edge*/
 		X = ((rand()%(MAXX-2))+1); /*1 to MAXX-2)*/
 		Y = ((rand()%(MAXY-2))+1); /*1 to MAXY-2)*/
-		if(place[X][Y] == 0) {
-			place[X][Y]=1;
+		if(tplace[X][Y] == 0) {
+			tplace[X][Y]=1;
 			area_map[X][Y]=4;
 			number[4]=number[4] - 1;
 			/*place surrounding sectors*/
-			if(place[X+1][Y] == 0) {
+			if(tplace[X+1][Y] == 0) {
 				rnd = rand()%100 + 1; /*1 to 100*/
 				if((rnd<25) && (number[4]>0)) {
 					area_map[X+1][Y]=4;
 					number[4]=number[4]-1;
-					place[X+1][Y]=1;
+					tplace[X+1][Y]=1;
 				}
 				if(rnd>25 && number[3]>0) {
 					area_map[X+1][Y]=3;
 					number[3]=number[3]-1;
-					place[X+1][Y]=1;
+					tplace[X+1][Y]=1;
 				}
 			}
-			if(place[X-1][Y] == 0) {
+			if(tplace[X-1][Y] == 0) {
 				rnd = rand()%100 + 1 ; /*(1 to 100)*/
 				if(rnd<25 && number[4]>0) {
 					area_map[X-1][Y]=4;
 					number[4]=number[4]-1;
-					place[X-1][Y]=1;
+					tplace[X-1][Y]=1;
 				}
 				if(rnd>25 && number[3]>0) {
 					area_map[X-1][Y]=3;
 					number[3]=number[3]-1;
-					place[X-1][Y]=1;
+					tplace[X-1][Y]=1;
 				}
 			}
-			if(place[X][Y+1] == 0) {
+			if(tplace[X][Y+1] == 0) {
 				rnd = rand()%100 + 1 ; /*(1 to 100)*/
 				if(rnd<25 && number[4]>0) {
 					area_map[X][Y+1]=4;
 					number[4]=number[4]-1;
-					place[X][Y+1]=1;
+					tplace[X][Y+1]=1;
 				}
 				if(rnd>25 && number[3]>0) {
 					area_map[X][Y+1]=3;
 					number[3]=number[3]-1;
-					place[X][Y+1]=1;
+					tplace[X][Y+1]=1;
 				}
 			}
-			if(place[X][Y-1] == 0) {
+			if(tplace[X][Y-1] == 0) {
 				rnd = rand()%100 + 1 ; /*(1 to 100)*/
 				if(rnd<25 && number[4]>0) {
 					area_map[X][Y-1]=4;
 					number[4]=number[4]-1;
-					place[X][Y-1]=1;
+					tplace[X][Y-1]=1;
 				}
 				if(rnd>25 && number[3]>0) {
 					area_map[X][Y-1]=3;
 					number[3]=number[3]-1;
-					place[X][Y-1]=1;
+					tplace[X][Y-1]=1;
 				}
 			}
 		}
@@ -187,12 +201,12 @@ makeworld()
 
 	/* place all other areas*/
 	for(X=0;X<MAXX;X++) for(Y=0;Y<MAXY;Y++) {
-		while(place[X][Y] == 0) {
+		while(tplace[X][Y] == 0) {
 			rnd = rand()%5; /*(0 to 4)*/
 			if(number[rnd]>0) {
 				area_map[X][Y]=rnd;
 				number[rnd]=number[rnd]-1;
-				place[X][Y]=1;
+				tplace[X][Y]=1;
 			}
 		}
 	}
@@ -201,9 +215,9 @@ makeworld()
  *fill in each area with sectors
  *      1)   water
  *      2)   water with major islands (25% land)
- *      3)   50/50 water/land 
+ *      3)   50/50 water/land
  *      4)   land with major water (75% Land)
- *      5)   land 
+ *      5)   land
  */
 	for(Y=0;Y<MAXY;Y++) for(X=0;X<MAXX;X++) {
 		/*fill in edges*/
@@ -241,26 +255,44 @@ makeworld()
 	/*calculate all 50% areas*/
 	for(X=0;X<MAPX;X++) for(Y=0;Y<MAPY;Y++) {
 		if(type[X][Y] == HALF)
-			if(rand()%2 == 0) {
+			if(rand()%100 >= (100-PWATER)) {
 				type[X][Y] = LAND;
 			}
 			else type[X][Y] = WATER;
 	}
 
+	chance=0;
+	for(X=0;X<MAPX;X++) for(Y=0;Y<MAPY;Y++)
+		if(type[X][Y] == WATER) chance++;
+	printf("amount of water is %d / %d sectors\n",chance,MAPX*MAPY);
 
-	/*Adjust world given sectors as land or sea, place vegetation, designation, 
- and altitude */
+	/*Newly added code to smooth the world out*/
+	for(X=1;X<MAPX-1;X++) for(Y=1;Y<MAPY-1;Y++) {
+		chance = 0;
+		/*count # of land and sea sides*/
+		for(i=X-1;i<=X+1;i++) for(j=Y-1;j<=Y+1;j++)
+			if(type[i][j] == LAND) chance++;
+		if(rand()%9 < chance) type[X][Y] = LAND;
+		else type[X][Y] = WATER;
+	}
+	chance=0;
+	for(X=0;X<MAPX;X++) for(Y=0;Y<MAPY;Y++)
+		if(type[X][Y] == WATER) chance++;
+	printf("smoothing...amount of water is %d / %d sectors\n",chance,MAPX*MAPY);
+
+	/*Adjust world given sectors as land or sea, place vegetation,
+	designation, and altitude */
 
 	for(i=0;i<MAPX;i++) for(j=0;j<MAPY;j++)
 		if(type[i][j]==LAND) sct[i][j].altitude = CLEAR;
 		else sct[i][j].altitude = WATER;
 
-	/*place mountain ranges */
+	/*place  */
+	nmountains= MAPX * MAPY * PMOUNT * ( 100-PWATER ) / (100*100);
+	printf("%d mountains to be placed",nmountains);
 
-	nranges=(rand()%10+3)*avvalue;
-	printf("%d mountain ranges to be placed",nranges);
-
-	while(nranges>0) {
+	/* heuristic says that 5 is cutoff number to stop placing ranges */
+	while(nmountains>(NUMAREAS*3*PWATER/100)+5) {
 		/*Place one range randomly*/
 		X1 = rand()%(MAPX-6);
 		Y1 = rand()%(MAPY-6);
@@ -270,47 +302,70 @@ makeworld()
 		&&(type[X1][Y1+1]==LAND)
 		&&(type[X1+2][Y1+2]==LAND)) {
 			/*place second endpoint */
-			valid = 0;
+			valid = FALSE;
 			i=0;
-			nranges--;
-			while((valid==0) && (i<500)) {
+			while((valid==FALSE) && (i<500)) {
 				i++;
 				X2 = (rand()%7) + X1;
 				Y2 = (rand()%7) + Y1;
 				if(type[X2][Y2] == LAND) {
-					valid = 1;
+					valid = TRUE;
 					/*fill in mountain range*/
 					for(x=X1;x<=X2;x++) {
-						if(X1<X2) y=((Y2-Y1)*(x-X1)/(X2-X1))+Y1;
+						if(X1<X2)
+						y=((Y2-Y1)*(x-X1)/(X2-X1))+Y1;
 						else y=Y1;
-						if(type[x][y] == LAND)
-							if(rand()%100>80) sct[x][y].altitude=PEAK;
-							else sct[x][y].altitude=MOUNTAIN;
-						if((y < MAPY - 1) 
+						if(type[x][y] == LAND){
+							if(rand()%100>80) {
+								TOPEAK(x,y);
+							}
+							else {
+								TOMT(x,y)
+							}
+						}
+						if((y < MAPY - 1)
 						&& type[x][y+1] == LAND) {
 							rnd=rand()%100+1;
-							if(rnd>90) sct[x][y+1].altitude=PEAK;
-							else if(rnd>50) sct[x][y+1].altitude=MOUNTAIN;
-							else if(rnd>20) sct[x][y+1].altitude=HILL;
+							if(rnd>90) {
+								TOPEAK(x,y+1);
+							}
+							else if(rnd>50) {
+								TOMT(x,y+1);
+							}
+							else if(rnd>20) {
+								TOHILL(x,y+1);
+							}
 						}
 						if((y!=0)
 						&& type[x][y-1] == LAND ) {
 							rnd=rand()%100+1;
-							if(rnd>90) sct[x][y-1].altitude=PEAK;
-							else if(rnd>50) sct[x][y-1].altitude=MOUNTAIN;
-							else if(rnd>20) sct[x][y-1].altitude=HILL;
+							if(rnd>90) {
+								TOPEAK(x,y-1);
+							} else
+							if(rnd>50) {
+								TOMT(x,y-1);
+							} else
+							if(rnd>20) {
+								TOHILL(x,y-1);
+							}
 						}
 						if((y>=2)
 						&&(type[x][y-2] == LAND )) {
 							rnd=rand()%100+1;
-							if(rnd>90) sct[x][y-2].altitude=MOUNTAIN;
-							else if(rnd>50) sct[x][y-2].altitude=HILL;
+							if(rnd>90) {
+								TOMT(x,y-2);
+							} else {
+								if(rnd>50) TOHILL(x,y-2);
+							}
 						}
 						if((y < MAPY - 2)
 						&&(type[x][y+2] == LAND )) {
 							rnd=rand()%100+1;
-							if(rnd>90) sct[x][y+2].altitude=MOUNTAIN;
-							else if(rnd>50) sct[x][y+2].altitude=HILL;
+							if(rnd>90) {
+								TOMT(x,y+2);
+							} else if(rnd>50) {
+								TOHILL(x,y+2);
+							}
 						}
 					}
 				}
@@ -319,11 +374,11 @@ makeworld()
 	}
 
 	/*fill in random hills to work out,not to left of to water*/
-	for(i=1;i<NUMAREAS*3;i++) {
+	while(nmountains>0) {
 		x = rand()%(MAPX-1);
 		y = rand()%(MAPY-1);
 		if((type[x][y]==LAND)&&(type[x+1][y]==LAND))
-			sct[x][y].altitude=HILL;
+			TOHILL(x,y);
 	}
 
 	/*make sure no peak or mountain is next to water*/
@@ -338,9 +393,6 @@ makeworld()
  *use sector.altitude, and sector to determine vegetation
  *from water is distance from nearest water
  */
-
-	/*char veg[]="VDW46973JSI~"*/
-	/*char veg[]="VDWBLGWFJSI~"*/
 
 	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
 		if(type[x][y]==LAND)
@@ -396,7 +448,7 @@ makeworld()
 			else for(n=2;n<9;n++)
 				if((sct[x][y].vegetation==(*(veg+n)))
 				&&(sct[x][y].altitude==CLEAR)
-				&&(rand()%4==0)) 
+				&&(rand()%4==0))
 				sct[x][y].vegetation=(*(veg+(n+1)));
 
 	/*char veg[]="VDW46973JSI~"*/
@@ -453,24 +505,26 @@ makeworld()
 		else sct[x][y].iron=0;
 
 		/*default designations*/
-		sct[x][y].designation=sct[x][y].vegetation;
+		sct[x][y].designation=DNODESIG;
 
 		/*default owner is unowned*/
 		sct[x][y].owner=0;
 	}
+	printf("populating world\n");
 	populate();
 	close(tempfd);
 	writedata();
 }
 
 /*fill: subroutine to fill in a square edges with land or sea*/
+void
 fill_edge(AX,AY)
 {
 /*      1)   water
  *      2)   water with major islands (25% land)
- *      3)   50/50 water/land 
+ *      3)   50/50 water/land
  *      4)   land with major water (75% Land)
- *      5)   land 
+ *      5)   land
  */
 	register int i;
 	int edgearea, X0, Y0, X1, Y1, X2, Y2, X3, Y3, X4, Y4;
@@ -488,10 +542,10 @@ fill_edge(AX,AY)
 	Y4=Y0+1;
 
 	/*NORMALIZE FOR EDGE OF WORLD*/
-  	if( X1 < 0 ) X1 = MAXX - 1;
-  	if( X2 >= MAXX ) X2 = 0;
-  	if( Y3 < 0 ) Y3 = MAXY - 1;
-  	if( Y4 >= MAXY ) Y4 = 0;
+	if( X1 < 0 ) X1 = MAXX - 1;
+	if( X2 >= MAXX ) X2 = 0;
+	if( Y3 < 0 ) Y3 = MAXY - 1;
+	if( Y4 >= MAXY ) Y4 = 0;
 
 	area=area_map[X0][Y0];
 	/*fill in south*/
@@ -533,6 +587,7 @@ fill_edge(AX,AY)
 }
 
 /* ALLOCATE POPULATIONS OF THE WORLD*/
+void
 populate()
 {
 	int i=0,x=0,y=0,j=0;
@@ -540,13 +595,13 @@ populate()
 	int temp;
 	int cnum=0;
 	FILE *fp, *fopen();
-	int done=0;
+	int done=FALSE;
 	char line[80];
 
 
 	/*randomly scatter lizard city (want in DESERTS/swamp/Ice) */
 	/*don't reproduce. Their cities are fortified and stockpiled */
-#ifdef LZARD 
+#ifdef LZARD
 	strncpy(ntn[NLIZARD].name,"lizard",10);
 	strncpy(ntn[NLIZARD].leader,"dragon",10);
 	strcpy(ntn[NLIZARD].passwd,ntn[0].passwd);
@@ -565,28 +620,33 @@ populate()
 
 	armynum=0;
 	country=NLIZARD;
-	while(armynum<MAXARM-2){
+	/* adjustment to make sure that fair amount of lizards are */
+	/* created on the map ... but not too many... */
+	while(armynum<(min((MAXARM-2),(MAXARM-2) * MAPX * MAPY / 10000 ))){
 		x = (rand()%MAPX);
 		y = (rand()%MAPY);
+		if(armynum>=MAXARM) break;
 		if (is_habitable(x,y)) {
 			sct[x][y].designation = DCASTLE;
 			sct[x][y].fortress = 5+rand()%5;
 			sct[x][y].gold = 15+rand()%20;
 			for(i=x-1;i<=x+1;i++) for(j=y-1;j<=y+1;j++)
-				if(i>=0&&j>=0&&i<MAPX&&j<MAPX)
+				if(i>=0&&j>=0&&i<MAPX&&j<MAPY)
 					if(sct[i][j].altitude!=WATER)
 						sct[i][j].owner = NLIZARD;
 			AMOVE=0;
 			AXLOC=x;
 			AYLOC=y;
 			ASTAT=GARRISON;
-			ASOLD=750+100*rand()%10;
+			ASOLD=750+100*(rand()%10);
+			ATYPE=A_INFANTRY;
 			armynum++;
 			AMOVE=8;
 			AXLOC=x;
 			AYLOC=y;
 			ASTAT=ATTACK;
-			ASOLD=750+100*rand()%10;
+			ASOLD=750+100*(rand()%10);
+			ATYPE=A_INFANTRY;
 			armynum++;
 		}
 	}
@@ -594,7 +654,7 @@ populate()
 #endif
 
 	/* Place Brigands, Barbarians, and Nomads*/
-#ifdef MONSTER 
+#ifdef MONSTER
 	armynum=0;
 	army2num=0;
 	strcpy(ntn[NBARBARIAN].name,"bbarian");
@@ -669,14 +729,15 @@ populate()
 		}
 
 		/* now place people*/
-		if (is_habitable(x,y)) {
+		if (is_habitable(x,y)&&sct[x][y].owner==0) {
 			if(rand()%2==0) {
 				sct[x][y].owner = NBARBARIAN;
 				country=NBARBARIAN;
 				AXLOC=x;
 				AYLOC=y;
 				ASTAT=ATTACK;
-				ASOLD=200+100*rand()%10;
+				ASOLD=200+100*(rand()%10);
+				ATYPE=A_INFANTRY;
 				if(armynum<MAXARM-1) armynum++;
 			}
 			else {
@@ -684,7 +745,8 @@ populate()
 				ntn[NNOMAD].arm[army2num].xloc=x;
 				ntn[NNOMAD].arm[army2num].yloc=y;
 				ntn[NNOMAD].arm[army2num].stat=ATTACK;
-				ntn[NNOMAD].arm[army2num].sold=100+100*rand()%15;
+				ntn[NNOMAD].arm[army2num].sold=100+100*(rand()%15);
+				ntn[NNOMAD].arm[army2num].unittyp=A_CAVALRY;
 				if(army2num<MAXARM-1) army2num++;
 			}
 		}
@@ -693,6 +755,7 @@ populate()
 			NXLOC=x;
 			NYLOC=y;
 			NWAR=2*(1+rand()%10);
+			NCREW=NWAR*SHIPCREW;
 			nvynum++;
 		}
 	}
@@ -742,20 +805,21 @@ populate()
 	}
 	else printf("reading npc nation data from file: %s\n",npcsfile);
 
+	cnum=1;
 	/*set up npc nation*/
-	if(fgets(line,80,fp)==NULL) done=1;
-  	while(done==0) {
-  		/*read and parse a new line*/
-  		if(line[0]!='#') {
-  			sscanf(line,"%s %s %c %c %c %hd %hd %hd %ld %ld %ld %hd %hd",
- 			ntn[cnum].name,ntn[cnum].leader,&ntn[cnum].race,
-  			&ntn[cnum].mark,&ntn[cnum].location,&ntn[cnum].aplus,
-  			&ntn[cnum].dplus,&ntn[cnum].maxmove,&ntn[cnum].tgold,
-  			&ntn[cnum].tmil,&ntn[cnum].tciv,&ntn[cnum].repro,
-  			&ntn[cnum].active);
-  			ntn[cnum].active++;
-  			ntn[cnum].class=0;
-  			strcpy(ntn[cnum].passwd,ntn[0].passwd);
+	if(fgets(line,80,fp)==NULL) done=TRUE;
+	while(done==FALSE) {
+		/*read and parse a new line*/
+		if(line[0]!='#') {
+			sscanf(line,"%s %s %c %c %c %hd %hd %hd %ld %ld %ld %hd %hd",
+			ntn[cnum].name,ntn[cnum].leader,&ntn[cnum].race,
+			&ntn[cnum].mark,&ntn[cnum].location,&ntn[cnum].aplus,
+			&ntn[cnum].dplus,&ntn[cnum].maxmove,&ntn[cnum].tgold,
+			&ntn[cnum].tmil,&ntn[cnum].tciv,&ntn[cnum].repro,
+			&ntn[cnum].active);
+			ntn[cnum].active++;
+			ntn[cnum].class=0;
+			strcpy(ntn[cnum].passwd,ntn[0].passwd);
 			country=cnum;
 			if(ntn[country].race==HUMAN){
 				ntn[country].powers=WARRIOR;
@@ -774,14 +838,14 @@ populate()
 				exenewmgk(MI_MONST);
 			}
 			else ntn[country].powers=WARRIOR;
-			ntn[country].tfood=24000L;
+			ntn[country].tfood= ntn[country].tciv * 3;
 			ntn[country].tiron=10000L;
 			ntn[country].jewels=10000L;
 			printf("\tnation %d: %s",cnum,line);
 			cnum++;
 			place();
 		}
-		if(fgets(line,80,fp)==NULL) done=1;
+		if(fgets(line,80,fp)==NULL) done=TRUE;
 	}
 	printf("all npc nations placed\n");
 #endif

@@ -1,23 +1,34 @@
    File Name		Archive #	Description
 -----------------------------------------------------------
+ FILESIZES                 3	
  MANIFEST                  1	This shipping list
- Makefile                  5	
+ Makefile                  4	
  README                    1	
- cexecute.c                2	
- combat.c                  4	
- commands.c                3	
+ admin.c                   8	
+ cexecute.c                8	
+ combat.c                  2	
+ commands.c                4	
+ data.c                    8	
  data.h                    6	
- forms.c                   4	
- help                      1	
- io.c                      6	
- magic.c                   3	
- main.c                    3	
- makeworld.c               2	
- misc.c                    5	
- move.c                    4	
+ display.c                 1	
+ extcmds.c                 8	
+ forms.c                   7	
+ getopt.c                  7	
+ header.h                  7	
+ help.txt                  3	
+ io.c                      5	
+ magic.c                   6	
+ main.c                    6	
+ makeworld.c               4	
+ man.page                  8	
+ misc.c                    3	
+ move.c                    7	
  nations                   5	
+ newhelp.c                 8	
  newlogin.c                1	
+ newlogin.h                8	
  npc.c                     2	
  randevent.c               5	
- reports.c                 5	
- run                       3	
+ reports.c                 7	
+ run                       8	
+ update.c                  5	

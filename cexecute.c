@@ -1,8 +1,8 @@
-/*conquer is copyrighted 1986 by Ed Barlow.
- *  I spent a long time writing this code & I hope that you respect this.  
+/*conquer : Copyright (c) 1988 by Ed Barlow.
+ *  I spent a long time writing this code & I hope that you respect this.
  *  I give permission to alter the code, but not to copy or redistribute
- *  it without my explicit permission.  If you alter the code, 
- *  please document changes and send me a copy, so all can have it.  
+ *  it without my explicit permission.  If you alter the code,
+ *  please document changes and send me a copy, so all can have it.
  *  This code, to the best of my knowledge works well,  but it is my first
  *  'C' program and should be treated as such.  I disclaim any
  *  responsibility for the codes actions (use at your own risk).  I guess
@@ -13,8 +13,11 @@
 /*EXECUTE THE PROGRAM*/
 #include "header.h"
 #include "data.h"
+extern long startgold;
 extern short country;
+extern FILE *fexe;
 
+int
 execute()
 {
 	FILE *fp, *fopen();
@@ -25,8 +28,21 @@ execute()
 	int armynum;
 	short int x,y;
 	int execed=0;
-	int done=0;
+	int done=FALSE;
 	char line[80];
+
+	/* initialize startgold */
+	startgold = ntn[country].tgold;
+
+	/* initialize i_people */
+	for(x=0;x<MAPX;x++)
+		for(y=0;y<MAPX;y++)
+			if(( sct[x][y].owner == country)&&
+			((sct[x][y].designation == DCITY)
+			||( sct[x][y].designation == DCAPITOL)))
+				sct[x][y].i_people = sct[x][y].people;
+			else
+				sct[x][y].i_people = 0;
 
 	/*execute in random order*/
 	/*open exefile file*/
@@ -38,17 +54,17 @@ execute()
 	savectry=country;
 
 	/*read in file*/
-	if(fgets(line,80,fp)==NULL) done=1;
-	while(done==0) {
+	if(fgets(line,80,fp)==NULL) done=TRUE;
+	while(done==FALSE) {
 		/*read and parse a new line*/
 		/*CODE IF YOU USE LONG VAR IS L_*/
-  		if( line[0] == 'L' && line[1] == '_' ) {
-  			sscanf(line,"%s %d %hd %ld %ld %hd %s",
-  				temp,&cmd,&country,&longvar,&long2var,&y,comment);
-  		} else {
-  			sscanf(line,"%s %d %hd %d %hd %hd %s",
-  				temp,&cmd,&country,&armynum,&x,&y,comment);
-  		}
+		if( line[0] == 'L' && line[1] == '_' ) {
+			sscanf(line,"%s %d %hd %ld %ld %hd %s",
+				temp,&cmd,&country,&longvar,&long2var,&y,comment);
+		} else {
+			sscanf(line,"%s %d %hd %d %hd %hd %s",
+				temp,&cmd,&country,&armynum,&x,&y,comment);
+		}
 		execed=1;
 		switch(cmd){
 		case XASTAT:		/*Aadjstat*/
@@ -57,6 +73,7 @@ execute()
 		case XAMEN:	/*Aadjmen*/
 			armynum= (int) longvar;
 			ASOLD= (int) long2var;
+			ATYPE= y;
 			break;
 		case XALOC:	/*Aadjloc*/
 			AXLOC=x;
@@ -76,8 +93,8 @@ execute()
 		case XECPAS:	/*Nadjpas*/
 			strncpy(ntn[country].passwd,comment,PASSLTH);
 			break;
-		case XECMARK:	/*Echgmark*/
-			ntn[country].mark=comment[0];
+		case EDSPL:	/*Edecspl*/
+			ntn[country].spellpts-=armynum;
 			break;
 		case XSADES:	/*Sadjdes*/
 			if((sct[x][y].owner==country)||(country==0)) {
@@ -124,19 +141,19 @@ execute()
 		case DESTRY:
 			sct[ntn[armynum].capx][ntn[armynum].capy].owner=savectry;
 			country=armynum;
-			destroy();
+			destroy(country);
 			country=savectry;
 			break;
 		case CHG_MGK:
 			ntn[country].powers|=long2var;
 			if(ntn[country].powers!=longvar){
-			printf("\nERROR ON MAGIC READ %ld != %d (or of %d)",longvar,ntn[country].powers,long2var);
+			printf("\nERROR ON MAGIC READ %ld != %ld (or of %ld)",longvar,ntn[country].powers,long2var);
 			getchar();
 			}
 			exenewmgk(long2var);
 			long2var=0;
 		}
-		if(fgets(line,80,fp)==NULL) done=1;
+		if(fgets(line,80,fp)==NULL) done=TRUE;
 	}
 	fclose(fp);
 	/*return 1 if it did something*/
@@ -144,4 +161,42 @@ execute()
 	if(execed==1) return(1);
 	else return(0);
 }
+#ifdef CONQUER
+void
+hangup()
+{
+	char line[100];
+	FILE *fp, *fopen();
+	char name[12];
+	char realname[12];
+	int temp=0;
 
+	if(country==0) writedata();
+	else {
+		fprintf(fexe,"L_NGOLD\t%d \t%d \t%ld \t0 \t0 \t%s\n",
+		XNAGOLD ,country,ntn[country].tgold,"null");
+		fprintf(fexe,"L_NIRON\t%d \t%d \t%ld \t0 \t0 \t%s\n",
+		XNAIRON ,country,ntn[country].tiron,"null");
+		fprintf(fexe,"L_NJWLS\t%d \t%d \t%ld \t0 \t0 \t%s\n",
+		XNARGOLD ,country,ntn[country].jewels,"null");
+	}
+	/*close file*/
+	fclose(fexe);
+	/*send a message to God*/
+	strcpy(name,"God");
+	strcpy(realname,"unowned");
+	sprintf(line,"%s%d",msgfile,temp);
+	if((fp=fopen(line,"a+"))==NULL) {
+		exit(FAIL);
+	}
+	fprintf(fp,"%s Message to %s from CONQUER\n",realname,name);
+	fprintf(fp,"%s \n",realname);
+	fprintf(fp,"%s      WARNING: Nation %s hungup on me.\n",realname,ntn[country].name);
+	fprintf(fp,"%s                 I DEMAND RESPECT!!!!\n",realname);
+	fputs("END\n",fp);
+
+	fclose(fp);
+	/* exit program */
+	exit(FAIL);
+}
+#endif CONQUER

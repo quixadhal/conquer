@@ -1,17 +1,17 @@
 
 			NOTES TO INSTALLER OF CONQUER
 
-What you have here is a copyrighted release 2 version version of CONQUER.  
+What you have here is a copyrighted release 3 version version of CONQUER.  
 I make no guaranties to the sanity or style of this code, but do believe
 that it should work as documented.  I have included numerous bugfixes
-from the release 1 posting, and have added numerous enhancements. 
+from previous releases posting, and have added numerous enhancements. 
 
-One note.  I am probably going to switch jobs soon.  My current email
-address is {ihnp4}!mhuxd!smile, but this will change.  I recommend that
-anybody interested in corresponding with me send me *their* address
-so I can inform them of my new address when I get one.  If your mail
-bounces, my home phone is 201-671-2896 and *current* work phone is
-201-949-4407.  Note that I only work on Conquer out of work hours.
+My current email address is {ihnp4}!homxc!smile.  I try to answer all
+mail, but sometimes it is dificult.  All feature requests that are sent
+in will be considered, and these are my primary method of deciding what
+to add to the code.  Your interest is appreciated.
+Note that I only work on Conquer out of work hours, and so sometimes it
+will take a while to get to it.
 
 Included in this file are the following:
 
@@ -20,27 +20,27 @@ Included in this file are the following:
 	3) Configuration Instructions
 	4) Compilation Instructions
 	5) Administration instructions
-	6) Execution instructions (how to play)
-	7) A list of further enhancements I am planning on making
-	8) Bug list and unimplemented options
+	6)   Changes in this version
+	7)   Problems that I know about are or desired changes
 
-This version should not be redistributed and probably has bugs.  
+This version should not be redistributed. 
 Any comments and bug reports would be appreciated.
 
 -----------------------------------------------------------
 I   A Brief Description of Conquer
 -----------------------------------------------------------
 
-READ FILE "man.page" FOR A DESCRIPTION OF CONQUER.  A more complete
-description can be found in the file "help". The help file can be
-read in nice format by using "conquer -h" after compilation.
-Hard copy of documentation can be made by typing "make docs".
+READ the files "man.page" and "conquer.docs" for a description of
+conquer.  Conquer.docs is equivalent to the on line help, found in
+the file "help".  These two documents are created when the program
+is compiled.  I have tried to make the documentation as good as possible,
+but I guarantee that I have missed a lot.
 
 -----------------------------------------------------------
 II  Installation (unpacking) Instructions
 -----------------------------------------------------------
 
-This program came in 5 shar scripts, which can be unpacked
+This program came in several shar scripts, which can be unpacked
 by using "sh filename".  If you are reading this, you know this.
 
 If you suspect missing files, please check the MANIFEST.
@@ -52,24 +52,26 @@ III Configuration
 THE FOLLOWING FILES SHOULD BE MODIFIED TO REFLECT YOUR ENVIRONMENT
 AND THE TYPE OF GAME YOU WISH TO PLAY.
 
-header file: header.h modify as per instructions
-             data.h   probably needs no modifications
-makefile: Makefile    modify as per instructions
-          main.c      probably needs no modifications
+header file:	header.h	modify as per instructions
+         	data.h		probably needs no modifications
+makefile:	Makefile	modify as per instructions
 
 I have tried to comment this stuff appropriately.
+
+The options specified in the configuration files will be reflected
+in the conquer.docs and help files when the program is compiled.
 
 -----------------------------------------------------------
 IV  Compilation Instructions
 -----------------------------------------------------------
 
 Browse the file header.h.  This sets up configurable parameters for the
-game.  This program should be easy to compile. 
+game.  This program should be easy to compile.  Just type make.
 
-- Sometimes termcap/termlib... are not on systems.  You will know this
-    is the error if all the '.c' files compile but will not compile together.
-    Unreferenced symbol errors will occur.  Try adding "-ltermcap" after
-    the "-lcurses" line in the makefile.
+Note: Sometimes curses does not include termcap or termlib.  If all the
+	'.c' files get compiled, but do not compile together,  and 
+	unreferenced symbol errors occur,  try adding "-ltermcap" after
+	the "-lcurses" line in the makefile.
 
 -----------------------------------------------------------
 V   administration instructions
@@ -82,51 +84,45 @@ can add other players.
 
 You can type the following commands to help administer the game
 
-Make:		Compiles the code.
-Make clobber:   Clobber everything but the source (destroys executable)
-Make clean:     Clean up objects (does not destroy executable)
-Make install:	Installs executable & data in appropriate directories (header.h)
-Make docs:	Creates documentation from help file
-run:		read this file, it permits you to run the update automatically
-		run needs to be modified for time to update
+make:		Compiles the code.
+make clobber:   Clobber everything but the source (destroys executables)
+make clean:     Clean up objects (does not destroy executables)
+make new_game:	Create a new game, make world, add players...
+make docs:	Creates documentation from help file
 
-This is the command line format for conquer:
-	Cmd line format: conquer [-maxhp]
-		(no options) play the game
-		-m  make a world ('data' file must not exist, need god password)
-		-a  add new player (must know god password)
-		-x  execute program (must know god password)
-		-p  print a map to stdout (must know god password)
-                -h  Print out help text.
-                -n  NTN Run as nation NTN.
-                -d  DIR Run on data in directory DIR.  Each game has its own 
-                    data directory.  The default is set up at compile time and 
-                    should only be used if only one game is run.
-                 -s Print out scores of all nations in the world.
+run:		read this shell script, it permits you to run the update
+		automatically.  It needs to be modified for time to update.
+
+The command line for the two executables created can be found by reading
+the help files.  The admin executable is for the game super user only,
+and the conquer executable is for the players.
 
 Again, prior to the compile, you should have followed the instructions
 in the Makefile and in header.h.  
 
-First, make a directory in which to play the game.  You should then
-move the nations and help files into the target directory.
-
-Then create the world via:
-	<conquer -m>    this will make your world.  Try it.
+You can administrate world either via "make new_game" or via:
+	<admin -m>    this will make your world.  
 			 This also sets up npc nations as per the nations file
 			 npc stats can be adjusted by editing nations
 			 prior to making the world.  Non player nations have
 			 the same password as god.
 
 Add 0 or more players via
-	<conquer -a>    which should be self explanatory
+	<admin -a>    which should be self explanatory
 
 
-Learn the commands (Type '?' to get help) & play around to get your 
-syntax right.
+Once you log in as a player or as god, you can get help by
+typing '?'.  Play around with the commands and get your syntax right.
 
 Try logging in as either a player or non player nation (they use the super
 user password) and noticing any differences.
 
+IMPORTANT FOR PLAY BALANCE: 
+The world is not created equal.  Some players may start in very bad
+positions.  You can either start them over (destroy that nation in the
+change nation command and create a new one), or modify the surrounding
+terain appropriately (god can use the redesignate command to change
+elevation and vegitation).
 Now move around on the map and learn where the players are
 positioned.  If there is a problem (they are surrounded by water...), 
 use the redesignate command to change elevation or vegetation. 
@@ -137,14 +133,205 @@ think the game will be fair, it is time to allow players to proceed.
 Now you are all set -- play via 
 	<conquer>
 
-and update with <conquer -x> via 
-an "at" script. This is contained in the shell script "run".
+and update with <admin -x> via an script similar to the one contained in "run". 
 
---------------------------------------------------------------------
-VI a list of further enhancements/bug fixes I am planning on making
---------------------------------------------------------------------
+-----------------------------------------------------------
+VI   Changes in this version
+-----------------------------------------------------------
 
-Trade is unimplemented
-Naval combat and movement has not been system tested
-Only one type of soldier and one type of warship allowed (see data.h)
-Character Classes and leaders are not fully implemented
+The following changes have been added in this version (v3).
+
+1) Peasant revolts should turn 25% of populace into militia. 
+2) nations in revolt have unique names.
+3) Ships no longer can move overland
+4) NPCs should only able to get WARRIOR type, MONSTER type, KNOWALL, DERVISH,
+	DESTROYER, HIDDEN, VOID, ARCHITECT, VAMPIRE, HEALER, MINER, BREEDER, 
+	URBAN, and STEEL, ARCHER POWERS, SLAVER
+	NPCs now utilize powers. If ARCHER => all non militia units = ARCHER
+5) Lizard armies are limited in how far they can wander
+6) Warrior power is now used by NPCs in recruitment
+7) added getopt.c for ibm pc's 	/* need to test it */
+8) Ship costs increased 
+9) tyranny class name changed to warlord
+10) new random events -- 
+	volcano strikes country, earthquake, tornado, general prosperity.
+11) added percentage chance that a volcano will go off somewhere on the globe.
+12) added lockfile mechanism to prevent players from logging in twice.
+13) creation of mountains based on map sized	/* need to test */
+14) fixed the mail editor so it processes only
+	printable characters and so vt220 delete key works.
+15) fort,gold,and iron should be char
+16) added starting # of people... for enforcement in drafting
+17) moved startgold and startpeople stuff to execute.c
+18) Iron for new units several places was not updated.
+19) now use drand48() on sysV and random() on BSD instead of rand()
+20) NPCs now have militia in all their cities.  NPC militia must not move.
+21) Help file should give more details on races, diplomacy, army stats.
+22) passwrod prompt made more explicit 
+23) magic powers now broken up more logically (magic/civilian/military)
+	more powers added.  Powers should effect units you can build.
+	added use of powers[i], getnumpowers(type,country), 
+	and getmgkcost(type,country)
+24) added data.c
+25) added hangup routine... need to test.
+26) added control L redraw on movement screen... need to test
+27) Split the game into 2 functioning units:  Move Entry and
+	   Move Execution.  This will help players on pc's.
+28) prevent countries from taking themselves over
+29) limited number of mercenaries to 1/2 your regular troops
+30) Fixed destroyer power... destroyers can redesignatie their sectors.
+	if they lose the sector, it reverts to desert.  All sectors in
+	the radius now become desert
+31) reproduction and production fall off if too many people are in a sector 
+32) make production ability fall off with increasing usage.  Each ??? mined
+	gives 100% chance of reducing the iron/jewel value of a sector by one 
+33) ???% chance of a sector gaining 1 point of iron/jewels in a turn.
+34) Changed the markers so that they are consistent.  
+	Upper case  - nation marks
+	Lower case  - sector designations (rename cities to towns)
+		char *ele=       "#^%-~";
+		char *des=       "ctmfx$!-";
+		char *veg=       "vdyblgwfjsi~";
+35) Magic screen should permit use of magic spells.
+36) It should take min(75,tmil/150) to take over sector only for pcs
+37) Classes: all classes should start with some sort of magic powers.
+38) new screen option for showing food value.
+39) joined ninja and spy powers
+40) reworked npc movement
+41) Modified the header.h file so that TAXFOOD is only 40, and TAXIRON is 60, 
+	TAXJEWELS is 80.  This should significantly reduce the amount
+	   of gold that nations have to play with.  
+42) Add elephant unit type 
+43) -D game to make smaller executables
+44) added extended commands
+45) Added slaver power
+46) Made buying a city cost a larger amount of money.
+47) Made spreadsheet() for update,reports,npcs which returns structure of
+	information on production abilities.
+48) intelligent npc sector redesignation
+49) have broken down my pceattr, atkattr, and defendattr() routines
+	into components... the building blocks of strategies.  
+	These strategies have not been implemented but for example are...
+
+	peaceful expand, peaceful hold, attack_empty_sectors(country),
+	survival, fortify, build, attack(nation number), jihad(nation number),
+	attack_army(nation), jihad_army(nation), take(race)..., 
+	defend(nation), defend_army(nation), etc...
+
+These will be pulled together into a list of "strategies" which will
+be stored in the active variable in the nation strucutre.  The higher
+the number, the more likely the nation will be to jihad() against PC's.
+Low numbered nations will not be likely to instigate a war...
+will need to write an additional diplomacy routine.
+50) Rewrote Makefile
+
+51) "verifying that nation x exists" string changed to "Loading nation x".
+52) integer and nation name input allows better deletion.
+53) OGOD option will allow the god to have greater power
+	(remove magic and give magic) as well as tightening security.
+54) DERVDESG option will change DERVISH (and DESTROYER) power
+	so that they will be able to redesignate sectors instead of
+	the previous automatic food generation. (may have desert mines,
+	towns, etc...)
+55) rewrote tofood so that it was passed the country
+	number as well as a vegetation.  (this means that display food
+	will show 6 for deserts with DERVISH power)
+56) HIDELOC option will make it so that the news will not print
+	the sector locations for battles and randomevents. (had to create
+	a disaster report that is mailed to PC players so that they can
+	know where a tornado or earthquake etc... struck.)
+57) saw what you did with newhelp.c and build it up so fixed it
+	so that it would work to create a new help file. NOTE: make sure
+	that the help file is moved to help.txt after being patched.
+	Look at the makefile to see what I mean.  
+58) altered randevent.c so that it would select a city/mine/goldmine
+	at random, not starting from the upperleft.
+59) altered display in BUDGET and PRODUCTION so that it will not be
+	ruined with nations started getting 500000 or more people.
+60) prettified all of the things that seemed a little off.
+61) did stuff to newlogin to make it beautiful
+62) Miscelaneous V2.2 fixes.
+	Fixed bug that generated too many nomads... now new
+		nomads are based on a nations military might
+	Stopped Mercenary troops from depleting population
+	Fixed News section bug that lists "Country A and B declare ceasefire" 
+		followed by "Country B declares war on A" 
+	Lowered town cost to 100000.
+63)
+Should force defeated armies to retreat if battle lost and not city
+-----------------------------------------------------------
+VII   Problems that I know about are or desired changes
+-----------------------------------------------------------
+
+platinum to add add to spell points at 25K per point.
+Sector ownership rules must change - capture on 8:1 odds always.
+Should have SEIGE and SEIGED status for armies
+
+Change movement so that when you move into a sector you don't own (that is also
+not owned bya friend or ally) you either stop automatically or at least use
+more movement, say twice normal to scout it out.
+
+new powers :
+	TRADER : Generally has very good diplomacy status, half cost to
+		construct and maintain merchant ships
+
+allow nations to redesignate a sector to devastated if they
+	wish, which discourages their populace from inhabiting it.
+
+keep track of the date... I should use a variable in nation 0
+	(how about its location variable...).
+
+make newlogin give nations added after the starting date extra points
+based on the scores of the PC nations playing.  This is not for
+rebel nations.  
+
+change readnews, fleetrpt, and armyrpt slightly so they only redraw the
+	screen if you have something to look at.
+
+Make the update keep track of which PC's didn't move and at the end of the
+update it puts a copy of the news for that turn into their message files.
+Make the update keep a copy of the newsfile in a turn log as well, which
+will keep news files from all turns in a game, and in the future I will
+implement a command that allows you to look up the log for a particular turn
+from within the program, in place of the news command.
+
+added to randevents so it prints a message of what happened to the nation
+ 	it affected.  This probably isn't really necessary now since players 
+	that miss turns will have the news saved, but I did it before I 
+	implemented the news saving.  I do need to add several message 
+	printings to the new/newly implemented randevents, though.
+
+rebel nations should have unique names - from table & unique nation marks
+Should have ubiquitous castle designation.  
+
+Ships will now have 50 man crews - which can melee and fight. 
+	Troops are required on ships.
+	Each fleet may carry one army of Marines (in addition to any troops 
+	that are ferried - who dont count in combat).  Marines add to chances
+	of success in shipboard combat.  
+
+Sea combat - 3 rounds
+	get nwarships nmerchants
+	get nmarines/shp nsailors/shp
+	each warship ship ram 20% (+10% if SAILOR) - will sink
+	Boarding 
+		get nsolds (nships*sold/ship) and bonus (weighted average)
+		use normal combat
+		casualties are applied to ships!!! only -> 30% chance
+			of collecting prize from boarding
+Fortifications should be demolished in combats by catapults or siege engines.  
+
+I have written a
+little trading system, and will send it to you, but I need just one
+thing:  a command in the execute file that does *increment* of
+gold, jewels, iron and food, rather than adjusting the absolute value.
+Could you add that for me quickly?  I really think it would
+be worth it.
+
+There is a problem with the logic of sector taking. I have
+had three sectors taken w/out battle from underneath my soldiers. The armies
+were never more than three times greater (and that is pushing). Plus, one of
+them, the latest, took my sector with exactly 112 soldiers to my 80 (I now
+have the ninja power, so I know for sure). The sector is taken, but NOT listed
+as taken in the NEWS. (The people are killed and the sector devastated,
+however) 

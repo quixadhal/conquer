@@ -39,20 +39,20 @@
 #
 # name leader race mark location aplus dplus maxmove gold mil civ repro aggr
 #########################################################################
-anorian  elfwizard  E a F 30 40  8  30000 1500 8500 8  2
-bobland  dragon     O b F 20 0   6  1000  1500 8000 10 9
-cordoba  wizard     H c R 10 10  2  10000 1500 8000 8  4
-darboth  balrog     O d R 0  0   7  30000 1500 9500 8  9
-edland   dragon     O e R 20 0   8  1000  1500 8500 10 9
-fung     elfking    E f F 10 40  8  20000 1000 9500 8  2
-gotho    warking    H g R 10 10  9  20000 1000 6150 8  4
-hargo    king       H h R 10 10  9  10000 1500 11000 7 4
-lint     elfwizard  E l F 20 30  8  20000 1500 7900 10 2
-medal    elfpriest  E m R 20 0   6  3000  2000 6500 10 9
-noria    dwarfduke  D n R 10 30  6  20000 1000 10000 8 4
-roos     dwarfduke  D r F 15 10  9  20000 1000 7900 7  8
-sodor    dwarfking  D s F 10 30  6  60000 5000 18000 7 4
-tokus    king       H t R 10 10  8  10000 1000 7500 8  4
-woooo    shadow     O w F 10 10  10 10000 3500 17000 10 9
-Valar    dwarf      D v R 10 15  8  10000 1000 7000 8  4
-zaos     king       H z R 10 15  12 10000 1000 7000 8  4
+anorian  elfwizard  E A F 30 40  8  70000 1500 8500 8  2
+bobland  dragon     O B F 20 0   6  12000  1500 8000 10 9
+cordoba  wizard     H C R 10 10  2  30000 1500 8000 8  4
+darboth  balrog     O D R 0  0   7  70000 1500 9500 8  9
+edland   dragon     O E R 20 0   8  12000  1500 8500 10 9
+fung     elfking    E F F 10 40  8  50000 1000 9500 8  2
+gotho    warking    H G R 10 10  9  50000 1000 6150 8  4
+hargo    king       H H R 10 10  9  30000 1500 11000 7 4
+lint     elfwizard  E L F 20 30  8  50000 1500 7900 10 2
+medal    elfpriest  E M R 20 0   6  16000  2000 6500 10 9
+noria    dwarfduke  D N R 10 30  6  50000 1000 10000 8 4
+roos     dwarfduke  D R F 15 10  9  50000 1000 7900 7  8
+sodor    dwarfking  D S F 10 30  6  160000 5000 18000 7 4
+tokus    king       H T R 10 10  8  30000 1000 7500 8  4
+woooo    shadow     O W F 10 10  10 60000 3500 17000 10 9
+Valar    dwarf      D V R 10 15  8  30000 1000 7000 8  4
+zaos     king       H Z R 10 15  12 30000 1000 7000 8  4

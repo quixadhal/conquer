@@ -1,8 +1,8 @@
-/*conquer is copyrighted 1986 by Ed Barlow.
- *  I spent a long time writing this code & I hope that you respect this.  
+/* Conquer: Copyright (c) 1988 by Edward M Barlow
+ *  I spent a long time writing this code & I hope that you respect this.
  *  I give permission to alter the code, but not to copy or redistribute
- *  it without my explicit permission.  If you alter the code, 
- *  please document changes and send me a copy, so all can have it.  
+ *  it without my explicit permission.  If you alter the code,
+ *  please document changes and send me a copy, so all can have it.
  *  This code, to the best of my knowledge works well,  but it is my first
  *  'C' program and should be treated as such.  I disclaim any
  *  responsibility for the codes actions (use at your own risk).  I guess
@@ -21,24 +21,27 @@
 extern FILE *fexe;
 extern short country;
 extern long startgold;
+extern short xcurs,ycurs;
+extern short xoffset,yoffset;
 
 /*report on armies and allow changes*/
-armyrpt()
+void
+armyrpt(repnum)
+	int repnum;
+	/* 0 is for full report 'a' and 1 is for group report 'g' */
 {
 	int i,j;
-	int chg;
 	short army;
 	int men;
-	int oldx,oldy;
 	short oldarmy;
-	int done=0;
+	int done=FALSE;
 	int position;
-	int isgod=0;
+	int isgod=FALSE;
 	int count;    /*number of armies on current screen */
 	short armynum=0;    /*current nation id */
 	if(country==0) {
 		standout();
-		isgod=1;
+		isgod=TRUE;
 		clear();
 		mvaddstr(0,0,"SUPER USER; FOR WHAT NATION NUMBER:");
 		clrtoeol();
@@ -49,7 +52,7 @@ armyrpt()
 	}
 	armynum=0;
 	/*new army screen*/
-	while(done==0) {
+	while(done==FALSE) {
 		clear();
 		/*Operate on any armies that you wish*/
 		standout();
@@ -62,11 +65,14 @@ armyrpt()
 		mvaddstr(5,0,"x location:");
 		mvaddstr(6,0,"y location:");
 		mvaddstr(7,0,"status    :");
+		mvaddstr(8,0,"unit type :");
+		mvaddstr(9,0,"cost/turn :");
+		mvaddstr(10,0,"enlist    :");
 
 		position=5;
 		count=0;
 		while((armynum<MAXARM)&&(count!=6)){
-			if(ASOLD>0) {
+			if(ASOLD>0 && (!repnum || (AXLOC==XREAL && AYLOC==YREAL))) {
 				count++;
 				position+=10;
 				standout();
@@ -77,10 +83,13 @@ armyrpt()
 				mvprintw(5,position,"%d",AXLOC);
 				mvprintw(6,position,"%d",AYLOC);
 				mvprintw(7,position,"%s",*(soldname+ASTAT));
+				mvprintw(8,position,"%s",*(unittype+(ATYPE%100)));
+				mvprintw(9,position,"$%d",ASOLD * *(unitmaint+(ATYPE%100)));
+				mvprintw(10,position,"$%d",ASOLD * *(u_encost+(ATYPE%100)));
 			}
 			armynum++;
 		}
-		if(armynum>=MAXARM) done=1;
+		if(armynum>=MAXARM) done=TRUE;
 
 		standout();
 		mvaddstr(12,(COLS/2)-10,"HIT SPACE KEY IF DONE");
@@ -88,155 +97,72 @@ armyrpt()
 		mvaddstr(14,(COLS/2)-14,"HIT ANY OTHER KEY TO CONTINUE");
 		standend();
 		refresh();
-		if ((army=getch())==' ') done=1;
+		if ((army=getch())==' ') done=TRUE;
 		if (army=='\n'){
+			done=0;
 			mvaddstr(16,0,"WHAT ARMY DO YOU WANT TO CHANGE:");
 			clrtoeol();
 			refresh();
 			armynum = get_number();
 			if((armynum<0)||(armynum>MAXARM)) return;
-			mvaddstr(18,0,"1) CHANGE STATUS, 2) TRANSFER / MERGE, 3) SPLIT ARMY, 4) DISBAND ARMY:");
+			if(ATYPE<99)
+			mvaddstr(18,0,"1) CHANGE STATUS, 2) TRANSFER / MERGE, 3) SPLIT ARMY, 4) DISBAND ARMY");
+			else mvaddstr(18,0,"1) CHANGE STATUS, 4) DISBAND ARMY:");
 			clrtoeol();
-			if(isgod==1) mvaddstr(20,0,"5) LOCATION, 6) SOLDIERS:");
+			if(isgod==TRUE) mvaddstr(20,0,"5) LOCATION, 6) SOLDIERS:");
 			refresh();
 			switch(getch()){
 			case '1':
-				if(ASTAT==SCOUT){
-				mvaddstr(21,0,"CANT CHANGE STATUS ON SCOUTS");
-				refresh();
-				getch();
-				break;
-				}
-				mvaddstr(21,0,"1=MARCH, 2=SCOUT, 3=ATTACK, 4=DEFEND, 5=GARRISON");
-				clrtoeol();
-				refresh();
-				chg = get_number();
-				if(chg<1) return;
-				if(chg>5) return;
-				if((chg==SCOUT)&&(ASOLD>25)){
-					clear();
-					mvaddstr(12,(COLS/2)-6,"NEED < 25 MEN TO SCOUT");
-					mvaddstr(13,(COLS/2)-12,"HIT ANY KEY TO CONTINUE");
-					refresh();
-					getch();
-					if(isgod==1) country=0;
-					return;
-				}
-				else if((chg>0)&&(chg<7)) {
-					ASTAT=chg; 
-					AADJSTAT;
-				}
+				adjarm(armynum);
 				break;
 			case '2':
-				oldx=AXLOC;
-				oldy=AYLOC;
+				clear_bottom(0);
+				if(ATYPE>=MINMONSTER){
+					errormsg("SORRY -- army is monster");
+					break;
+				}
 				oldarmy=armynum;
-				mvaddstr(22,0,"TO WHAT ARMY: ");
-				clrtoeol();
+				mvaddstr(LINES-4,0,"TO WHAT ARMY: ");
 				refresh();
 				armynum = get_number();
-				if(armynum==oldarmy) {
-					mvprintw(23,0,"SORRY -- SAME (%d,%d",armynum,oldarmy);
-					refresh();
-					getch();
-				}
-				else if((armynum<0)||(armynum>MAXARM)){
-					mvprintw(23,0,"SORRY -- INVALID ARMY %d",armynum);
-					refresh();
-					getch();
-				}
-				else if(ASTAT==SCOUT){
-					mvaddstr(23,0,"SORRY -- TARGET ARMY IS SCOUTING");
-					refresh();
-					getch();
-				}
-				else if((oldx==AXLOC)&&(oldy==AYLOC)&&(ASOLD>0)) {
-					ASOLD+= ntn[country].arm[oldarmy].sold;
-					ntn[country].arm[oldarmy].sold=0;
-					AADJMEN;
-					if(AMOVE>ntn[country].arm[oldarmy].smove)
-						AMOVE=ntn[country].arm[oldarmy].smove;
-					AADJMOV;
-					armynum=oldarmy;
-					AADJMEN;
-				}
-				else {
-					mvaddstr(23,0,"Armies not together (hit any key) ");
-					refresh();
-					getch();
-				}
+
+				combinearmies(armynum,oldarmy);
 				break;
 			case '3':
-				mvaddstr(21,0,"HOW MANY MEN TO SPLIT: ");
-				clrtoeol();
-				refresh();
-				men = get_number();
-				if((armynum<0)||(armynum>MAXARM)) return;
-				if((men<25)||(ASOLD-men<25)){
-					mvaddstr(23,0,"TOO FEW MEN TRANSFERED OR LEFT");
-					refresh();
-					getch();
-				}
-				else if(men<ASOLD){
-					ASOLD-=men;
-					AADJMEN;
-					oldarmy=armynum;
-					oldx=AXLOC;
-					oldy=AYLOC;
-					armynum=(-1);
-					for(army=0;army<MAXARM;army++)
-						if(ntn[country].arm[army].sold==0){
-							if(armynum==(-1)) armynum=army;
-						}
-					/*overflow*/
-					if(armynum==(-1)) {
-						mvaddstr(23,0,"TOO MANY ARMIES: ");
-						armynum=oldarmy;
-						ASOLD+=men;
-						AADJMEN;
-					}
-					else {
-						AMOVE=ntn[country].arm[oldarmy].smove;
-						ASTAT=DEFEND;
-						AXLOC=oldx;
-						AYLOC=oldy;
-						ASOLD=men;
-						AADJSTAT;
-						AADJMEN;
-						AADJLOC;
-						AADJMOV;
-					}
-				}
-				else {
-					mvaddstr(23,0,"TOO MANY MEN : ");
-					refresh();
-					getch();
-				}
+				splitarmy(armynum);
 				break;
 			case '4':
+				clear_bottom(0);
 				if(sct[AXLOC][AYLOC].owner!=country){
-					mvaddstr(21,0,"YOU DONT OWN SECTOR-- hit return");
-					clrtoeol();
-					refresh();
-					getch();
+					errormsg("YOU DONT OWN SECTOR");
+					break;
 				}
-				else if(magic(country,VAMPIRE)==1){
-					mvaddstr(21,0,"VAMPIRES CANT DISBAND--hit return");
-					clrtoeol();
+				else if(ATYPE==A_MERCENARY){
+					/*mercs must be payed off*/
+					/*mercs do not add to local populace*/
+					mvprintw(LINES-4,0,"Your mercenaries demand %ld gold to disband",
+					*(u_encost+(ATYPE%100)) * ASOLD);
+					mvprintw(LINES-3,0,"continue? (y or n)");
 					refresh();
-					getch();
-				}
-				else {
-					i=AXLOC;
-					j=AYLOC;
-					sct[i][j].people+=ASOLD;
+					if(getch()=='y'){
+					ntn[country].tgold -= *(u_encost+(ATYPE%100)) * ASOLD;
 					ASOLD=0;
 					AADJMEN;
+					}
+				} else if(magic(country,VAMPIRE)==1){
+					errormsg("VAMPIRES CANT DISBAND");
+					break;
+				} else {
+					sct[AXLOC][AYLOC].people+=ASOLD;
+					ASOLD=0;
+					AADJMEN;
+					i=AXLOC;
+					j=AYLOC;
 					SADJCIV2;
 				}
 				break;
 			case '5':
-				if(isgod==1){
+				if(isgod==TRUE){
 					/*X LOCATION*/
 					mvaddstr(21,0,"WHAT IS THE NEW X LOC: ");
 					refresh();
@@ -251,7 +177,7 @@ armyrpt()
 				}
 				break;
 			case '6':
-				if(isgod==1){
+				if(isgod==TRUE){
 					/*SOLDIERS*/
 					mvaddstr(21,0,"WHAT IS THE NEW TOTAL SOLDIERS: ");
 					refresh();
@@ -270,94 +196,66 @@ armyrpt()
 			armynum=0;
 		}
 	}
-	if(isgod==1) country=0;
+	if(isgod==TRUE) country=0;
 }
 
+void
 budget()
 {
-	register int xsctr,ysctr;
 	short armynum,nvynum;
+	long expship=0L,expsold=0L,nosold=0L;	/*nosold = # men,exp expense */
+	int isgod=FALSE;
 
-	int ingold=0,iniron=0,infood=0,incap=0,incity=0;
-	long revgold=0,reviron=0,revfood=0,revcap=0,revcity=0;
-	long expship=0,expsold=0;
-	int isgod=0;
 	if(country==0) {
-		isgod=1;
+		isgod=TRUE;
 		clear();
 		mvaddstr(0,0,"SUPER USER; FOR WHAT NATION NUMBER:");
 		clrtoeol();
 		refresh();
 		country = get_number();
 	}
+
 	clear();
 	standout();
 	mvaddstr(0,(COLS/2)-10,"NEXT YEARS BUDGET ESTIMATES");
 	standend();
 
-	for(xsctr=0;xsctr<MAPX;xsctr++) for(ysctr=0;ysctr<MAPX;ysctr++) if(sct[xsctr][ysctr].owner==country) {
-		if(sct[xsctr][ysctr].designation==DFARM){
-			infood+= sct[xsctr][ysctr].people;
-			revfood+=todigit(sct[xsctr][ysctr].vegetation)*sct[xsctr][ysctr].people;
-		}
-		else if(sct[xsctr][ysctr].designation==DMINE) {
-			iniron+= sct[xsctr][ysctr].people;
-			reviron+=sct[xsctr][ysctr].iron*sct[xsctr][ysctr].people;
-		}
-		else if(sct[xsctr][ysctr].designation==DGOLDMINE) {
-			ingold+= sct[xsctr][ysctr].people;
-			revgold+=sct[xsctr][ysctr].gold*sct[xsctr][ysctr].people;
-		}
-		else if(sct[xsctr][ysctr].designation==DCAPITOL) incap+= sct[xsctr][ysctr].people;
-		else if(sct[xsctr][ysctr].designation==DCITY)    incity+= sct[xsctr][ysctr].people;
-	}
+	spreadsheet(country);
 
-	revfood *= TAXFOOD / 100;
-	reviron *= TAXIRON / 100;
-	revgold *= TAXGOLD / 100;
-	revcap = (long) incap * TAXCAP / 100;
-	revcity = (long) incity * TAXCITY / 100;
-	if( magic(country,ARCHITECT) ) {
-		revcap *= 2;
-		revcity *= 2;
+	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0) {
+		nosold+= ASOLD;
+		expsold += ASOLD * *(unitmaint+(ATYPE%100));
 	}
-
-	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0) expsold+= ASOLD;
 	for(nvynum=0;nvynum<MAXNAVY;nvynum++)
 		if(NWAR+NMER>0) expship+=(NWAR+NMER);
 
 	standout();
-	mvprintw(5,0,  "nation name is ...%s   ",ntn[country].name);
+	mvprintw(5,0,  "nation name is.....%s   ",ntn[country].name);
 	mvprintw(6,0,  "gold in treasury..$%8ld",ntn[country].tgold);
+	mvprintw(7,0,  "number of sectors..%d",spread.sectors);
 	standend();
 	if(ntn[country].tfood<ntn[country].tciv) standout();
 	mvprintw(9,0,  "granary holds ....%8ld",ntn[country].tfood);
 	standend();
 	mvprintw(10,0, "jewels owned is...%8ld",ntn[country].jewels);
 	mvprintw(11,0, "iron ore owned is.%8ld",ntn[country].tiron);
-	mvprintw(7,30, "%5d people in gold mines:%8ld",ingold,revgold);
-	mvprintw(8,30, "%5d people in iron mines:%8ld",iniron,reviron);
-	mvprintw(9,30, "%5d people in farms:     %8ld",infood,revfood);
-	mvprintw(10,30,"%5d people in capital:   %8ld",incap,revcap);
-	mvprintw(11,30,"%5d people in cities:    %8ld",incity,revcity);
+	mvprintw(7,30, "%8d people in gold mines:%8ld",spread.ingold,spread.revjewels);
+	mvprintw(8,30, "%8d people in iron mines:%8ld",spread.iniron,spread.reviron);
+	mvprintw(9,30, "%8d people in farms:     %8ld",spread.infarm,spread.revfood);
+	mvprintw(10,30,"%8d people in capitol:   %8ld",spread.incap,spread.revcap);
+	mvprintw(11,30,"%8d people in towns:     %8ld",spread.incity,spread.revcity);
 	standout();
-	mvprintw(12,30,"%5ld people TOTAL INCOME: %8ld",ntn[country].tciv,revfood+reviron+revgold+(incap*TAXCAP/100)+(incity*TAXCITY/100));
+	mvprintw(12,30,"%8ld people TOTAL INCOME: %8ld",spread.civilians,spread.gold - ntn[country].tgold);
 	standend();
 
-	if(magic(country,VAMPIRE)!=1) 
-	mvprintw(14,30,"%5d troops at %5d each:%8d",expsold,SOLDMAINT,expsold*SOLDMAINT);
-	else
-	mvprintw(14,30,"%5d troops at     0 each:0",expsold);
-	mvprintw(15,30,"%5d ships at %5d each: %8d",expship,SHIPMAINT,expship*SHIPMAINT);
-	mvprintw(16,30,"other expenses this turn:  %8ld",startgold-ntn[country].tgold);
+	if(magic(country,VAMPIRE)==1)  expsold/=4;
+	mvprintw(14,30,"%8d troops:              %8ld",nosold,expsold);
+
+	mvprintw(15,30,"%8d ships at %5d each: %8ld",expship,SHIPMAINT,expship*SHIPMAINT);
+	mvprintw(16,30,"other expenses this turn:     %8ld",startgold-ntn[country].tgold);
 	standout();
-	if(magic(country,VAMPIRE)!=1) {
-	mvprintw(17,30,"TOTAL EXPENSES:            %8ld",(expsold*SOLDMAINT)+(expship*SHIPMAINT)+startgold-ntn[country].tgold);
-	mvprintw(18,30,"NET INCOME:                %8ld",revfood+reviron+revgold+(incap*TAXCAP/100)+(incity*TAXCITY/100)-(expsold*SOLDMAINT)-(expship*SHIPMAINT)-startgold+ntn[country].tgold);
-	} else {
-	mvprintw(17,30,"TOTAL EXPENSES:            %8ld",(expship*SHIPMAINT)+startgold-ntn[country].tgold);
-	mvprintw(18,30,"NET INCOME:                %8ld",revfood+reviron+revgold+(incap*TAXCAP/100)+(incity*TAXCITY/100)-(expship*SHIPMAINT)-startgold+ntn[country].tgold);
-	}
+	mvprintw(17,30,"TOTAL EXPENSES:               %8ld",expsold+(expship*SHIPMAINT)+startgold-ntn[country].tgold);
+	mvprintw(18,30,"NET INCOME:                   %8ld",spread.gold-expsold-(expship*SHIPMAINT)-startgold);
 
 	mvaddstr(20,(COLS/2)-13,"HIT 'P' TO SEE PRODUCTION STATS");
 	mvaddstr(21,(COLS/2)-12,"HIT ANY OTHER KEY TO CONTINUE");
@@ -366,20 +264,18 @@ budget()
 	if(getch()=='P'){
 		produce();
 	}
-	if(isgod==1) country=0;
+	if(isgod==TRUE) country=0;
 }
 
+void
 produce()
 {
-	register int xsctr,ysctr;
 	short armynum;
-	int civilians=0, military=0;
-	int ingold=0 ,indesert=0,iniron=0,infood=0;
-	long revgold=0,reviron=0,revdesert=0,revfood=0;
-	int isgod=0;
+	int military=0;
+	int isgod=FALSE;
 
 	if(country==0) {
-		isgod=1;
+		isgod=TRUE;
 		clear();
 		mvaddstr(0,0,"SUPER USER; FOR WHAT NATION NUMBER:");
 		clrtoeol();
@@ -388,68 +284,37 @@ produce()
 	}
 	clear();
 	standout();
-	mvaddstr(0,(COLS/2)-20,"NEXT YEARS PRODUCTION ESTIMATES");
+	mvaddstr(0,(COLS/2)-12,"NEXT YEARS PRODUCTION ESTIMATES");
 	standend();
 
-	for(xsctr=0;xsctr<MAPX;xsctr++) for(ysctr=0;ysctr<MAPX;ysctr++) if(sct[xsctr][ysctr].owner==country) {
-		civilians += sct[xsctr][ysctr].people;
-
-		if(sct[xsctr][ysctr].designation==DFARM){
-			infood+= sct[xsctr][ysctr].people;
-			revfood+=todigit(sct[xsctr][ysctr].vegetation)*sct[xsctr][ysctr].people;
-		}
-		else if(sct[xsctr][ysctr].designation==DMINE) {
-			iniron+= sct[xsctr][ysctr].people;
-			reviron+=sct[xsctr][ysctr].iron*sct[xsctr][ysctr].people;
-		}
-		else if(sct[xsctr][ysctr].designation==DGOLDMINE) {
-			ingold+= sct[xsctr][ysctr].people;
-			revgold+=sct[xsctr][ysctr].gold*sct[xsctr][ysctr].people;
-		}
-		else if(((magic(country,DERVISH)==1)
-		||(magic(country,DESTROYER)==1))
-		&&((sct[xsctr][ysctr].vegetation==ICE)
-		||(sct[xsctr][ysctr].vegetation==DESERT))
-		&&(sct[xsctr][ysctr].people>0)) {
-			indesert+= sct[xsctr][ysctr].people;
-			revdesert+=6*sct[xsctr][ysctr].people;
-		}
-	}
-	if(magic(country,MINER)==1) {
-		mvaddstr(20,0,"MINER");
-		reviron*=2;
-		revgold*=2;
-	}
+	spreadsheet(country);
+	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0) military+=ASOLD;
 
 	standout();
-	mvprintw(5,0,  "nation name is ...%s   ",ntn[country].name);
+	mvprintw(5,0,  "nation name is ...%9s",ntn[country].name);
 	mvprintw(6,0,  "gold in treasury..$%8ld",ntn[country].tgold);
 	standend();
 	mvaddstr(8,0,  "FOOD PRODUCTION");
-	mvprintw(9,0,  "granary now holds......%8ld tons",ntn[country].tfood);
-	mvprintw(10,0, "%5d people in farms..%8ld tons",infood,revfood);
-	if((magic(country,DERVISH)==1)||(magic(country,DESTROYER)==1)) {
-	mvprintw(11,0, "dervish: %5d people..%8d tons",indesert,revdesert);
-	}
-	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0) military+=ASOLD;
-	mvprintw(12,0, "%5d civilians eat....%8d tons",civilians,civilians);
-	mvprintw(13,0, "%5d soldiers  eat....%8d tons",military,military*2);
-	mvprintw(15,0, "TOTAL NET FOOD.........%8d tons",revfood+revdesert-civilians-military*2);
-	if(ntn[country].tfood+revfood+revdesert-civilians-military*2<FOODTHRESH*civilians) {
-	mvprintw(16,0, "TOTAL NEXT YEARS FOOD..%8ld tons",ntn[country].tfood+revfood+revdesert-civilians-military*2);
+	mvprintw(9,0,  "granary now holds.........%8ld tons",ntn[country].tfood);
+	mvprintw(10,0, "%8d people in farms..%8ld tons",spread.infarm,spread.food-ntn[country].tfood);
+	mvprintw(12,0, "%8d civilians eat....%8d tons",spread.civilians,spread.civilians);
+	mvprintw(13,0, "%8d soldiers  eat....%8d tons",military,military*2);
+	mvprintw(15,0, "TOTAL NET FOOD............%8d tons",spread.food-ntn[country].tfood-spread.civilians-military*2);
+	if(spread.food-spread.civilians-military*2<FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100){
+	mvprintw(16,0, "TOTAL NEXT YEARS FOOD.....%8ld tons",spread.food-spread.civilians-military*2);
 	}
 	else{
-	mvprintw(16,0, "TOTAL NEXT YEARS FOOD..%8ld tons",FOODTHRESH*civilians);
-	mvprintw(17,0, "REVENUE FROM EXCESS....%8ld gold",ntn[country].tfood+revfood+revdesert-civilians-military*2-FOODTHRESH*civilians);
+	mvprintw(16,0, "TOTAL NEXT YEARS FOOD.....%8ld tons",FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100);
+	mvprintw(17,0, "REVENUE FROM EXCESS.......%8ld gold",spread.food-spread.civilians-military*2-FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100);
 	}
 
-	mvaddstr(8,40,  "OTHER PRODUCTION");
-	mvprintw(10,40, "jewels owned is............%8ld",ntn[country].jewels);
-	mvprintw(11,40, "%5d people in goldmines :%8ld",ingold,revgold);
-	mvprintw(12,40, "ESTIMATE NEXT YEARS JEWELS %8ld",ntn[country].jewels+revgold);
-	mvprintw(14,40, "iron ore owned is..........%8ld",ntn[country].tiron);
-	mvprintw(15,40, "%5d people in iron mines:%8ld",iniron,reviron);
-	mvprintw(16,40, "ESTIMATE NEXT YEARS IRON   %8ld",ntn[country].tiron+reviron);
+	mvaddstr(8,41,  "OTHER PRODUCTION");
+	mvprintw(10,41, "jewels owned is...............%8ld",ntn[country].jewels);
+	mvprintw(11,41, "%8d people in goldmines :%8ld",spread.ingold,spread.jewels-ntn[country].jewels);
+	mvprintw(12,41, "ESTIMATE NEXT YEARS JEWELS    %8ld",spread.jewels);
+	mvprintw(14,41, "iron ore owned is.............%8ld",ntn[country].tiron);
+	mvprintw(15,41, "%8d people in iron mines:%8ld",spread.iniron,spread.iron-ntn[country].tiron);
+	mvprintw(16,41, "ESTIMATE NEXT YEARS IRON      %8ld",spread.iron);
 
 	standout();
 	mvaddstr(20,(COLS/2)-12,"HIT 'B' TO SEE BUDGET SCREEN");
@@ -460,23 +325,24 @@ produce()
 		budget();
 	}
 
-	if(isgod==1) country=0;
+	if(isgod==TRUE) country=0;
 }
 
 /*report on ships and allow changes */
+void
 fleetrpt()
 {
 	short navy;
 	short oldx,oldy,oldnavy;
-	short done=0;
+	short done=FALSE;
 	int position;
 	int count;       /*screen number */
 	short nvynum=0;    /*current ship id */
 	short wships,mships;
-	int isgod=0;
+	int isgod=FALSE;
 	if(country==0) {
 		standout();
-		isgod=1;
+		isgod=TRUE;
 		clear();
 		mvaddstr(0,0,"SUPER USER; FOR WHAT NATION NUMBER:");
 		clrtoeol();
@@ -494,13 +360,13 @@ fleetrpt()
 		mvaddstr(5,(COLS/2)-6, "NO NAVIES ");
 		mvaddstr(15,(COLS/2)-14,"HIT ANY KEY TO CONTINUE");
 		standend();
-		done=1;
+		done=TRUE;
 		refresh();
-		if(isgod==1) country=0;
+		if(isgod==TRUE) country=0;
 		return;
 	}
 	nvynum=0;
-	while(done==0) {
+	while(done==FALSE) {
 		clear();
 		/*Operate on any navies that you wish*/
 		standout();
@@ -531,7 +397,7 @@ fleetrpt()
 			}
 			nvynum++;
 		}
-		if(nvynum>=MAXNAVY) done=1;
+		if(nvynum>=MAXNAVY) done=TRUE;
 
 		standout();
 		mvaddstr(12,(COLS/2)-10,"HIT SPACE KEY IF DONE");
@@ -539,7 +405,7 @@ fleetrpt()
 		mvaddstr(14,(COLS/2)-14,"HIT ANY OTHER KEY TO CONTINUE");
 		standend();
 		refresh();
-		if ((navy=getch())==' ') done=1;
+		if ((navy=getch())==' ') done=TRUE;
 		if (navy=='\n'){
 			mvaddstr(16,0,"WHAT NAVY DO YOU WANT TO CHANGE:");
 			clrtoeol();
@@ -559,7 +425,7 @@ fleetrpt()
 				refresh();
 				nvynum = get_number();
 				if(nvynum==oldnavy) {
-					mvprintw(23,0,"SORRY -- SAME (%d,%d)",nvynum,oldnavy);
+					mvprintw(23,0,"SORRY -- SAME NAVY (%d,%d)",nvynum,oldnavy);
 					refresh();
 					getch();
 				}
@@ -606,7 +472,7 @@ fleetrpt()
 					oldy=NYLOC;
 					navy=(-1);
 					for(nvynum=0;nvynum<MAXNAVY;nvynum++)
-						if((NWAR+NMER==0)&&(navy==(-1))) 
+						if((NWAR+NMER==0)&&(navy==(-1)))
 							navy=nvynum;
 					nvynum=navy;
 					/*overflow*/
@@ -649,5 +515,5 @@ fleetrpt()
 			nvynum=0;
 		}
 	}
-	if(isgod==1) country=0;
+	if(isgod==TRUE) country=0;
 }

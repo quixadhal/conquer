@@ -1,0 +1,550 @@
+	               CONQUER COMMAND HELP SCREEN
+
+    MOVEMENT                 COMMANDS                    ADMINISTRATION
+'h': move west           'a': army report            'p': pick item
+'y': move north-west     'r': redesignate            'd': change display
+'k': move north          'ctrl-L': redraw screen     'c': administration
+'u': move north-east     'm': move selected unit     '?': help screen
+'l': move east           'A': adjust army            's': score
+'n': move south-east     'f': fleet report           'B': budget status
+'j': move south          'Z': move people 2 Sectors  'P': production stats
+'b': move south west     'S': diplomacy status       'N': read newspaper
+'J': scroll south        'Q': quit (saves changes)   'W': write message
+'K': scroll north        'M': magic                  'R': read messages
+'L': scroll east         'C': construct
+'H': scroll west         'D': draft              'ESC [1-5]': chg status
+	                 'G': go to next army    'ESC +': combine 2 armies
+	                 'F': go to next fleet   'ESC -': split army
+	                 'g': group army report  'ESC /': split army in 2
+END
+                    Welcome to Conquer XVERSION
+
+CONQUER is a multi player computer game designed to run under the UNIX
+operating system.  In CONQUER,  each player is the leader of a nation,
+composed of people (humans, orcs, elves, dwarves), resources, and land.
+Rulers customize their nation at creation by chosing their race and by giving
+their nation special powers (magic, combat factor, location, speed...)
+and resources (civilians, troops, iron, gold...).  Play involves building,
+moving, and controlling armies and navies, diplomacy with other players,
+and adjusting economic activity, which is primarily geared to the production
+of gold for your treasury.  Iron is needed, however to build ships & armies,
+and food is needed to prevent revolts and keep people alive.
+
+Command line format: conquer [-maxhps -nNAT -dDIR]
+	-h       print this help text 		-n NTN   run as nation NTN
+	-d DIR   run on data in directory DIR	-s       print out scores
+Command line format: admin [-maxdp]
+	-a       add new player		-m       make a world
+	-p       print a map		-x       execute program
+	-d DIR   run on data in directory DIR
+It is suggested that each player set up a shell alias for their game & nation
+END
+	                         THE WORLD
+
+The Conquer world is very bloody, and a player needs skills at war gaming,
+diplomacy, and building an economy to succeed.  Rival races are constantly
+at war, and the world starts filled with player nations, random peoples
+(lizard men in their cities of gold, barbarians, nomads, pirates, brigands),
+and both hostile and friendly computer controlled non player countries.
+Conquer can be played solitaire.  The computer uses an highly intelligent
+movement algorithm to run the armies and navies of these non player
+countries (NPC), and has intelligent algorithms built in that control these
+nations diplomacy, construction, and economies.  You can find NPCs allied with
+you against a common enemy,  but can also suddenly be stabbed in the
+back and find hostile NPC armies at your doorstep.
+END
+	                   CURSOR MOVEMENT
+
+	                       NORTH
+
+	                        (K)
+	                  y,7   k,8   u,9
+	                     \   |   /
+	                       \ | /
+	  WEST      (H) h,4 ---- 0 ---- l,6 (L)       EAST
+	                       / | \
+	                     /   |   \
+	                  b,1   j,2   n,3
+	                        (J)
+
+	                       SOUTH
+
+	       Figures in parenthesis indicate scrolling
+	    Note the numeric keypad OR vi keys can be used
+
+		<cntrl>-L will redraw the screen
+END
+	              WHAT IS WHAT IN THE WORLD
+
+The world is composed of a 2 dimensional map of sectors, created by the
+computer at the beginning of the game.  Each sector has about 10 unique
+characteristics (altitude, gold, vegetation...).
+
+SECTOR ELEVATIONS include:
+	ZMOUNTAIN	ZHILL	ZCLEAR
+	ZWATER	ZPEAK
+SECTOR VEGETATION
+Uninhabitable Areas (do not produce food and people simply do not like)
+	ZVOLCANO	ZDESERT	ZJUNGLE
+	ZTUNDRA	ZICE		ZSWAMP
+Inhabitable (people like, number is relative value of food production)
+	ZGOOD...9	ZFOREST...3 (4 ELF)	ZLIGHT...6
+	ZWOOD...7 	ZBARREN...4 (3 ELF)
+
+CONQUER is designed so each race likes their appropriate terrain.  Elves like
+woods & forests,  Humans like good & light vegetation, and Orcs and Dwarves
+like hills and mountains.  You can only redesignate inhabitable sector types.
+END
+	         	CONQUER COMMANDS -- lower case commands
+
+'a': army report:    Gives an army's details & permits changing army status,
+	              merging 2 armies, splitting armies, and disbanding armies
+'c': administration: Report on nation status and then change name, password,
+	              add to combat bonus, or (if god) destroy a nation.
+'d': change display: Change display mode.  Numbers in gold screens... are
+	              relative values of the materials.
+'f': fleet report:   Report on the status of your fleets.
+'g': group report:   As army report, but display will only show those armies
+	              in the current sector.
+'m': move unit:      move selected unit. The unit will stop when it runs out
+	              of move points or runs into an army larger than it.
+'p': pick item:      allows you to select the next army or navy in the
+	              sector.  Other commands will operate on that unit.
+'r': redesignate:    you can change habitable sectors you own to other
+	              designations.  Towns require 500+ people & Capitols
+	              require Towns.  God can redesignate anything.
+'s': score:          print out a screen showing the scores
+'?': help screen:    print out this help text
+END
+	         	CONQUER COMMANDS -- upper case commands pg. 1.
+
+'A': adjust army:  The quick way to adjust the status of your armies.
+'B': budget :      ESTIMATE your nations budget statistics
+'C': construct:    If you have cash, you can build fortifications and
+	            ships in your Towns.  Ships can only be built in Towns
+	            located on the water.
+'D': draft:        You may draft a quarter of the starting population from a
+		   sector if it was a Town, and if you have the gold & iron.
+'F': next fleet:   Move cursor to your next fleet
+'G': next army:    Move cursor to your next army
+'M': magic:        Prints your magic powers & offers you the option to
+	            purchase more (cost doubles each power). Monster Power
+	            gives you the chance to take over NPC nations.
+END
+	         	CONQUER COMMANDS -- upper case commands pg. 2.
+
+'N': newspaper:    Briefs you on world happenings.  Note: News has 4 pages.
+'P': production:   ESTIMATE your nations production statistics
+'S': diplomacy:    Allow you to see and alter your diplomatic status.
+'Q': quit:         Save your move and quit the game.  Note there is no
+	            means supported to quit without saving your moves.
+'R': read mail:    Read mail messages
+'W': write mail:   Write mail messages
+'Z': move people:  Civilians can move between two of your sectors at a cost
+	            of 50 per civilian.  Civilians naturally move in the update.
+END
+	                      RACES OF THE WORLD
+
+ORC       'O'   Poor at combat but they reproduce like mad (they can go over
+	         10% reproduction ceiling). Orcs are lousy fighters and are
+	         led by minor monsters (they start with MINOR MONSTER power).
+ELF       'E'   Great at defense and quick, but few in numbers.  They start
+	         with VOID power, which is perhaps the most potent power in the
+	         game, but which costs them an extra distribution point.
+DWARF     'D'   Dwarves are good at combat, but slow and few in numbers.  They
+	         start with MINER power, which allows them to quickly mine
+	         iron/jewels, and thus build up their combat skills and powers.
+HUMAN     'H'   Humans start average at everything -- with reasonable numbers,
+	         of people, and WARRIOR power, which gives them +10% in combat.
+	         They have OK reproduction and good movement.
+LIZARD    'L'   (NPC only)  An ancient race bound to their cities of gold
+PIRATE    'P'   (NPC only)  Wandering pirates/brigands intent on plunder
+NOMAD     'N'   (NPC only)  Will the wandering nomads tribes leave you alone?
+BARBARIAN 'B'   (NPC only)  Indigenous natives
+END
+	                 POSSIBLE SECTOR DESIGNATIONS
+
+ZMINE   Produces 100*Iron*People Talons + Produces Iron Ores
+ZFARM   Produces 100*Vegetation*People Talons + Produces Food
+ZGOLD   Produces 100*Gold*People Talons + Produces Jewels
+ZCASTLE   Fortified Cities of the Lizards (only)
+ZDEVASTATED   devastated sector
+ZTOWN   Towns and Capitols are the bases of your power and are
+ZCAPITOL   the only places you can draft soldiers or construct ships.
+	Drafting only works if the sectors population is greater than your
+	total civilians divided by the quantity 16+(number of sectors)/2.
+	Towns give 750 talons per person and Capitols give 1000 talons per
+	person.  Towns and Capitols cost more to redesignate.  To capture a
+	Town or Capitol, you must be the only occupant when the world is
+	updated.
+
+The minimum permissible vegetation to redesignate a sector is XDESFOOD.
+END
+	                   	IRON, FOOD, AND GOLD
+
+FOOD:      You MUST have enough food to feed your people... One civilian eats
+	 one unit of food, and one soldier eats two units.  If you run out of
+	 food, half the difference of people in Towns die.  Your Granary
+	 will store 3x your civilian population in food.  The remainder
+	 is converted to gold talons at a rate of 1 per food point.
+IRON:      You need to have iron to draft new military, as per the unit types
+	section.  One person produces one iron per point of mineral in
+	 the sector per turn.  An amount of Iron (based on the number of troops
+	 you have) can be used to buy +1% in your nations attack or defense.
+JEWELS:    You can have a maximum of 10 talons debt for every jewel
+	 point that you mined.  After that point, you undergo a TAX REVOLT,
+	 which has not yet been implemented. Thus gold can be negative to
+	 a certain level.  Jewels are also used in magic, and 100000 Jewels
+	 will buy you one random new power (command M) (it doubles for each
+	 power though).  You can have 10 talons in the treasury for each jewel
+	 (gold based economy).  After that, your gold talons will be converted
+	 to jewels at a 10:1 ratio.
+END
+				UNIT TYPES
+
+		costs		combat				power
+		enlist maintain	attack defend move	iron	prerequisites
+
+MILITIA		$40	$10    -25	-25	0	0
+GOBLIN		$70	$20    -15	-15    x1	80    MI_MONST
+ORC		$90	$40	+0	 +0    x1	80    MI_MONST
+INFANTRY	$90	$40	+0	 +0    x1	100
+SAILOR		$90	$40	+0	 +0	0	100
+MARINES		$90	$40    +25	+25     0	100   SAILOR
+ARCHER		$90	$40	+0	+10    x1	100   ARCHER
+URUK-HAI	$120	$40	+5	 +5    x1	150   AV_MONST
+NINJA		$130	$80    +20	 +0    x1	150   NINJA
+PHALANX		$150	$60    +10	+10    x1	150   CAPTAIN
+OLOG-HAI  	$200	$80    +15	+15    x1	150   BREEDER+AV_MONST
+LEGION		$200	$80    +20	+20    x1	150   WARLORD
+DRAGOON		$250   $100    +10	+10    x2	100   CAVALRY
+MERCENARY  	$300   $100    +20	+15    x1	0
+TROLL		$300   $120    +25	+15    x1	200   MA_MONST
+END
+			UNIT TYPES - CONTINUED
+
+		costs		combat				power
+		enlist maintain	attack defend move	iron	prerequisites
+
+ELITE		$300   $120    +20	+20  x1.3	200   STEEL
+LT_CAVALRY 	$400   $200    +10	+10  x1.5	100   CAVALRY
+CAVALRY		$600   $250    +30	+30    x2	300   CAVALRY
+CATAPULT	$750   $300    -20	-20   x.5	1000
+SIEGE		$750   $300    -20	-20   x.5	1000
+ROC		$700   $350    +20	+30    x1	300   AVIAN
+KNIGHT		$1000  $400    +50	+50    x2	600   ARMOR & CAVALRY
+GRIFFON		$1200  $500    +40	+50  x1.5	400   AVIAN
+ELEPHANT	$1000  $400    +50	+50   x.5	600   DERVISH
+END
+			ADDITIONAL ADVANTAGES TO UNITS
+
+Dragoons are cavalry that fight on foot as regular infantry (treat as inf)
+Archers gain an additional +15%*(percent of cavalry/knight opponents)
+Archers gain +15% defending & +5% attacking forts (no bonus vs cavalry also)
+Mercenaries don't deplete population when hired, but you can only have 1/2
+   your normal troops in mercenaries. They cost their enlist cost to disband.
+Seige_engines add +1%/20 men *TO WHOLE COMBAT* attacking fortress (max +30%)
+Catapults add +1%/40 men *TO WHOLE COMBAT* in normal combat (max +10%).
+Catapults add +1%/20 men *TO WHOLE COMBAT* when defending castle (max +10%).
+Catapults have a % chance of damaging a fortress when attacking it
+Cavalry and Knights get -20% attacking or defending fortress.
+Knights are heavy cavalry
+Phalanx are infantry that get combat bonus *only* if in 500+ men units
+Legionaires are infantry that get combat bonus *only* if in 1000+ men units
+Roc and Griffon Troops fly and can ignore zones of control.
+Ninja act as scouts in that they are not effected by zones of control
+Marines are the only units that can land by ship in unowned sectors
+END
+	                   SCORING & CHARACTER CLASSES
+Each nation has a types (classe), which is choosen when it it is created, and
+which determines how Victory points are received.  Some classes start with
+powers and have a starting cost. Warlord/Monster powers get all the prerequisite
+powers, and thus starting cost can varies.
+
+         Per   1000   1000  100K  100K  100K Magic  10  Start
+       Sector People Troops Gold Jewels Iron Power Ship Cost  Races Powers
+king     1      1       2     3    0     0     0     0   0    HDE   None
+empire   1.5    0       0     0    0     0     0     0   0    HDE   None
+wizard   0      2       1     0    3     5    20     0   2    HDE   SUMMON
+priest   1      1       0     0    3     0     7     0   2    H     HEALER
+pirate   0      0       5     0   10    10     1     5   1    HO    SAILOR
+trader   1      1       0     0    1     1     1     8   2    ED    URBAN
+warlord  1      1       2     0    1     1     1     0   *    HO    WARLORD
+demon    1      0       1     0    1     0    10     0   2    O     DESTROYER
+dragon   0      0       0    10   20     0     0     0   2    O     MA_MONST
+shadow   1      0       0     0    0     5     0     0   1    O     VOID
+NPC      1      1       0     0    1     1     1     0   0    HDEO  None
+END
+				VIEWING THE WORLD
+
+When you log in, you will notice that you can only see a part of the
+world.  You must discover the world by getting certain magical powers,
+by taking land, or by moving armies and navies.  The use of SCOUT armies
+is intended for this purpose.
+
+The 'd' command allows you to change what you see on the map.  You can
+alter the information in the sector and can  change the type of sectors that
+are highlighted as follows:
+
+information:  (d)esignation, (r)ace, (m)ove cost, (p)eople, (D)efense
+        (f)ood, (c)ontour, (v)egetation, (i)ron, (n)ation mark, (j)old
+
+highlight options:
+	(o)wner (a)rmy (y)our Army (x)=none (M)ove left
+
+I have tried to make the use of these options clear and self explainatory.
+END
+	                 POSSIBLE ARMY STATUS
+
+MARCH    :Marching doubles army movement at the expense of combat strength.
+SCOUT    :Scouts avoid any enemy, if possible, and can move through hostile
+	 :   armies, but must have less than 25 men per army and can not take
+	 :   even unowned land.  They are useful to check out the  map and
+	 :   to determine the enemy combat strength.  You must draft scouts
+	 :   as you can not split scouts from an army.
+ATTACK   :Armies in this mode can take owned sectors, initiate
+	 :   combat, and have they reasonable movement rates.
+DEFEND   :In this mode, can take owned sectors and have good defense
+	 :   and movement, but can not initiate combat.
+GARRISON :This mode offers the strongest defense but is used only in Towns,
+	 :   Capitol, and castles.  Garrisons may not move.
+
+Note: It takes the greater of 75 and total soldiers/150 men to take a sector.
+Your attack bonus increases by 5% if you take over a non player country.
+END
+			SHIPS AND SHIP COSTS
+
+		crew	build cost	maintain cost	capacity
+Warship		50	XWARSHPCOST		XSHIPMAINT		0
+Merchant	50	XMERSHPCOST		XSHIPMAINT		XSHIPCP
+
+Ships will now have crews - which, in addition to being drafted upon
+construction, represent the ships current level of damage and are replaced,
+in harbor, by using the construct ships command.  Movement of
+a fleet is reduced if the crews are not full.  Marine or Sailor Armies
+can also be carried by navies with warships.  Each fleet may carry one army
+in addition to any troops that are ferried - who dont count in combat.
+Marines add to chances of success in shipboard combat.
+
+Ships permit rapid relocation of armies & civilians to strategic points.  Their
+movement is 3x your nations maximum movement, and they only pay 1 move point 
+per sector (coast lands), 4 in deep water, 4 in your harbor, and the min of
+10 and all their remaining points points for non harbor coastlands.  Naval 
+combat has not been adequately play tested, and Sailor units dont work.
+END
+	                         MAGIC POWERS
+Magic powers differentiate your nation from all the other nations in the
+world.  There are three types of powers - truely MAGICAL powers, which
+usually involve summoning or spell use, CIVILIAN powers, which are related
+to civilization and trade, and MILITARY powers, which measure your ability
+to make war.  All nations start with at least one power (based on race or
+class) and can purchase additional powers by expending jewels.  The formula
+for this is to take two to the power of the sum of the number of powers you
+have from that type and half the number of other powers times your base value:
+
+jewel cost for civilian power = Base * 2**( #mgk/2 + #civ + #mil/2 )
+
+				type of power desired
+race			magical		civilian	military
+	elves -		50K		50K		50K
+	dwarves -	80K		40K		40K
+	humans -	100K		25K		50K
+	orcs -		100K		50K		25K
+
+for example a human with 1 of each power wanting a magic power would pay
+		50* 2**(1+1/2+1/2)=200K jewels
+END
+			COMBAT TYPE POWERS
+
+WARRIOR 	+10% in combat, 1/2 Enlistment cost
+CAPTAIN 	+10% in combat, Can have Phalanx Units
+WARLORD 	+10% in combat, Can have Legionary Units
+ARCHER 		Able to get ARCHER units.
+CAVALRY 	Able to get CAVALRY & DRAGOONS units.
+SAPPER 		Catapult/Siege Engines @ 1/2 price and 1/2 iron. 1/2 maint.
+ARMOR 		With CAVALRY, can get knights; -3 Move (4 Min), +20 Defense
+AVIAN 		Use roc and griffon units.
+MONSTER POWERS	If the Orc Takeover option is implemented, then
+		All monsters have a chance to takeover ORC NPCs for jewels.
+MINOR MONST 	Army 0 fights at +20%. Can have ORC units. (ORCS ONLY)
+AVERAGE MONST 	Army 0 fights at +20% (above MI_MONST) Can have
+		Uruk Hai Units. (ORCS ONLY)
+MAJOR MONST 	Army 0 fights at +20% per level (above MI_MONST)
+		Can have Troll Units. (ORCS ONLY)
+END
+			CIVILIAN TYPE POWERS
+
+DERVISH	   Desert/ICE sectors => 1 move point, vegetation 6, +30% combat in
+		XDERVDESG redesignate desert/ice sectors.
+HIDDEN	   Nobody can count troops in your armies on map.
+ARCHITECT  Double strength forts, Double Town revenue.
+HEALER	   +2 repro to 10% limit.  excess repro adds to defense. (Not ORCS).
+MINER	   (DWARVES) 2x iron and jewel production
+URBAN 	   +3% Birth Rate to 12% limit.  remainder gives + to move (roads)
+BREEDER    +3% Birth Rate (ORCS ONLY) (to 13% limit). -10% combat. (no urban)
+		BREEDER and URBAN powers are mutually exclusive.
+STEEL	   Additional 2x Iron Production for MINERS.
+NINJA 	   Can have Ninja units.  Spys show enemy troop/civilian strength
+		exactly (even voids)
+SAILOR 	   1/2 price naval units.  Can use marines. +10% ramming.
+DEMOCRACY  +10% in combat (moralle) +1 Move +1 repro All units eat double.
+ROADS 	   +4 to move if unit starts in your nation.
+SLAVER     you gain 25% of the populace of *any* sector you take over
+END
+			MAGICAL TYPE POWERS
+
+THE_VOID   Nobody can see your sectors/armies (appear blank)
+KNOWALL	   Know all troop strengths and see the whole map (except voids)
+DESTROYER  Vegetation in 3 sectors of Capitol = Desert.  Act as Dervish.
+VAMPIRE	   35% of troops killed become yours, -35% in all combat, -2 Move,
+		1/4 cost for soldier maintenance, can't add to combat bonus
+		Vampire Power causes all nations to go to jihad with you.
+SUMMON 	   gives 4 spell pts per turn... can summon monsters with them
+		Can also do spell research.  100K Jewels and 1M gold gives
+		a 20% chance of gaining +1 spell point per turn
+WYZARD 	   Gives +3 spell points.  Must have SUMMON Power
+SORCERER   Gives +3 spell points.  Must have SUMMON Power
+END
+			SUMMONED MONSTERS
+
+Monsters can be summoned via the magic menu if you have the SUMMON power.
+A monster unit represents one monster, but is the equivalent in combat of an
+army of the given number of men.  When summoned, they appear in your Capitol,
+and are yours to command until you disband them or can not afford to pay
+their per/turn jewel cost *and* 5x that cost in gold.  Monsters may be
+wounded in combat as can normal army units.  Wounded monsters have a percent
+chance of dying based on the percent damage taken (a dragon (1000 men) taking
+200 equivalent men of damage has a 20% chance of dying).  Next turn, however
+its strength will be fully restored (1000 men again).
+
+Spell points are accumulated by having the SUMMON/WYZARD/SORCERER power.
+Spell points can accumulate from turn to turn, but there is a 25% chance
+that half your unused spell points dissappear each turn... Gives you some
+incentive to use them.
+END
+			SUMMONED MONSTER TYPES
+
+	        spell	combat			jewels	power
+		points	bonus	move	men	turn	prerequisites
+SPIRIT		2	+0	x1	50	1000
+ASSASSIN	2	+20	x1	50	400	NINJA
+DJINNI		2	+10	x1.5	50	400	DERVISH
+GARGOYLE	2	+10	x1	75	450	MI_MONST
+WRAITH		2	+10	x1	75	450	VAMPIRE
+HERO		2	+0	x1	100	200	WARRIOR
+CENTAUR		2	+10	x1.5	50	200
+GIANT		5	+0	x1	150	2100
+SUPERHERO  	5	+15	x1	150	450	WARLORD
+MUMMY		5	+15	x1	150	1050	VAMPIRE
+ELEMENTAL  	5	+5	x1.5	175	1925	SORCERER
+MINOTAUR	5	+20	x1	150	2100	DESTROYER
+DEMON		10	+50	x1	500	6000	DESTROYER
+BALROG		10	+40	x1.5	500	6000	WIZARD & VAMPIRE
+DRAGON		15	+50	x2	1000	10000	MA_MONST & WIZARD
+END
+	                    	NOTES ON COMBAT
+
+Losses per unit are inversely proportional to a units combat bonus.
+
+You can expect to take several turns to reduce a large army, especially
+	 on a Town or Capitol.  NPC defenders will draft new troops each turn
+
+The only method to take an occupied Town or Capitol is to be the the only
+	 army in the sector when the combat is *over*.
+
+THE NEXT PAGE IS THE COMBAT RESULTS TABLE
+	 basically the attacker wants a high roll and the defender wants low.
+END
+	        6-1 5-1 4-1 3-1 2-1 3-2 5-4 1-1 4-5 2-3 1-2 1-3 1-4 1-5 1-6
+    <--010     20% 40% 50% 60% 70% 80% 90% 100%100%100%110%120%120%130%130%
+   010-020     20% 30% 40% 50% 50% 60% 60% 90% 90% 90% 100%110%110%110%120%
+   020-030     20% 20% 30% 40% 40% 40% 50% 60% 80% 80% 100%110%100%110%110%
+   030-040     20% 20% 30% 30% 40% 40% 50% 60% 70% 80% 90% 100%100%100%110%
+   040-050     20% 20% 30% 30% 40% 40% 50% 60% 70% 70% 80% 90% 90% 100%110%
+D  050-060     15% 20% 20% 30% 40% 40% 40% 60% 70% 70% 80% 90% 90% 90% 100%
+I  060-070     10% 20% 20% 20% 30% 30% 40% 50% 60% 60% 80% 90% 90% 90% 100%
+E  070-080     10% 10% 20% 20% 30% 30% 30% 50% 60% 60% 80% 90% 90% 90% 90%
+   080-090     10% 10% 20% 20% 20% 30% 30% 40% 50% 50% 70% 80% 80% 80% 90%
+R  090-100     10% 10% 10% 20% 20% 30% 30% 40% 50% 50% 60% 80% 80% 80% 90%
+O  100-110      5% 10% 10% 10% 20% 20% 30% 40% 50% 50% 60% 70% 70% 70% 80%
+L  110-120      5%  5% 10% 10% 20% 20% 30% 40% 50% 50% 60% 70% 70% 70% 80%
+L  120-130      5%  5% 10% 10% 10% 20% 30% 30% 40% 40% 50% 70% 70% 70% 80%
+   130-140      5%  5%  5% 10% 10% 20% 30% 30% 40% 40% 50% 70% 70% 70% 70%
+   140-150      5%  0%  5%  5% 10% 20% 30% 30% 40% 40% 50% 60% 60% 60% 70%
+   150-160      0%  0%  5%  5% 10% 20% 30% 30% 40% 40% 50% 50% 50% 50% 50%
+   160-170      0%  0%  0%  5% 10% 20% 30% 20% 40% 40% 50% 50% 50% 50% 50%
+   170-180      0%  0%  0%  0%  5% 10% 20% 20% 30% 40% 40% 40% 40% 40% 40%
+   180-190      0%  0%  0%  0%  5% 10% 10% 20% 20% 30% 30% 30% 30% 40% 40%
+   190+++       0%  0%  0%  0%  5% 10% 10% 10% 20% 20% 30% 30% 30% 30% 40%
+END
+	                 FINAL HINTS & OTHER COSTS
+
+It is important to initially have a reprorate of 9-10% and a move of ~8-9.
+You need about 1000 military to start - to take enough new land.
+Take as much land as possible in the beginning.
+Make sure your combat bonus stays respectable.
+Diplomacy with non player nations is important as it determines if you get 
+	attacked or not.  Bribing NPCs is a good way to get some breathing room.
+	You waste your money if you are at war with them that turn.
+
+				OTHER COSTS
+
+		Designation Costs:		$XDESCOST
+		Designation to Towns/Capitol:	20x$XDESCOST+$XDESCOST IRON
+		Fortification:			$XFORTCOST*(2**Fort Level)
+		Bribe Nation:			$XBRIBE/level
+		Move Civilians:			$50/civilian
+END
+				OTHER NOTES
+
+   The computer can move for players if they dont enter a turn and the
+CMOVE variable is set before the program is compiled.  This works well... 
+for a time.  The Computer will NOT redesignate captured sectors for you.
+
+Mercenaries must be paid a discharge fee equal to enlistcost when disbanded.
+
+If you have too many people in a given non Town, non capitol sector, 
+reproduction and production is halved for them.  If you have a huge 
+(>10,000,000) number of people in a sector, they will not reproduce.
+END
+			OPTIONS OF YOUR VERSION
+
+	Maximum Number of Armies Per Nation....XMAXARM
+	Maximum Number of Navies Per Nation....XMAXNAVY
+	Absolute Maximum Number of Nations.....XMAXNTN
+	Percentage of Water in the World.......XPWATER
+	Starting Points to buy your nation.....XMAXPTS
+	Map Size is............................XMAPX by XMAPY
+	Percentage of land that is mountains...XPMOUNT
+	Storm Percentage.......................XPSTORM
+	Cost for Orc Npc Takeover..............XTAKEPRICE
+	Average Number of Random Events........XNORANDEVENTS
+	Chance of Volcano Eruption.............XPVULCAN
+
+	Lizards		XLZARD	  System V	XSYSV
+	Monsters	XMONSTER	  Npc Cheat	XCHEAT
+	Storms		XSTORMS	  Volcanos	XVULCANIZE
+	Npc Nations 	XNPC	  PC Automove	XCMOVE
+	Random Events	XRANEVENT	  Orc Takeovers	XORCTAKE
+	Super God	XOGOD
+END
+	                ADDITIONAL OPTIONS
+
+	Land Vision Range is..................XLANDSEE
+	Navy Vision Range is..................XNAVYSEE
+	Army Vision Range is..................XARMYSEE
+
+	Taxation Rates:
+	Food tax per value point per person...XTAXFOOD
+	Jewel tax per jewel point per person..XTAXGOLD
+	Iron tax per iron point per person....XTAXIRON
+	Town tax per person...................XTAXCITY
+	Capitol tax per person................XTAXCAP
+
+	100% chance per XTOMUCHMINED iron mined of deplete iron mines.
+	100% chance per XTOMUCHMINED jewels mined of deplete gold mines.
+	XFINDPERCENT% chance that new materials are found in a sector.
+	Maximum Sector Population is XTOMANYPEOPLE.
+	Ships hold XSHIPHOLD men.
+END
+DONE
