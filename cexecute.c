@@ -15,10 +15,17 @@
 #include "data.h"
 extern long startgold;
 extern short country;
-extern FILE *fexe,*fison;
+extern FILE *fexe;
+extern char fison[];
+
+#ifdef CONQUER
+extern int roads_this_turn;
+extern int terror_adj;
+#endif
 
 int
-execute()
+execute(isupdate)
+int	isupdate;	/* 0 if not update, 1 if update */
 {
 	FILE *fp, *fopen();
 	int cmd,savectry;
@@ -32,19 +39,20 @@ execute()
 	char line[80];
 
 	/* initialize startgold */
-	startgold = ntn[country].tgold;
+	if( isupdate==0) startgold = curntn->tgold;
 
 	/* initialize i_people */
 	for(x=0;x<MAPX;x++)
 		for(y=0;y<MAPY;y++)
 			if(( sct[x][y].owner == country)&&
-			((sct[x][y].designation == DCITY)
-			||( sct[x][y].designation == DCAPITOL)))
-				sct[x][y].i_people = sct[x][y].people;
+			((sct[x][y].designation == DTOWN)
+			||( sct[x][y].designation == DCAPITOL)
+			||( sct[x][y].designation == DCITY)))
+/* note: i_people is a short, so we must scale to allow for people >= 32K */
+				sct[x][y].i_people = sct[x][y].people/256;
 			else
 				sct[x][y].i_people = 0;
 
-	/*execute in random order*/
 	/*open exefile file*/
 	sprintf(line,"%s%d",exefile,country);
 	if ((fp=fopen(line,"r"))==NULL) {
@@ -65,82 +73,168 @@ execute()
 			sscanf(line,"%s %d %hd %d %hd %hd %s",
 				temp,&cmd,&country,&armynum,&x,&y,comment);
 		}
+		curntn = &ntn[country];
+
 		execed=1;
 		switch(cmd){
 		case XASTAT:		/*Aadjstat*/
-			if((x>0)&&(x<6))  ASTAT=x;
+			if(x>0)  P_ASTAT=x;
 			break;
 		case XAMEN:	/*Aadjmen*/
 			armynum= (int) longvar;
-			ASOLD= (int) long2var;
-			ATYPE= y;
+			P_ASOLD= (int) long2var;
+			P_ATYPE= y;
+			break;
+		case XBRIBE:	/* nation has been bribed */
+			if(!isupdate) break;	/* only work on update */
+			ntn[y].tgold += longvar;
+#ifdef DEBUG
+	fprintf(stderr,"DEBUG: BRIBE BY %s of %s\n",ntn[country].name,ntn[y].name);
+#endif DEBUG
+			/* x represents chance of successful bribe */
+			if(npctype(curntn->active)==npctype(ntn[y].active))
+				x = 50;
+			else if(isneutral(ntn[y].active)) x=30;
+			else if(npctype(ntn[y].active)==ISOLATIONIST) x=15;
+			else	x = 20;
+			if(curntn->race==ntn[y].race) x+= 20;
+			if( rand()%100 < x){
+#ifdef DEBUG
+	fprintf(stderr,"DEBUG: BRIBE IS SUCCESS\n");
+#endif DEBUG
+				ntn[y].dstatus[country]--;
+			}
 			break;
 		case XALOC:	/*Aadjloc*/
-			AXLOC=x;
-			AYLOC=y;
+			P_AXLOC=x;
+			P_AYLOC=y;
+			break;
+		case MSETA:	/*Aadjmerc*/
+#ifdef CONQUER
+			mercgot+=armynum;
+#endif
+#ifdef ADMIN
+			MERCMEN-=armynum;
+#endif
+			break;
+		case MSETB:	/*Aadjdisb*/
+			/* only allow raising of merc bonus */
+			if (x>MERCATT)
+			MERCATT=(MERCMEN*MERCATT+armynum*x)/(MERCMEN+armynum);
+			if (y>MERCDEF)
+			MERCDEF=(MERCMEN*MERCDEF+armynum*y)/(MERCMEN+armynum);
+			MERCMEN+=armynum;
 			break;
 		case XNLOC: /*nadjloc*/
-			ntn[country].nvy[armynum].xloc=x;
-			ntn[country].nvy[armynum].yloc=y;
+			curntn->nvy[armynum].xloc=x;
+			curntn->nvy[armynum].yloc=y;
 			break;
-		case XNACREW: 
-			ntn[country].nvy[armynum].crew=x;
-			ntn[country].nvy[armynum].armynum=y;
+		case XNACREW:
+			curntn->nvy[armynum].crew=x;
+			curntn->nvy[armynum].armynum=y;
 			break;
-		case XNASHP: /*nadjshp*/
-			ntn[country].nvy[armynum].merchant=x;
-			ntn[country].nvy[armynum].warships=y;
+		case XNAMER: /*nadjmer*/
+			curntn->nvy[armynum].merchant=x;
+			break;
+		case XNAWAR: /*nadjwar*/
+			curntn->nvy[armynum].warships=x;
+			break;
+		case XNAGAL: /*nadjgal*/
+			curntn->nvy[armynum].galleys=x;
+			break;
+		case XNAHOLD: /*nadjhld*/
+			curntn->nvy[armynum].people=(unsigned char)y;
+			curntn->nvy[armynum].armynum=(unsigned char)x;
 			break;
 		case XECNAME:	/*Nadjname*/
-			strcpy(ntn[country].name,comment);
+			strcpy(curntn->name,comment);
 			break;
 		case XECPAS:	/*Nadjpas*/
-			strncpy(ntn[country].passwd,comment,PASSLTH);
+			strncpy(curntn->passwd,comment,PASSLTH);
+			break;
+		case NPOP:	/* set various nation attributes */
+#ifdef CONQUER
+			terror_adj++;
+#endif CONQUER
+			curntn->popularity = armynum;
+			curntn->terror = x;
+			curntn->reputation = y;
+			break;
+		case NTAX:	/* set nations tax rate */
+			curntn->tax_rate = armynum;
+			curntn->active = x;
+			curntn->charity = y;
 			break;
 		case EDSPL:	/*Edecspl*/
-			ntn[country].spellpts-=armynum;
+			curntn->spellpts-=armynum;
 			break;
 		case XSADES:	/*Sadjdes*/
-			if((sct[x][y].owner==country)||(country==0)) {
-				sct[x][y].designation=comment[0];
+			if((sct[x][y].owner!=country)&&(country!=0)) {
+				fprintf(stderr,"ERROR: <%s> redesignate sector %d,%d that is not owned\n",curntn->name,x,y);
+				break;
 			}
+
+			sct[x][y].designation=comment[0];
 			if(sct[x][y].designation==DCAPITOL){
-				ntn[country].capx=x;
-				ntn[country].capy=y;
+				curntn->capx=x;
+				curntn->capy=y;
 			}
+#ifdef CONQUER
+			if (sct[x][y].designation==DROAD)
+				roads_this_turn++;
+#endif
 			break;
 		case XSACIV:	/*Sadjciv*/
+			/* if for some reason you dont own it, put people
+			back into your capitol */
+			if((sct[x][y].owner!=country)&&(country!=0)) {
+				sct[curntn->capx][curntn->capy].people+=armynum;
+				fprintf(stderr,"ERROR: <%s> told to put %d civilians in sector %d,%d not owned - placed in capitol\n",curntn->name,armynum,x,y);
+				break;
+			}
 			sct[x][y].people=armynum;
 			break;
 		case XSIFORT:	/*Sincfort*/
 			sct[x][y].fortress++;
 			break;
 		case XNAGOLD:	/*Nadjgold:*/
-			ntn[country].tgold = longvar;
+			curntn->tgold = longvar;
 			break;
 		case XAMOV:
-			AMOVE=x;
+			P_AMOVE=x;
 			break;
 		case XNMOV:
-			ntn[country].nvy[armynum].smove=x;
+			curntn->nvy[armynum].smove=x;
 			break;
 		case XSAOWN:
+			/* if not own it, and if people there, problem */
+			if((sct[x][y].owner!=country)
+			&&( country!=0)
+			&&( sct[x][y].owner>0 )
+			&&( sct[x][y].people>0 )
+			&&( magic(country,SLAVER)==FALSE )
+			&&( ntn[sct[x][y].owner].race!=curntn->race)){
+				sct[ntn[sct[x][y].owner].capx][ntn[sct[x][y].owner].capy].people+= sct[x][y].people;
+				sct[x][y].people=0;
+				fprintf(stderr,"ERROR: <%s> taking sector %d %d but civilians exist of other race - puting them in their capitol\n",curntn->name,x,y);
+			}
+			if(curntn->popularity<MAXTGVAL) curntn->popularity++;
 			sct[x][y].owner=country;
 			break;
 		case EDADJ:
-			ntn[country].dstatus[armynum]=x;
+			curntn->dstatus[armynum]=x;
 			break;
 		case XNARGOLD:
-			ntn[country].jewels = longvar;
+			curntn->jewels = longvar;
 			break;
-		case XNAIRON:
-			ntn[country].tiron = longvar;
+		case XNAMETAL:
+			curntn->metals = longvar;
 			break;
 		case INCAPLUS:
-			ntn[country].aplus++;
+			curntn->aplus++;
 			break;
 		case INCDPLUS:
-			ntn[country].dplus++;
+			curntn->dplus++;
 			break;
 		case DESTRY:
 			sct[ntn[armynum].capx][ntn[armynum].capy].owner=savectry;
@@ -149,19 +243,21 @@ execute()
 			country=savectry;
 			break;
 		case CHG_MGK:
-			ntn[country].powers|=long2var;
-			if(ntn[country].powers!=longvar){
-			printf("\nERROR ON MAGIC READ %ld != %ld (or of %ld)",longvar,ntn[country].powers,long2var);
+			curntn->powers|=long2var;
+			if(curntn->powers!=longvar){
+			printf("\nERROR ON MAGIC READ country=%d %ld != %ld (or of %ld)",country,longvar,curntn->powers,long2var);
 			getchar();
 			}
 			exenewmgk(long2var);
 			long2var=0;
+			break;
 		}
 		if(fgets(line,80,fp)==NULL) done=TRUE;
 	}
 	fclose(fp);
 	/*return 1 if it did something*/
 	country=savectry;
+	curntn = &ntn[country];
 	if(execed==1) return(1);
 	else return(0);
 }
@@ -169,37 +265,22 @@ execute()
 void
 hangup()
 {
-	char line[100];
-	FILE *fp, *fopen();
-	char name[12];
-	char realname[12];
-	int temp=0;
-
 	if(country==0) writedata();
 	else {
 		fprintf(fexe,"L_NGOLD\t%d \t%d \t%ld \t0 \t0 \t%s\n",
-		XNAGOLD ,country,ntn[country].tgold,"null");
-		fprintf(fexe,"L_NIRON\t%d \t%d \t%ld \t0 \t0 \t%s\n",
-		XNAIRON ,country,ntn[country].tiron,"null");
+		XNAGOLD ,country,curntn->tgold,"null");
+		fprintf(fexe,"L_NMETAL\t%d \t%d \t%ld \t0 \t0 \t%s\n",
+		XNAMETAL ,country,curntn->metals,"null");
 		fprintf(fexe,"L_NJWLS\t%d \t%d \t%ld \t0 \t0 \t%s\n",
-		XNARGOLD ,country,ntn[country].jewels,"null");
+		XNARGOLD ,country,curntn->jewels,"null");
 	}
 	/*close file*/
 	fclose(fexe);
 	/*send a message to God*/
-	strcpy(name,"God");
-	strcpy(realname,"unowned");
-	sprintf(line,"%s%d",msgfile,temp);
-	if((fp=fopen(line,"a+"))==NULL) {
-		exit(FAIL);
-	}
-	fprintf(fp,"%s Message to %s from CONQUER\n",realname,name);
-	fprintf(fp,"%s \n",realname);
-	fprintf(fp,"%s      WARNING: Nation %s hungup on me.\n",realname,ntn[country].name);
-	fprintf(fp,"%s                 I DEMAND RESPECT!!!!\n",realname);
-	fputs("END\n",fp);
+	mailopen( 0 );
+	fprintf(fm,"WARNING: Nation %s hungup on me.\n",curntn->name);
+	mailclose();
 
-	fclose(fp);
 	/* remove the lock file */
 	unlink(fison);
 	/* exit program */

@@ -23,7 +23,14 @@ extern short country;
 extern long startgold;
 extern short xcurs,ycurs;
 extern short xoffset,yoffset;
+extern short redraw;
 
+#define RPT_LINES 11
+#define RPT_COLS 10
+#define BUF_LINES 10
+#define BUF_COLS 15
+#define MAXINROW ((COLS-BUF_COLS)/RPT_COLS)
+#define MAXINSCR (((LINES-BUF_LINES)/RPT_LINES)*MAXINROW)
 /*report on armies and allow changes*/
 void
 armyrpt(repnum)
@@ -31,592 +38,814 @@ armyrpt(repnum)
 	/* 0 is for full report 'a' and 1 is for group report 'g' */
 {
 	int i,j;
-	short army;
-	int men;
+	char	inpkey;
+	int men,attset,defset,bemerc;
 	short oldarmy;
 	int done=FALSE;
-	int position;
+	int xpos,ypos;
 	int isgod=FALSE;
-	int count;    /*number of armies on current screen */
-	short armynum=0;    /*current nation id */
+	int count,count2;    /*number of armies on current screen */
+	short armynum=0;
+
 	if(country==0) {
-		standout();
 		isgod=TRUE;
-		clear();
-		mvaddstr(0,0,"SUPER USER; FOR WHAT NATION NUMBER:");
-		clrtoeol();
-		standend();
-		refresh();
-		country = get_number();
-		if(country<0||country>NTOTAL) { country=0; return; }
+		if (get_god()) return;
+	} else {
+		/* if not god, check there are armies to display */
+		men=FALSE;
+		for(armynum=0;men==FALSE && armynum<MAXARM;armynum++)
+			if(P_ASOLD>0 && (!repnum ||
+				(P_AXLOC==XREAL && P_AYLOC==YREAL)))
+				men=TRUE;
+		if (!men) {
+			redraw=FALSE;
+			clear_bottom(0);
+			errormsg("no armies to display");
+			makebottom();
+			return;
+		}
 	}
-	armynum=0;
+	count2=0;
 	/*new army screen*/
 	while(done==FALSE) {
 		clear();
-		/*Operate on any armies that you wish*/
-		standout();
-		mvprintw(0,(COLS/2)-20,"ARMY STATS SUMMARY FOR %s",ntn[country].name);
-		standend();
-		/* give a army report */
-
-		mvaddstr(3,0,"soldiers  :");
-		mvaddstr(4,0,"movement  :");
-		mvaddstr(5,0,"x location:");
-		mvaddstr(6,0,"y location:");
-		mvaddstr(7,0,"status    :");
-		mvaddstr(8,0,"unit type :");
-		mvaddstr(9,0,"cost/turn :");
-		mvaddstr(10,0,"enlist    :");
-
-		position=5;
+		armynum=count2;
+		xpos=BUF_COLS;
+		ypos=2;
 		count=0;
-		while((armynum<MAXARM)&&(count!=6)){
-			if(ASOLD>0 && (!repnum || (AXLOC==XREAL && AYLOC==YREAL))) {
-				count++;
-				position+=10;
+		while((armynum<MAXARM)&&(count<MAXINSCR)){
+			if(P_ASOLD>0 && (!repnum || (P_AXLOC==XREAL && P_AYLOC==YREAL))) {
+				if (count%MAXINROW==0) {
+					/* diplay header information */
+					mvaddstr(ypos+1,0,"soldiers  :");
+					mvaddstr(ypos+2,0,"movement  :");
+					mvaddstr(ypos+3,0,"x location:");
+					mvaddstr(ypos+4,0,"y location:");
+					mvaddstr(ypos+5,0,"status    :");
+					mvaddstr(ypos+6,0,"unit type :");
+					mvaddstr(ypos+7,0,"cost/turn :");
+					mvaddstr(ypos+8,0,"enlist    :");
+				}
 				standout();
-				mvprintw(2,position,"%d:",armynum);
+				mvprintw(ypos,xpos,"%d:",armynum);
 				standend();
-				mvprintw(3,position,"%d",ASOLD);
-				mvprintw(4,position,"%d",AMOVE);
-				mvprintw(5,position,"%d",AXLOC);
-				mvprintw(6,position,"%d",AYLOC);
-				mvprintw(7,position,"%s",*(soldname+ASTAT));
-				mvprintw(8,position,"%s",*(unittype+(ATYPE%100)));
-				mvprintw(9,position,"$%d",ASOLD * *(unitmaint+(ATYPE%100)));
-				mvprintw(10,position,"$%d",ASOLD * *(u_encost+(ATYPE%100)));
+				mvprintw(ypos+1,xpos,"%ld",P_ASOLD);
+				mvprintw(ypos+2,xpos,"%d",P_AMOVE);
+				mvprintw(ypos+3,xpos,"%d",P_AXLOC);
+				mvprintw(ypos+4,xpos,"%d",P_AYLOC);
+				if(P_ASTAT>=NUMSTATUS)
+				mvprintw(ypos+5,xpos,"group %d",P_ASTAT-NUMSTATUS);
+				else
+				mvprintw(ypos+5,xpos,"%s",*(soldname+P_ASTAT));
+				mvprintw(ypos+6,xpos,"%s",*(unittype+(P_ATYPE%UTYPE)));
+				if (P_ATYPE<MINMONSTER)
+				mvprintw(ypos+7,xpos,"$%ld",P_ASOLD * *(unitmaint+(P_ATYPE%UTYPE)));
+				else
+				mvprintw(ypos+7,xpos,"$%ld", 5L * *(unitmaint+(P_ATYPE%UTYPE)));
+				if (P_ATYPE<MINMONSTER)
+				mvprintw(ypos+8,xpos,"$%ld",P_ASOLD * *(u_encost+(P_ATYPE%UTYPE)));
+				else
+				mvprintw(ypos+8,xpos,"%d pts", (int)*(u_encost+(P_ATYPE%UTYPE)));
+				count++;
+				if(count<MAXINSCR && count%MAXINROW==0) {
+					ypos+=RPT_LINES;
+					xpos=BUF_COLS;
+				} else {
+					xpos+=RPT_COLS;
+				}
 			}
 			armynum++;
 		}
-		if(armynum>=MAXARM) done=TRUE;
 
+		/*Operate on any armies that you wish*/
 		standout();
-		mvaddstr(12,(COLS/2)-10,"HIT SPACE KEY IF DONE");
-		mvaddstr(13,(COLS/2)-14,"HIT RETURN TO CHANGE AN ARMY");
-		mvaddstr(14,(COLS/2)-14,"HIT ANY OTHER KEY TO CONTINUE");
+		mvprintw(0,(COLS/2)-15-strlen(curntn->name)/2,"ARMY STATS SUMMARY FOR %s",curntn->name);
+
+		ypos+=10;
+		mvaddstr(ypos++,(COLS/2)-14,"HIT SPACE KEY IF DONE");
+		mvaddstr(ypos++,(COLS/2)-25,"HIT RETURN TO CHANGE ANY ARMY STATISTICS");
+		mvaddstr(ypos++,(COLS/2)-17,"HIT ANY OTHER KEY FOR MORE");
 		standend();
 		refresh();
-		if ((army=getch())==' ') done=TRUE;
-		if (army=='\n'){
+
+		ypos++;
+		if ((inpkey = getch())==' ') done=TRUE;
+		else if((inpkey=='\n')||(inpkey=='\r')) {
 			done=0;
-			mvaddstr(16,0,"WHAT ARMY DO YOU WANT TO CHANGE:");
+			mvaddstr(ypos++,0,"WHAT ARMY DO YOU WANT TO CHANGE:");
+			ypos++;
 			clrtoeol();
 			refresh();
 			armynum = get_number();
 			if((armynum<0)||(armynum>MAXARM)) {
-				if (isgod==TRUE) country=0;
-				return;
+				continue;
 			}
 #ifdef TRADE
-			if(ASTAT==TRADED) {
+			if(P_ASTAT==TRADED) {
 				errormsg("May not change traded army");
-				if (isgod==TRUE) country=0;
-				return;
-#endif TRADe
+				continue;
 			}
-			if(ATYPE<99)
-			mvaddstr(18,0,"1) CHANGE STATUS, 2) TRANSFER / MERGE, 3) SPLIT ARMY, 4) DISBAND ARMY");
-			else mvaddstr(18,0,"1) CHANGE STATUS, 4) DISBAND ARMY:");
+#endif TRADE
+			mvaddstr(ypos,0,"OPTIONS: 1) COMMAND 2) DISBAND 3) CHANGE GROUP");
+			if(P_ATYPE<MINLEADER)
+			mvaddstr(ypos,47,"4) MERGE 5) SPLIT ARMY");
+			ypos++;
 			clrtoeol();
 #ifdef OGOD
-			if(isgod==TRUE) mvaddstr(20,0,"5) LOCATION, 6) SOLDIERS:");
+			if(isgod==TRUE) mvaddstr(ypos++,0,"GOD OPTIONS: 6) LOCATION 7) SOLDIERS");
+			clrtoeol();
+#endif OGOD
+			ypos++;
 			refresh();
 			switch(getch()){
 			case '1':
-				adjarm(armynum);
+				ext_cmd(armynum);
 				break;
-			case '2':
+			case '4':
 				clear_bottom(0);
-				if(ATYPE>=MINMONSTER){
+				if(P_ATYPE>=MINLEADER){
 					errormsg("SORRY -- army is monster");
 					break;
 				}
 				oldarmy=armynum;
-				mvaddstr(LINES-4,0,"TO WHAT ARMY: ");
+				mvaddstr(ypos++,0,"TO WHAT ARMY: ");
 				refresh();
 				armynum = get_number();
 
 				combinearmies(armynum,oldarmy);
 				break;
-			case '3':
+			case '5':
 				splitarmy(armynum);
 				break;
-			case '4':
+			case '2':	/* disband army */
 				clear_bottom(0);
-				if(sct[AXLOC][AYLOC].owner!=country){
-					errormsg("YOU DONT OWN SECTOR");
+				if(P_ATYPE<MINLEADER) 
+					mvprintw(ypos++,0,"Disband your %s army %d?",*(unittype+(P_ATYPE%UTYPE)),armynum);
+				else 	mvprintw(ypos++,0,"Disband your %s %d?",*(unittype+(P_ATYPE%UTYPE)),armynum);
+				refresh();
+				if(getch()!='y') break;
+				if(sct[P_AXLOC][P_AYLOC].owner!=country && P_ATYPE!=A_SPY){
+					errormsg("You don't own the sector");
 					break;
-				}
-				else if(ATYPE==A_MERCENARY){
-					/*mercs must be payed off*/
-					/*mercs do not add to local populace*/
-					mvprintw(LINES-4,0,"Your mercenaries demand %ld gold to disband",
-					*(u_encost+(ATYPE%100)) * ASOLD);
-					mvprintw(LINES-3,0,"continue? (y or n)");
+				} else if(P_ASTAT==ONBOARD) {
+					errormsg("That unit must be first be unloaded");
+					break;
+				} else if(P_ATYPE==A_SPY) {
+					/*spys are given a shut up fee */
+					mvprintw(LINES-4,0,"Your spy demands %ld talons to remain quiet",
+					*(u_encost+(P_ATYPE%UTYPE)) * 2);
+					mvprintw(LINES-3,0,"Pay him off? (y or n)");
+					clrtoeol();
 					refresh();
 					if(getch()=='y'){
-					ntn[country].tgold -= *(u_encost+(ATYPE%100)) * ASOLD;
-					ASOLD=0;
+					/* spys do not add to population */
+					curntn->tgold -= *(u_encost+(P_ATYPE%UTYPE)) * 2;
+					P_ASOLD=0;
 					AADJMEN;
 					}
-				} else if(magic(country,VAMPIRE)==1){
-					errormsg("VAMPIRES CANT DISBAND");
+				} else if(P_ATYPE==A_MERCENARY){
+					/*mercs must be payed off*/
+					mvprintw(LINES-4,0,"Your mercenaries demand %ld talons to disband",
+					*(u_encost+(P_ATYPE%UTYPE)) * P_ASOLD);
+	
+					mvprintw(LINES-3,0,"Give them severance pay? (y or n)");
+					clrtoeol();
+					refresh();
+					if(getch()=='y'){
+					curntn->tgold -= *(u_encost+(P_ATYPE%UTYPE)) * P_ASOLD;
+					/*mercs do not add to local populace*/
+					attset = MERCATT;
+					defset = MERCDEF;
+					bemerc = P_ASOLD;
+					P_ASOLD=0;
+					AADJMEN;
+					AADJDISB;
+					}
+				} else if(P_ATYPE==A_ZOMBIE){
+					errormsg("Zombie units cannot disband");
 					break;
 				} else {
-					sct[AXLOC][AYLOC].people+=ASOLD;
-					ASOLD=0;
+					if (P_ATYPE < MINLEADER) {
+					bemerc = (P_ASOLD*15)/100;
+					/*15% become mercs*/
+					attset = curntn->aplus +
+						*(unitattack+(P_ATYPE%UTYPE));
+					defset = curntn->dplus +
+						*(unitdefend+(P_ATYPE%UTYPE));
+					P_ASOLD -= bemerc;
+					sct[P_AXLOC][P_AYLOC].people+=P_ASOLD;
+					AADJDISB;
+					}
+					P_ASOLD=0;
 					AADJMEN;
-					i=AXLOC;
-					j=AYLOC;
+					i=P_AXLOC;
+					j=P_AYLOC;
 					SADJCIV2;
 				}
 				break;
-			case '5':
+			case '3':
+				addgroup(armynum);
+				break;
+#ifdef OGOD
+			case '6':
 				if(isgod==TRUE){
 					/*X LOCATION*/
-					mvaddstr(21,0,"WHAT IS THE NEW X LOC: ");
+					mvaddstr(ypos++,0,"What is the New X Loc: ");
 					refresh();
 					men = get_number();
-					AXLOC=men;
+					if (men>=0 && men<MAPX)
+					P_AXLOC=men;
 					/*Y LOCATION*/
-					mvaddstr(21,0,"WHAT IS THE NEW Y LOC: ");
+					mvaddstr(ypos++,0,"What is the New Y Loc: ");
 					refresh();
 					men = get_number();
-					AYLOC=men;
+					if (men>=0 && men<MAPY)
+					P_AYLOC=men;
 					AADJLOC;
 				}
 				break;
-			case '6':
+			case '7':
 				if(isgod==TRUE){
 					/*SOLDIERS*/
-					mvaddstr(21,0,"WHAT IS THE NEW TOTAL SOLDIERS: ");
+					mvaddstr(ypos++,0,"What is the New Total Soldiers: ");
 					refresh();
 					men = get_number();
-					ASOLD=men;
+					P_ASOLD=men;
 					AADJMEN;
 				}
 				break;
+#endif OGOD
 			default:
-				mvaddstr(21,0,"ERROR : HIT ANY CHAR TO CONTINUE");
-				clrtoeol();
-				refresh();
-				getch();
+				errormsg("Invalid Input");
 			}
-			noecho();
 			armynum=0;
+		} else {
+			/* go to start of next page in army list */
+			while(armynum<MAXARM && (P_ASOLD==0 || !(!repnum ||
+			(P_AXLOC==XREAL && P_AYLOC==YREAL)))) armynum++;
+			if(armynum==MAXARM) count2=0;
+			else count2=armynum;
 		}
 	}
-	if(isgod==TRUE) country=0;
+	if(isgod==TRUE) reset_god();
 }
 
 void
 budget()
 {
 	short armynum,nvynum;
-	long expship=0L,expsold=0L,nosold=0L;	/*nosold = # men,exp expense */
+	long numship=0L,costsold=0L,numsold=0L;
+	long nummonst=0L,costmonst=0L,money;
 	int isgod=FALSE;
 
 	if(country==0) {
 		isgod=TRUE;
-		clear();
-		mvaddstr(0,0,"SUPER USER; FOR WHAT NATION NUMBER:");
-		clrtoeol();
-		refresh();
-		country = get_number();
+		if (get_god()) return;
+		/* make budget report work for god */
+		startgold=curntn->tgold;
 	}
 
 	clear();
 	standout();
-	mvaddstr(0,(COLS/2)-10,"NEXT YEARS BUDGET ESTIMATES");
+	mvaddstr(0,(COLS/2)-15,"NEXT SEASON'S BUDGET ESTIMATES");
 	standend();
-
 	spreadsheet(country);
-
-	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0) {
-		nosold+= ASOLD;
-		expsold += ASOLD * *(unitmaint+(ATYPE%100));
+  
+	for(armynum=0;armynum<MAXARM;armynum++)
+	if(P_ASOLD>0) {
+		if(P_ATYPE<MINLEADER) {
+			numsold += P_ASOLD;
+			costsold += P_ASOLD * ((long) *(unitmaint+(P_ATYPE%UTYPE)));
+		} else if (P_ATYPE>=MINMONSTER) {
+			nummonst++;
+			costmonst += 5L * ((long) *(unitmaint+(P_ATYPE%UTYPE)));
+		}
 	}
 	for(nvynum=0;nvynum<MAXNAVY;nvynum++)
-		if(NWAR+NMER>0) expship+=(NWAR+NMER);
+		if(P_NWSHP!=0||P_NMSHP!=0||P_NGSHP!=0)
+			numship+=flthold(nvynum);
 
 	standout();
-	mvprintw(5,0,  "nation name is.....%s   ",ntn[country].name);
-	mvprintw(6,0,  "gold in treasury..$%8ld",ntn[country].tgold);
-	mvprintw(7,0,  "number of sectors..%d",spread.sectors);
+	mvprintw(3,0,  "nation name is......%s",curntn->name);
 	standend();
-	if(ntn[country].tfood<ntn[country].tciv) standout();
-	mvprintw(9,0,  "granary holds ....%8ld",ntn[country].tfood);
+	mvprintw(4,0,  "talons in treasury.$%ld",startgold);
+	mvprintw(5,0,  "number of sectors...%d",spread.sectors);
+	if(curntn->tfood<2*curntn->tciv) standout();
+	mvprintw(7,0,  "granary holds.....%8ld",curntn->tfood);
 	standend();
-	mvprintw(10,0, "jewels owned is...%8ld",ntn[country].jewels);
-	mvprintw(11,0, "iron ore owned is.%8ld",ntn[country].tiron);
-	mvprintw(7,30, "%8d people in gold mines:%8ld",spread.ingold,spread.revjewels);
-	mvprintw(8,30, "%8d people in iron mines:%8ld",spread.iniron,spread.reviron);
-	mvprintw(9,30, "%8d people in farms:     %8ld",spread.infarm,spread.revfood);
-	mvprintw(10,30,"%8d people in capitol:   %8ld",spread.incap,spread.revcap);
-	mvprintw(11,30,"%8d people in towns:     %8ld",spread.incity,spread.revcity);
+	mvprintw(8,0, "jewels owned......%8ld",curntn->jewels);
+	mvprintw(9,0, "metal ore owned...%8ld",curntn->metals);
+	mvprintw(3,COLS-50, "%8ld people in gold mines.%8ld",spread.ingold,spread.revjewels);
+	mvprintw(4,COLS-50, "%8ld people in mines......%8ld",spread.inmetal,spread.revmetal);
+	mvprintw(5,COLS-50, "%8ld people in farms......%8ld",spread.infarm,spread.revfood);
+	mvprintw(6,COLS-50,"%8ld people in cities.....%8ld",spread.incap,spread.revcap);
+	mvprintw(7,COLS-50,"%8ld people in towns......%8ld",spread.incity,spread.revcity);
+	mvprintw(8,COLS-50, "%8ld people elsewhere.....%8ld",spread.inothr,spread.revothr);
 	standout();
-	mvprintw(12,30,"%8ld people TOTAL INCOME: %8ld",spread.civilians,spread.gold - ntn[country].tgold);
+	mvprintw(9,COLS-50,"%8ld people INCOME........%8ld",spread.civilians,spread.gold - curntn->tgold);
 	standend();
+	mvprintw(11,COLS-50,"%8ld troops...............%8ld",numsold,costsold);
+	mvprintw(12,COLS-50,"%8ld monsters.............%8ld",nummonst,costmonst);
 
-	if(magic(country,VAMPIRE)==1)  expsold/=4;
-	mvprintw(14,30,"%8d troops:              %8ld",nosold,expsold);
-
-	mvprintw(15,30,"%8d ships at %5d each: %8ld",expship,SHIPMAINT,expship*SHIPMAINT);
-	mvprintw(16,30,"other expenses this turn:     %8ld",startgold-ntn[country].tgold);
+	mvprintw(13,COLS-50,"%8ld ship holds @ %4d....%8ld",numship,SHIPMAINT,numship*SHIPMAINT);
+	mvprintw(14,COLS-50,"other expenses this turn......%8ld",startgold-curntn->tgold);
 	standout();
-	mvprintw(17,30,"TOTAL EXPENSES:               %8ld",expsold+(expship*SHIPMAINT)+startgold-ntn[country].tgold);
-	mvprintw(18,30,"NET INCOME:                   %8ld",spread.gold-expsold-(expship*SHIPMAINT)-startgold);
+	money=costmonst+costsold+(numship*SHIPMAINT)+startgold-curntn->tgold;
+	mvprintw(15,COLS-50,"TOTAL EXPENSES................%8ld",money);
+	money=spread.gold - curntn->tgold - money;	/* net income */
+	standend();
+	mvprintw(17,COLS-50,"NET INCOME....................%8ld",money);
+	mvprintw(16,COLS-50,"CHARITY.......................%8ld",max((money*curntn->charity)/100,0));
+	standout();
+	mvprintw(18,COLS-50,"NEXT SEASON'S TREASURY........%8ld",(startgold + money)*(100-curntn->charity)/100);
 
-	mvaddstr(20,(COLS/2)-13,"HIT 'P' TO SEE PRODUCTION STATS");
-	mvaddstr(21,(COLS/2)-12,"HIT ANY OTHER KEY TO CONTINUE");
+	mvaddstr(LINES-3,(COLS/2)-15,"HIT 'P' TO SEE PRODUCTION SCREEN");
+	mvaddstr(LINES-2,(COLS/2)-15,"HIT 'C' FOR CHANGE NATION SCREEN");
+	mvaddstr(LINES-1,(COLS/2)-14,"HIT ANY OTHER KEY TO CONTINUE");
 	standend();
 	refresh();
-	if(getch()=='P'){
-		produce();
+	switch( getch() ) {
+	case 'p':
+	case 'P': produce(); break;
+	case 'c':
+	case 'C': change(); break;
 	}
-	if(isgod==TRUE) country=0;
+	if(isgod==TRUE) reset_god();
 }
 
 void
 produce()
 {
-	short armynum,multiplier=1;
-	int military=0;
+	FILE *fp;
+	short armynum;
+	long military=0;
+	long nummonst=0L,costmonst=0L;
 	int isgod=FALSE;
 
 	if(country==0) {
 		isgod=TRUE;
-		clear();
-		mvaddstr(0,0,"SUPER USER; FOR WHAT NATION NUMBER:");
-		clrtoeol();
-		refresh();
-		country = get_number();
+		if (get_god()) return;
 	}
+	fp=fopen("temp","w");
 	clear();
 	standout();
-	mvaddstr(0,(COLS/2)-12,"NEXT YEARS PRODUCTION ESTIMATES");
+	mvaddstr(0,(COLS/2)-17,"NEXT SEASON'S PRODUCTION ESTIMATES");
 	standend();
 
 	spreadsheet(country);
-	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0) military+=ASOLD;
+	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
+	for(armynum=0;armynum<MAXARM;armynum++)
+	if(P_ASOLD>0)
+	{
+		if (P_ATYPE<MINLEADER) {
+			military+=P_ASOLD;
+		} else if (P_ATYPE>=MINMONSTER) {
+			nummonst++;
+			costmonst += (long) *(unitmaint+(P_ATYPE%UTYPE));
+		}
+	}
 
 	standout();
-	mvprintw(5,0,  "nation name is ...%9s",ntn[country].name);
-	mvprintw(6,0,  "gold in treasury..$%8ld",ntn[country].tgold);
+	mvprintw(4,0,  "nation name is....%s",curntn->name);
 	standend();
-	mvaddstr(8,0,  "FOOD PRODUCTION");
-	mvprintw(9,0,  "granary now holds.........%8ld tons",ntn[country].tfood);
-	mvprintw(10,0, "%8d people in farms..%8ld tons",spread.infarm,spread.food-ntn[country].tfood);
-	if(magic(country,DEMOCRACY)==1)   multiplier=2;
-	mvprintw(12,0, "%8d civilians eat....%8d tons",spread.civilians,multiplier*spread.civilians);
-	mvprintw(13,0, "%8d soldiers  eat....%8d tons",military,military*2);
-	mvprintw(15,0, "TOTAL NET FOOD............%8d tons",spread.food-ntn[country].tfood-multiplier*spread.civilians-military*2);
-	if(spread.food-multiplier*spread.civilians-military*2<FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100){
-	mvprintw(16,0, "TOTAL NEXT YEARS FOOD.....%8ld tons",spread.food-multiplier*spread.civilians-military*2);
-	}
-	else{
-	mvprintw(16,0, "TOTAL NEXT YEARS FOOD.....%8ld tons",FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100);
-	mvprintw(17,0, "REVENUE FROM EXCESS.......%8ld gold",spread.food-multiplier*spread.civilians-military*2-FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100);
-	}
+	mvprintw(5,0,  "talons in treasury..$%ld",startgold);
+	mvaddstr(7,0,  "FOOD PRODUCTION");
+	mvprintw(9,0,  "granary now holds.........%8ld tons",curntn->tfood);
+	mvprintw(10,0, "%8ld people in farms..%8ld tons",spread.infarm,spread.food - curntn->tfood);
+	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
+	mvprintw(12,0, "%8ld people @ %3.1f eat.%8.0f tons",spread.civilians,P_EATRATE,P_EATRATE*(float)spread.civilians);
+	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
+	mvprintw(13,0, "%8ld soldiers eat.....%8.0f tons",military,military*2*P_EATRATE);
+	military+= military+spread.civilians; /* military is amount eaten */
+	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
+	standout();
+	mvprintw(15,0, "ESTIMATE NET FOOD.........%8.0f tons",spread.food-curntn->tfood-P_EATRATE*military);
+	mvprintw(16,0, "ESTIMATE FOOD SUPPLY......%8.0f tons",spread.food-P_EATRATE*military);
+	standend();
+	fprintf(fp,"LINE %d FILE %s\n",__LINE__,__FILE__);
 
-	mvaddstr(8,41,  "OTHER PRODUCTION");
-	mvprintw(10,41, "jewels owned is...............%8ld",ntn[country].jewels);
-	mvprintw(11,41, "%8d people in goldmines :%8ld",spread.ingold,spread.jewels-ntn[country].jewels);
-	mvprintw(12,41, "ESTIMATE NEXT YEARS JEWELS    %8ld",spread.jewels);
-	mvprintw(14,41, "iron ore owned is.............%8ld",ntn[country].tiron);
-	mvprintw(15,41, "%8d people in iron mines:%8ld",spread.iniron,spread.iron-ntn[country].tiron);
-	mvprintw(16,41, "ESTIMATE NEXT YEARS IRON      %8ld",spread.iron);
+	mvaddstr(7,COLS/2+1,  "OTHER PRODUCTION");
+	mvprintw(9,COLS/2+1, "jewels owned is...............%8ld",curntn->jewels);
+	mvprintw(10,COLS/2+1, "%8ld people in goldmines..%8ld",spread.ingold,spread.jewels-curntn->jewels);
+	mvprintw(11,COLS/2+1, "%8ld monsters.............%8ld",nummonst,-costmonst);
+	standout();
+	mvprintw(12,COLS/2+1, "ESTIMATE JEWEL SUPPLY.........%8ld",spread.jewels-costmonst);
+	standend();
+
+	mvprintw(14,COLS/2+1, "metal ore owned is............%8ld",curntn->metals);
+	mvprintw(15,COLS/2+1, "%8ld people in mines......%8ld",spread.inmetal,spread.metal-curntn->metals);
+	standout();
+	mvprintw(16,COLS/2+1, "ESTIMATE METAL SUPPLY.........%8ld",spread.metal);
+	standend();
 
 	standout();
-	mvaddstr(20,(COLS/2)-12,"HIT 'B' TO SEE BUDGET SCREEN");
-	mvaddstr(21,(COLS/2)-12,"HIT ANY OTHER KEY TO CONTINUE");
+	mvaddstr(LINES-3,(COLS/2)-15,"HIT 'B' TO SEE BUDGET SCREEN");
+	mvaddstr(LINES-2,(COLS/2)-17,"HIT 'C' FOR CHANGE NATION SCREEN");
+	mvaddstr(LINES-1,(COLS/2)-15,"HIT ANY OTHER KEY TO CONTINUE");
 	standend();
 	refresh();
-	if(getch()=='B'){
-		budget();
+	switch( getch() ) {
+		case 'b':
+		case 'B': budget(); break;
+		case 'c':
+		case 'C': change(); break;
 	}
 
-	if(isgod==TRUE) country=0;
+	if(isgod==TRUE) reset_god();
+	fclose(fp);
 }
 
+#undef RPT_LINES
+#undef RPT_COLS
+#undef BUF_LINES
+#undef BUF_COLS
+#define RPT_LINES 13
+#define RPT_COLS 11
+#define BUF_LINES 10
+#define BUF_COLS 15
+char *fltstr[]= {"Light", "Medium", "Heavy"};
 /*report on ships and allow changes */
 void
 fleetrpt()
 {
-	short navy;
-	short oldx,oldy,oldnavy;
+	short navy,armynum;
+	short newx,newy,newnavy;
 	short done=FALSE;
 	int i,j;
-	int position,crew;
-	int count;       /*screen number */
+	int xpos,ypos,crew,people;
+	int count,count2;       /*screen number */
 	short nvynum=0;    /*current ship id */
-	short wships,mships;
+	short shipsize;
 	int isgod=FALSE;
 	if(country==0) {
-		standout();
 		isgod=TRUE;
-		clear();
-		mvaddstr(0,0,"SUPER USER; FOR WHAT NATION NUMBER:");
-		clrtoeol();
-		standend();
-		refresh();
-		country = get_number();
-		if(country<0||country>NTOTAL) return;
+		if (get_god()) return;
 	}
+	else {
+		/* if not god, check if there are navies to display */
+		for(count=nvynum=0;count==0 && nvynum<MAXNAVY;nvynum++)
+			if (P_NWSHP!=0||P_NMSHP!=0||P_NGSHP!=0) count=1;
+		if(count==0){
+			clear_bottom(0);
+			errormsg("no navies");
+			redraw=FALSE;
+			makebottom();
+			return;
+		}
+  	}
 
-	count=0;
-	for(nvynum=0;nvynum<MAXNAVY;nvynum++) count+=NWAR+NMER;
-	if(count==0){
-		clear();
-		standout();
-		mvaddstr(5,(COLS/2)-6, "NO NAVIES ");
-		mvaddstr(15,(COLS/2)-14,"HIT ANY KEY TO CONTINUE");
-		standend();
-		done=TRUE;
-		refresh();
- 		getch();
-		if(isgod==TRUE) country=0;
-		return;
-	}
-	nvynum=0;
+	count2=0;
 	while(done==FALSE) {
 		clear();
-		/*Operate on any navies that you wish*/
-		standout();
-		mvprintw(0,(COLS/2)-20,"NAVY STATS SUMMARY FOR %s",ntn[country].name);
-		standend();
-		/* give a navy report */
-
-		mvaddstr(3,0, "warships  :");
-		mvaddstr(4,0, "merchant :");
-		mvaddstr(5,0, "x location:");
-		mvaddstr(6,0, "y location:");
- 		mvaddstr(7,0, "crew:");
-		mvaddstr(8,0,"move left :");
-
-		position=5;
+		ypos=2;
+		xpos=BUF_COLS;
 		count=0;
-		while((nvynum<MAXNAVY)&&(count!=6)){
-			if((NWAR+NMER)>0) {
-				count++;
-				position+=10;
+		nvynum=count2;
+		while((nvynum<MAXNAVY)&&(count<MAXINSCR)){
+			if((P_NWSHP!=0)||(P_NMSHP!=0)||(P_NGSHP!=0)) {
+
+				/* give a navy report */
+				if (count%MAXINROW==0) {
+					mvaddstr(ypos+2,0, "warships  :");
+					mvaddstr(ypos+3,0, "merchants :");
+					mvaddstr(ypos+4,0, "galleys   :");
+					mvaddstr(ypos+5,0, "x location:");
+					mvaddstr(ypos+6,0, "y location:");
+					mvaddstr(ypos+7,0, "crew/unit :");
+					mvaddstr(ypos+8,0, "move left :");
+					mvaddstr(ypos+9,0, "carrying  :");
+					mvaddstr(ypos+10,0, "civilians :");
+				}
+
+				/* give naval information */
 				standout();
-				mvprintw(2,position,"%d:",nvynum);
+				mvprintw(ypos,xpos,"%d:",nvynum);
 				standend();
-				mvprintw(3,position,"%d",NWAR);
-				mvprintw(4,position,"%d",NMER);
-				mvprintw(5,position,"%d",NXLOC);
-				mvprintw(6,position,"%d",NYLOC);
-				mvprintw(7,position,"%d",NCREW/(NWAR+NMER));
-				mvprintw(8,position,"%d",NMOVE);
+				mvprintw(ypos+1,xpos,"lt/md/hv");
+				mvprintw(ypos+2,xpos,"%2hd/%2hd/%2hd",P_NWAR(N_LIGHT),P_NWAR(N_MEDIUM),P_NWAR(N_HEAVY));
+				mvprintw(ypos+3,xpos,"%2hd/%2hd/%2hd",P_NMER(N_LIGHT),P_NMER(N_MEDIUM),P_NMER(N_HEAVY));
+				mvprintw(ypos+4,xpos,"%2hd/%2hd/%2hd",P_NGAL(N_LIGHT),P_NGAL(N_MEDIUM),P_NGAL(N_HEAVY));
+				mvprintw(ypos+5,xpos,"%d",(int)P_NXLOC);
+				mvprintw(ypos+6,xpos,"%d",(int)P_NYLOC);
+				mvprintw(ypos+7,xpos,"%d",(int)P_NCREW);
+				mvprintw(ypos+8,xpos,"%d",(int)P_NMOVE);
+				if(P_NARMY==MAXARM)
+					mvaddstr(ypos+9,xpos,"(none)");
+				else {
+					armynum=P_NARMY;
+					if(P_ATYPE<MINLEADER)
+						mvprintw(ypos+9,xpos,"army %d",armynum);
+					else
+						mvprintw(ypos+9,xpos,"%s %d",*(unittype+(P_ATYPE%UTYPE)),armynum);
+				}
+				mvprintw(ypos+10,xpos,"%d",P_NPEOP*fltmhold(nvynum));
+
+				count++;
+				if(count<MAXINSCR && count%MAXINROW==0) {
+					ypos+=RPT_LINES;
+					xpos=BUF_COLS;
+				} else {
+					xpos+=RPT_COLS;
+				}
 			}
 			nvynum++;
 		}
-		if(nvynum>=MAXNAVY) done=TRUE;
 
+		/*Operate on any navies that you wish*/
 		standout();
-		mvaddstr(12,(COLS/2)-10,"HIT SPACE KEY IF DONE");
-		mvaddstr(13,(COLS/2)-14,"HIT RETURN TO CHANGE A NAVY");
-		mvaddstr(14,(COLS/2)-14,"HIT ANY OTHER KEY TO CONTINUE");
+		mvprintw(0,(COLS/2)-15-strlen(curntn->name)/2,"NAVY STATS SUMMARY FOR %s",curntn->name);
+
+		ypos+=12;
+		mvaddstr(ypos++,(COLS/2)-14,"HIT SPACE KEY IF DONE");
+		mvaddstr(ypos++,(COLS/2)-18,"HIT RETURN TO CHANGE A NAVY");
+		mvaddstr(ypos++,(COLS/2)-17,"HIT ANY OTHER KEY FOR MORE");
+		ypos++;
 		standend();
 		refresh();
+
 		if ((navy=getch())==' ') done=TRUE;
-		if (navy=='\n'){
-			mvaddstr(16,0,"WHAT NAVY DO YOU WANT TO CHANGE:");
+		else if ((navy=='\n')||(navy=='\r')){
+			mvaddstr(ypos++,0,"WHAT NAVY DO YOU WANT TO CHANGE:");
 			clrtoeol();
-#endif OGOD
 			refresh();
 			nvynum = get_number();
 #ifdef TRADE
-			if (ntn[country].nvy[nvynum].armynum==TRADED) {
-				mvaddstr(23,0,"SORRY - THAT NAVY IS UP FOR TRADE");
-				refresh();
-				getch();
-				if (isgod==TRUE) country=0;
-				return;
+			if (curntn->nvy[nvynum].commodity==TRADED) {
+				errormsg("Sorry - That Navy is up for trade");
+				continue;
 			}
 #endif TRADE
-			if((nvynum<0)||(nvynum>MAXNAVY)) return;
-			mvaddstr(18,0,"1) TRANSFER / MERGE, 2) SPLIT NAVY, 3) DISBAND NAVY:");
+			if((nvynum<0)||(nvynum>=MAXNAVY)) {
+				errormsg("Invalid Naval unit");
+				continue;
+			}
+			mvaddstr(ypos++,0,"OPTIONS: 1) TRANSFER / MERGE, 2) SPLIT NAVY, 3) DISBAND NAVY");
   			clrtoeol();
 #ifdef OGOD
-			if(isgod==TRUE) mvaddstr(19,0,"4) ADJUST SHIPS, 5) LOCATION, 6) CREW");
+			if(isgod==TRUE) mvaddstr(ypos++,0,"GOD OPTIONS:  4) ADJUST SHIPS, 5) LOCATION, 6) CREW");
+			ypos++;
 			clrtoeol();
 #endif OGOD
 			refresh();
 			switch(getch()){
 			case '1':
-				oldx=NXLOC;
-				oldy=NYLOC;
-				oldnavy=nvynum;
-				mvaddstr(22,0,"TO WHAT NAVY: ");
+				mvaddstr(ypos++,0,"TO WHAT NAVY: ");
 				clrtoeol();
 				refresh();
-				nvynum = get_number();
+				newnavy = get_number();
+				if(newnavy<0 || newnavy>=MAXNAVY) {
+					errormsg("Sorry - Invalid Navy unit");
+					break;
+				}
+				newx = curntn->nvy[newnavy].xloc;
+				newy = curntn->nvy[newnavy].yloc;
 #ifdef TRADE
-				if (ntn[country].nvy[nvynum].armynum==TRADED) {
-					mvaddstr(23,0,"SORRY - THAT NAVY IS UP FOR TRADE");
-					refresh();
-					getch();
+				if (curntn->nvy[newnavy].commodity==TRADED) {
+					errormsg("Sorry - That Navy is up for trade");
 				} else
 #endif TRADE
-				if(nvynum==oldnavy) {
-					mvprintw(23,0,"SORRY -- SAME NAVY (%d,%d)",nvynum,oldnavy);
-					refresh();
-					getch();
+				if(nvynum==newnavy) {
+					errormsg("Sorry -- That is the same Navy");
 				}
-				else if((nvynum<0)||(nvynum>MAXNAVY)){
-					mvprintw(23,0,"SORRY -- INVALID NAVY %d",nvynum);
-					refresh();
-					getch();
+				else if((P_NARMY!=MAXARM)
+				&&(curntn->nvy[newnavy].armynum!=MAXARM)) {
+					errormsg("Sorry -- One of the two Armies must be unloaded");
 				}
-				else if((oldx==NXLOC)&&(oldy==NYLOC)) {
-					NWAR+=ntn[country].nvy[oldnavy].warships;
-					NMER+=ntn[country].nvy[oldnavy].merchant;
-					NCREW += ntn[country].nvy[oldnavy].crew;
-					NADJSHP;
+				else if((newx==P_NXLOC)&&(newy==P_NYLOC)) {
+					crew = flthold(nvynum)*P_NCREW;
+					people = fltmhold(nvynum)*P_NPEOP;
+					crew += flthold(newnavy)*curntn->nvy[newnavy].crew;
+					people += flthold(newnavy)*curntn->nvy[newnavy].people;
+					for(i=N_LIGHT;i<=N_HEAVY;i++) {
+						(void) addwships(newnavy,i,P_NWAR(i));
+						(void) addmships(newnavy,i,P_NMER(i));
+						(void) addgships(newnavy,i,P_NGAL(i));
+					}
+					P_NCREW=0;
+					P_NWSHP=0;
+					P_NMSHP=0;
+					P_NGSHP=0;
+					if (P_NARMY!=MAXARM) {
+						curntn->nvy[newnavy].armynum=P_NARMY;
+						P_NARMY=MAXARM;
+					}
+					P_NPEOP=0;
+					NADJWAR;
+					NADJMER;
+					NADJGAL;
 					NADJCRW;
-					if(NMOVE>ntn[country].nvy[oldnavy].smove)
-						NMOVE=ntn[country].nvy[oldnavy].smove;
+					NADJHLD;
+					if(P_NMOVE>curntn->nvy[newnavy].smove)
+						curntn->nvy[newnavy].smove=P_NMOVE;
+					P_NMOVE=0;
 					NADJMOV;
-					nvynum=oldnavy;
-					NWAR=0;
-					NMER=0;
-					NCREW=0;
-					NADJSHP;
+					nvynum=newnavy;
+					if (flthold(nvynum)>0)
+					P_NCREW=(unsigned char)(crew/flthold(nvynum));
+					if (fltmhold(nvynum)>0)
+					P_NPEOP=(unsigned char)(people/fltmhold(nvynum));
+					NADJMOV;
+					NADJWAR;
+					NADJMER;
+					NADJGAL;
 					NADJCRW;
+					NADJHLD;
 				}
 				else {
-					mvaddstr(23,0,"Navies not together (hit any key) ");
-					refresh();
-					getch();
+					errormsg("Navies not together");
 				}
 				break;
 			case '2':
-				mvaddstr(21,0,"HOW MANY WARSHIPS TO SPLIT: ");
-				clrtoeol();
+				newnavy=nvynum;
+				navy=(-1);
+				for(nvynum=0;nvynum<MAXNAVY;nvynum++)
+				if(((P_NWSHP==0)&&(P_NMSHP==0)&&(P_NGSHP==0))
+				&&(navy==(-1)))
+					navy=nvynum;
+				if(navy==(-1)) {
+					errormsg("Too many Navies");
+					break;
+				}
+				nvynum=newnavy;
+				curntn->nvy[navy].xloc=P_NXLOC;
+				curntn->nvy[navy].yloc=P_NYLOC;
+				curntn->nvy[navy].crew=P_NCREW;
+				curntn->nvy[navy].people=P_NPEOP;
+				curntn->nvy[navy].smove=P_NMOVE;
+					
+				mvaddstr(LINES-2,0,"Do you wish to separate warships from remainder of fleet?");
 				refresh();
-				wships = get_number();
-				mvaddstr(21,0,"HOW MANY MERCHANTS TO SPLIT: ");
-				clrtoeol();
-				refresh();
-				mships = get_number();
-				if(wships<0) wships=0;
-				if(mships<0) mships=0;
-				if((wships<=NWAR)&&(mships<=NMER)){
-					NWAR-=wships;
-					NMER-=mships;
-					crew = NCREW * (wships+mships) / (NWAR+NMER);
-					NCREW -= crew;
-					NADJCRW;
-					NADJSHP;
-					oldnavy=nvynum;
-					oldx=NXLOC;
-					oldy=NYLOC;
-					navy=(-1);
-					for(nvynum=0;nvynum<MAXNAVY;nvynum++)
-						if((NWAR+NMER==0)&&(navy==(-1)))
-							navy=nvynum;
+				if(getch()=='y') {
+					curntn->nvy[navy].warships=P_NWSHP;
+					P_NWSHP=0;
+					NADJWAR;
 					nvynum=navy;
-					/*overflow*/
-					if(nvynum==(-1)) {
-						mvaddstr(23,0,"TOO MANY NAVIES: ");
-						nvynum=oldnavy;
-						NWAR+=wships;
-						NMER+=mships;
-						NADJSHP;
-						NCREW+=crew;
-						NADJCRW;
-					}
-					else {
-						NMOVE=ntn[country].nvy[oldnavy].smove;
-						NXLOC=oldx;
-						NYLOC=oldy;
-						NWAR=wships;
-						NMER=mships;
-						NCREW=crew;
-						NADJCRW;
-						NADJSHP;
-						NADJLOC;
-						NADJMOV;
-					}
+					P_NMSHP=0;
+					P_NGSHP=0;
+					P_NARMY=MAXARM;
+					P_NPEOP=0;
+					NADJMOV;
+					NADJCRW;
+					NADJWAR;
+					NADJMER;
+					NADJGAL;
+					NADJHLD;
+					break;
+				} else if(P_NARMY!=MAXARM) {
+					errormsg("Army must be unloaded before Navy is divided");
+					break;
 				}
-				else {
-					mvaddstr(23,0,"TOO MANY SHIPS: ");
+				for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
+					mvprintw(ypos,0,"How Many %s Warships To Split?",fltstr[shipsize]);
+					clrtoeol();
 					refresh();
-					getch();
+					newnavy = get_number();
+					if(newnavy>P_NWAR(shipsize)) newnavy=0;
+					NSUB_WAR(newnavy);
+					(void) addwships(navy,shipsize,newnavy);
 				}
+				for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
+					mvprintw(ypos,0,"How Many %s Merchants To Split?",fltstr[shipsize]);
+					clrtoeol();
+					refresh();
+					newnavy = get_number();
+					if(newnavy>P_NMER(shipsize)) newnavy=0;
+					NSUB_MER(newnavy);
+					(void) addmships(navy,shipsize,newnavy);
+				}
+				for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
+					mvprintw(ypos,0,"How Many %s Galleys To Split?",fltstr[shipsize]);
+					clrtoeol();
+					refresh();
+					newnavy = get_number();
+					if(newnavy>P_NGAL(shipsize)) newnavy=0;
+					NSUB_GAL(newnavy);
+					(void) addgships(navy,shipsize,newnavy);
+				}
+
+				NADJWAR;
+				NADJMER;
+				NADJGAL;
+				nvynum=navy;
+				P_NARMY=MAXARM;
+				NADJMOV;
+				NADJCRW;
+				NADJWAR;
+				NADJMER;
+				NADJGAL;
+				NADJHLD;
 				break;
 			case '3':
 				/* DISBAND NAVY */
-				i=NXLOC;
-				j=NYLOC;
-				if(sct[i][j].altitude == WATER) {
+				i=P_NXLOC;
+				j=P_NYLOC;
+				if(sct[i][j].altitude == WATER && isgod==FALSE) {
 					errormsg("Ships need to be on land or in harbor");
 					break;
 				}
-				NWAR=0;
-				NMER=0;
-				sct[i][j].people+=NCREW;
-				NCREW=0;
+				if(sct[i][j].owner != country && isgod==FALSE) {
+					errormsg("You don't own the land");
+					break;
+				}
+				sct[i][j].people+=P_NCREW*flthold(nvynum);
+				sct[i][j].people+=P_NPEOP*fltmhold(nvynum);
+				if(P_NARMY!=MAXARM) {
+					armynum=P_NARMY;
+					P_NARMY=MAXARM;
+					P_ASTAT=DEFEND;
+					AADJSTAT;
+				}
+				P_NWSHP=0;
+				P_NMSHP=0;
+				P_NGSHP=0;
+				P_NCREW=0;
+				P_NPEOP=0;
 				SADJCIV2;
 				NADJCRW;
-				NADJSHP;
+				NADJWAR;
+				NADJGAL;
+				NADJMER;
+				NADJHLD;
 				break;
+#ifdef OGOD
 			case '4':
 				if (isgod==TRUE) {
 					/* ADJUST SHIPS */
-					mvaddstr(21,0,"HOW MANY WAR SHIPS: ");
-					refresh();
-					wships = get_number();
-					NWAR = wships;
-					mvaddstr(22,0,"HOW MANY MERCHANT SHIPS: ");
-					refresh();
-					mships = get_number();
-					NMER = mships;
-					NADJSHP;
+					P_NWSHP=0;
+					P_NMSHP=0;
+					P_NGSHP=0;
+					for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
+						mvprintw(ypos,0,"How Many %s Warships?",fltstr[shipsize]);
+						clrtoeol();
+						refresh();
+						newnavy = get_number();
+						if(newnavy>N_MASK) newnavy=0;
+						(void) NADD_WAR(newnavy);
+					}
+					for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
+						mvprintw(ypos,0,"How Many %s Merchants?",fltstr[shipsize]);
+						clrtoeol();
+						refresh();
+						newnavy = get_number();
+						if(newnavy>N_MASK) newnavy=0;
+						(void) NADD_MER(newnavy);
+					}
+					for(shipsize=N_LIGHT;shipsize<=N_HEAVY;shipsize++) {
+						mvprintw(ypos,0,"How Many %s Galleys?",fltstr[shipsize]);
+						clrtoeol();
+						refresh();
+						newnavy = get_number();
+						if(newnavy>N_MASK) newnavy=0;
+						(void) NADD_GAL(newnavy);
+					}
+					NADJWAR;
+					NADJMER;
+					NADJGAL;
 				}
 				break;
-#ifdef OGOD
 			case '5':
 				if (isgod==TRUE) {
 					/*X LOCATION*/
-					mvaddstr(21,0,"WHAT IS THE NEW X LOC: ");
+					mvaddstr(ypos++,0,"What Is The New X Loc: ");
 					refresh();
-					wships = get_number();
-					if (wships>=0 && wships<MAPX)
-						NXLOC=wships;
+					crew = get_number();
+					if (crew>=0 && crew<MAPX)
+						P_NXLOC=crew;
 					/*Y LOCATION*/
-					mvaddstr(22,0,"WHAT IS THE NEW Y LOC: ");
+					mvaddstr(ypos,0,"What Is The New Y Loc: ");
+					clrtoeol();
 					refresh();
-					wships = get_number();
-					if (wships>=0 && wships<MAPY)
-						NYLOC=wships;
+					crew = get_number();
+					if (crew>=0 && crew<MAPY)
+						P_NYLOC=crew;
 					NADJLOC;
 				}
 				break;
 			case '6':
 				if (isgod==TRUE) {
 					/* ADJUST CREWSIZE */
-					mvaddstr(21,0,"WHAT VALUE FOR CREW PER SHIP: ");
+					mvaddstr(ypos,0,"What value for crew/ship unit: ");
 					refresh();
-					wships = get_number();
-					if (wships>=0 && wships<=SHIPCREW)
-						NCREW = wships*(NMER+NWAR);
+					crew = get_number();
+					if (crew>=0 && crew<=SHIPCREW)
+						P_NCREW = crew;
 					NADJCRW;
 				}
 				break;
 #endif OGOD
 			default:
-				mvaddstr(21,0,"ERROR : HIT ANY CHAR TO CONTINUE");
-				clrtoeol();
-				refresh();
-				getch();
+				errormsg("Invalid Input");
 			}
 			noecho();
 			nvynum=0;
+		} else {
+			/* go to start of next page in navy list */
+			while((nvynum<MAXNAVY)
+			&&((P_NWSHP==0)&&(P_NMSHP==0)&&(P_NGSHP==0)))
+				nvynum++;
+			if(nvynum==MAXNAVY) count2=0;
+			else count2=nvynum;
 		}
 	}
-	if(isgod==TRUE) country=0;
+	if(isgod==TRUE) reset_god();
 }

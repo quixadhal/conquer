@@ -1,0 +1,164 @@
+                       CONQUER COMMAND HELP SCREEN
+
+    MOVEMENT                 COMMANDS                    ADMINISTRATION
+'h': move west           'a': army report            'p': pick item
+'y': move north-west     'r': redesignate            'd': change display
+'k': move north          'w': cast spells/summon     'c': administration
+'u': move north-east     'm': move selected unit     '?': help screen
+'l': move east           'F': go to next fleet       's': score
+'n': move south-east     'f': fleet report           'B': budget status
+'j': move south          'Z': move people 2 Sectors  'P': production stats
+'b': move south-west     'S': diplomacy status       'N': read newspaper
+'J': scroll south        'Q': quit (saves changes)   'W': write message
+'K': scroll north        'M': magic                  'R': read messages
+'L': scroll east         'C': construct              'T': trade
+'H': scroll west         'D': draft                  't': transport via ship
+                         'G': go to next army        'v': version credits
+                         'g': group army report      'I': campaign information
+'ctrl-L': redraw                                     'ESC': extra commands 
+END
+                      CONQUER EXTENDED COMMANDS
+
+   All of the extended commands are accessed by typing the ESC key and
+then one of the following extended command keys.
+
+   Each of the commands takes action on the currently selected army unit.
+
+                  'a': set army status to ATTACK
+                  'd': set army status to DEFEND
+                  's': set army status to SCOUT
+                  'm': set army status to MARCH
+                  'g': set army status to GARRISON
+                  'G': place army in a group with other armies
+                  'S': set army status to SEIGE or SORTIE
+                  'R': set army leader status to RULE
+                  '+': combine selected and next army
+                  '-': separate army into two units
+                  '/': separate army into two equal units
+END
+                    Welcome to Conquer XVERSION
+
+CONQUER is a multi player computer game designed to run under the UNIX
+operating system.  In CONQUER,  each player is the leader of a nation,
+composed of people (humans, orcs, elves, dwarves), resources, and land.
+Rulers customize their nation at creation by chosing their race and by giving
+their nation special powers (magic, combat factor, location, speed...)
+and resources (civilians, troops, metal, gold...).  Play involves building,
+moving, and controlling armies and navies, diplomacy with other players,
+and adjusting economic activity, which is primarily geared to the production
+of gold for your treasury.  Metals are needed, however to build ships & armies,
+and food is needed to prevent revolts and keep people alive.
+
+Command line format: conquer [-hs -nNAT -dDIR]
+                -h       print this help text
+                -s       print out scores
+                -n NTN   run as nation NTN
+                -d DIR   run on data in directory DIR
+It is suggested that each player set up a shell alias for their game & nation
+The game administrator should read documentation on using the conqrun command.
+END
+                       CONQUER CURSOR MOVEMENT
+
+                               NORTH
+
+                                (K)
+                          y,7   k,8   u,9
+                             \   |   /
+                               \ | /
+          WEST      (H) h,4 ---- 0 ---- l,6 (L)       EAST
+                               / | \
+                             /   |   \
+                          b,1   j,2   n,3
+                                (J)
+
+                               SOUTH
+
+               Figures in parenthesis indicate scrolling
+           Note either numeric keypad OR vi keys can be used
+
+                <cntrl>-L will redraw the screen
+END
+                        CONQUER COMMANDS -- lower case commands
+
+'a': army report:    Gives an army's details & permits changing army status,
+                     merging 2 armies, splitting armies, and disbanding armies
+'c': administration: Report on nation status and then change name, password,
+                     add to combat bonus, or (if god) destroy a nation.
+'d': change display: Change display mode.  metal/jewel screens #'s are sector
+                     value.  Population screen #'s are the closest 100 people
+'f': fleet report:   Report on the status of your fleets.
+'g': group report:   As army report, but only show armies in current sector.
+'m': move unit:      move selected unit. The unit will stop when it runs out
+                     of move points or runs into an army larger than it.
+'p': pick item:      allows you to select the next army or navy in the
+                     sector.  Other commands will operate on that unit.
+'r': redesignate:    you can change habitable sectors you own to other
+                     designations.  Towns require 500+ people & Capitols
+                     require Towns.  God can redesignate anything.
+'s': score:          print out a screen showing the scores
+'t': transport:      load/unload soldiers or civilians onto selected fleet.
+'w': wizardry:       cast spells if you have the ability
+'?': help screen:    print out this help text
+END
+                        CONQUER COMMANDS -- upper case commands pg. 1.
+
+'B': budget :      ESTIMATE your nations budget statistics
+'C': construct:    If you have cash, you can build fortifications and
+                   ships in your Towns.  Ships can only be built in Towns
+                   located on the water.
+'D': draft:        You may draft a 1/4 of the starting sector population if it
+                   was a Town/City/Cap and if you have the gold & metal. You
+                   must draft soldiers in multiples of 10 men.
+'F': next fleet:   Move cursor to your next fleet.
+'G': next army:    Move cursor to your next army.
+'I': information:  Display a screen containing general conquer statistics.
+'M': magic:        Prints your magic powers & offers you the option to
+                   purchase more (cost doubles each power). Monster Power
+                   gives you the chance to take over NPC nations.
+END
+                        CONQUER COMMANDS -- upper case commands pg. 2.
+
+'N': newspaper:    Briefs you on world happenings.  Note: News has 4 pages.
+'P': production:   ESTIMATE your nations production statistics
+'S': diplomacy:    Allow you to see and alter your diplomatic status.
+'T': commerce:     Allow you to trade with other nations.
+'Q': quit:         Save your move and quit the game.  Note there is no
+                   means supported to quit without saving your moves.
+'R': read mail:    Read mail messages
+'W': write mail:   Write mail messages.  You can write to the administrator
+                   and can post articles to the news board with this command.
+'Z': move people:  Civilians can move between two of your sectors at a cost
+                   of 50 per civilian.  Civilians naturally move in the update.
+END
+                       A TYPICAL FIRST TURN
+
+This section is offered to help beginning players understand the first
+turns of the game.  The objective at this point is to take land and to
+make enough farms that your people don't starve.  The first thing to do is
+to look at sectors you can see (using the cursor keys).  You
+are looking for sectors with high (4+) food/metal/jewel values.  You should
+now assign soldiers to army groups (via. the Escape / G sequence). An army
+group id is the same as a leader id.  Then, pick an army or army group with
+the 'p'ick  command and 'm'ove it to a target sectors.  When you stop the
+army, it should take the sector, and you should be able to see a little bit
+more of the world.  Every army should try to take a different sector each
+of the first few turns.  'r'edesignate sectors to farms (f),mines (m), or
+goldmines ($).  Now browse the other reports and forms to get a feel of the
+game.  When done, quit via the 'q'uit command.  After the update,
+civilians will have moved into your sectors, and will start producing.
+Watch that food consumption early on!!!
+END
+                            FINAL COMMENTS
+
+To my knowledge Conquer runs well on UNIX (SYS V or BSD 4.3) systems.  The
+game treats turns like a hidden move wargame would...  you enter all your
+moves and the program and the program tells you what happens.  Like wargames, 
+there is no turning back.  Every move you make will be saved when you quit.
+If you goof up real bad, you need to go to the administrator, and have him
+log in (as god) and fix whatever you did.  
+
+Have Fun
+
+The Ed
+END
+DONE

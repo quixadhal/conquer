@@ -17,10 +17,6 @@
 #include "header.h"
 #include "data.h"
 
-/*Declarations*/
-extern struct s_sector sct[MAPX][MAPY];
-extern struct nation ntn[NTOTAL];   /* player nation stats */
-
 /*offset of upper left hand corner*/
 extern short xoffset;
 extern short yoffset;
@@ -33,71 +29,38 @@ extern short redraw;
 /*display state SEE data.h FOR CURRENT VALUES OF THESE */
 extern short hilmode;
 extern short dismode;
+short movmode;
 /* nation id of owner*/
 extern short country;
+
+static char *hasseen;
+
+/* allocate space for the hasseen array based on the actual screen size */
+void
+init_hasseen()
+{
+	hasseen = (char *)malloc(((COLS-10)/2) * (LINES-5));
+#ifdef BSD
+	bzero(hasseen,((COLS-10)/2) * (LINES-5));
+#else
+	memset( hasseen, 0, ((COLS-10)/2) * (LINES-5));
+#endif
+	if (hasseen == (char *)NULL) {
+		errormsg("Cannot allocate memory.");
+		bye(FALSE);
+	}
+}
 
 /*make a map*/
 void
 makemap()
 {
 	register int x,y;
-	register int i,j;
-	short armynum,nvynum;
 
-	/*can you see all?*/
-	if((magic(country,KNOWALL)==1)||(country==0)) {
-		for(x=0;x<SCREEN_X_SIZE;x++) {
-			for(y=0;y<SCREEN_Y_SIZE;y++) {
-				highlight(x,y);
-				see(x,y);
-			}
-		}
-		if((hilmode==HI_ARMY)||(hilmode==HI_MOVE)||(hilmode==HI_YARM)) {
-			for(armynum=0;armynum<MAXARM;armynum++)
-			if((ASOLD>0)&&((AMOVE>0)||(hilmode!=4))){
-				standout();
-				see(AXLOC-xoffset,AYLOC-yoffset);
-			}
-		}
-	}
-	/*see as appropriate?*/
-	else {
-		for(x=(-LANDSEE);(x<SCREEN_X_SIZE+LANDSEE)&&(x+xoffset<MAPX);x++)
-		for(y=(-LANDSEE);(y<SCREEN_Y_SIZE+LANDSEE)&&(y+yoffset<MAPY);y++) {
-			if(sct[x+xoffset][y+yoffset].owner==country){
-				for(i=x-LANDSEE;i<=x+LANDSEE;i++){
-					for(j=y-LANDSEE;j<=y+LANDSEE;j++) {
-						highlight(i,j);
-						see(i,j);
-					}
-				}
-			}
-		}
-		for(nvynum=0;nvynum<MAXNAVY;nvynum++) if(NMER+NWAR>0){
-			for(i=NXLOC-xoffset-NAVYSEE;i<=NXLOC-xoffset+NAVYSEE;i++) for(j=NYLOC-yoffset-NAVYSEE;j<=NYLOC-yoffset+NAVYSEE;j++){
-				highlight(i,j);
-				see(i,j);
-			}
-		}
-		for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0){
-			for(i=AXLOC-xoffset-ARMYSEE;i<=AXLOC-xoffset+ARMYSEE;i++) for(j=AYLOC-yoffset-ARMYSEE;j<=AYLOC-yoffset+ARMYSEE;j++) {
-				highlight(i,j);
-				see(i,j);
-			}
-		}
-		/*optimal method of highlighting your armies*/
-		if((hilmode==HI_YARM)||(hilmode==HI_MOVE)) {
-			for(armynum=0;armynum<MAXARM;armynum++)
-			if((ASOLD>0)&&((AMOVE>0)||(hilmode==HI_YARM))){
-				standout();
-				see(AXLOC-xoffset,AYLOC-yoffset);
-			}
-			for(nvynum=0;nvynum<MAXNAVY;nvynum++)
-			if((NWAR+NMER>0)&&((NMOVE>0)||(hilmode==HI_YARM))){
-				standout();
-				see(NXLOC-xoffset,NYLOC-yoffset);
-			}
-		}
+	for(x=0;x<SCREEN_X_SIZE;x++) for(y=0;y<SCREEN_Y_SIZE;y++)
+	if( HAS_SEEN(x,y) ) {
+		highlight(x,y);
+		see(x,y);
 	}
 	move(ycurs,2*xcurs);
 }
@@ -105,20 +68,24 @@ makemap()
 void
 newdisplay()
 {
-	mvaddstr(LINES-4,0,"viewing options:  (d)esignation, (r)ace, (m)ove cost, (p)eople, (D)efense");
+	mvaddstr(LINES-4,0,"viewing options:  (d)esignation, (r)ace, (M)ove cost, (p)eople, (D)efense");
 	clrtoeol();
-        mvaddstr(LINES-3,0,"          (f)ood, (c)ontour, (v)egetation, (i)ron, (n)ation mark, (j)ewels");
+	mvaddstr(LINES-3,0,"   (f)ood, (c)ontour, (v)egetation, (m)etal, (n)ation mark, (j)ewels, (i)tems");
 	clrtoeol();
-	mvaddstr(LINES-2,0,"highlight option: (o)wners, (a)rmy, (y)our Army, (M)ove left, (x)=none");
+	mvaddstr(LINES-2,0,"highlight option: (o)wners, (a)rmy, (y)our Army, move (l)eft, (s)pecial,(x)=none");
+	clrtoeol();
+	mvaddstr(LINES-1,0,"toggle move mode: hit '/'");
 	clrtoeol();
 	standout();
-	mvaddstr(LINES-1,0,"what display?:");
-	clrtoeol();
-	move(LINES-1,16);
+	mvaddstr(LINES-1,COLS-25,"what display?:");
 	standend();
 	refresh();
 	redraw=TRUE;
 	switch(getch()) {
+	case '/':
+		if( movmode==TRUE ) movmode=FALSE;
+		else movmode=TRUE;
+		break;
 	case 'f':
 		dismode=DI_FOOD;
 		break;
@@ -126,6 +93,7 @@ newdisplay()
 		dismode=DI_VEGE;
 		break;
 	case 'd':	/* designations map*/
+		movmode=FALSE;
 		dismode=DI_DESI;
 		break;
 	case 'c':	/* contour map of world */
@@ -137,7 +105,7 @@ newdisplay()
 	case 'r':	/* race map*/
 		dismode=DI_RACE;
 		break;
-	case 'm':	/* move cost map*/
+	case 'M': /* move cost map */
 		dismode=DI_MOVE;
 		break;
 	case 'D':
@@ -149,25 +117,31 @@ newdisplay()
 	case 'j':
 		dismode=DI_GOLD;
 		break;
+	case 'm':
+		dismode=DI_METAL;
+		break;
 	case 'i':
-		dismode=DI_IRON;
+		dismode=DI_ITEMS;
 		break;
 	case 'a':	/* armies hilighted map*/
-		prep(country);
+		prep(country,FALSE);
 		hilmode=HI_ARMY;
 		break;
 	case 'o':	/* owners hilighted map*/
 		hilmode=HI_OWN;
 		break;
+	case 's':	/* hilight tradegoods */
+		hilmode=HI_GOOD;
+		break;
 	case 'x':	/*no highlighting*/
 		hilmode=HI_NONE;
 		break;
 	case 'y':	/* your armies hilighted map*/
-		prep(country);
+		prep(country,FALSE);
 		hilmode=HI_YARM;
 		break;
-	case 'M':	/* your armies with moves left hilighted map*/
-		prep(country);
+	case 'l':	/* your armies with moves left hilighted map*/
+		prep(country,FALSE);
 		hilmode=HI_MOVE;
 		break;
 	default:
@@ -178,33 +152,37 @@ newdisplay()
 }
 
 /*see what is in xy as per display mode*/
+/* also add move cost next to sector */
 void
 see(x,y)
 {
 	int armbonus;
-	if((x<0)||(y<0)||(x>=SCREEN_X_SIZE)||(y>=SCREEN_Y_SIZE)) return;
+	if((x<0)||(y<0)||(x>=SCREEN_X_SIZE)||(y>=SCREEN_Y_SIZE)
+	||((y+yoffset)>=MAPY)||((x+xoffset)>=MAPX)) return;
 	if(((y+yoffset)<MAPY)&&((x+xoffset)<MAPX)) {
 
 		if((magic(sct[x+xoffset][y+yoffset].owner,THE_VOID)==TRUE)
-		&&((dismode==DI_DEFE)||(dismode==DI_GOLD)||(dismode==DI_IRON)
-			||(dismode==DI_PEOP)||(dismode==DI_FOOD))
+		&&((dismode==DI_DEFE)||(dismode==DI_GOLD)||(dismode==DI_METAL)
+			||(dismode==DI_PEOP)||(dismode==DI_FOOD)||(dismode==DI_ITEMS))
 		&&(country!=sct[x+xoffset][y+yoffset].owner)
+		&&(magic(country,NINJA)!=TRUE)
 		&&(country!=0)) {
 			mvaddch(y,2*x,'?');
 		} else {
 			switch(dismode){
 			case DI_FOOD:	/*food */
-				if(tofood(sct[x+xoffset][y+yoffset].vegetation,country)==0)
+				if(tofood( &sct[x+xoffset][y+yoffset],country)==0)
 				mvaddch(y,2*x,sct[x+xoffset][y+yoffset].vegetation);
-				else
-				mvprintw(y,2*x,"%d",tofood(sct[x+xoffset][y+yoffset].vegetation,country));
+				else if (tofood( &sct[x+xoffset][y+yoffset],country)<10)
+				mvprintw(y,2*x,"%d",tofood( &sct[x+xoffset][y+yoffset],country));
+				else mvaddch(y,2*x,'+');
 				break;
 			case DI_VEGE: /*vegetation*/
 				mvaddch(y,2*x,sct[x+xoffset][y+yoffset].vegetation);
 				break;
 			case DI_DESI: /*designation*/
 				if(sct[x+xoffset][y+yoffset].owner==0){
-					if(tofood(sct[x+xoffset][y+yoffset].vegetation,sct[x+xoffset][y+yoffset].owner)!=0) mvaddch(y,2*x,sct[x+xoffset][y+yoffset].altitude);
+					if(tofood( &sct[x+xoffset][y+yoffset],sct[x+xoffset][y+yoffset].owner)!=0) mvaddch(y,2*x,sct[x+xoffset][y+yoffset].altitude);
 					else mvaddch(y,2*x,sct[x+xoffset][y+yoffset].vegetation);
 				}
 				else if((country==0)
@@ -226,8 +204,11 @@ see(x,y)
 				else mvaddch(y,2*x,ntn[sct[x+xoffset][y+yoffset].owner].race);
 				break;
 			case DI_MOVE:	/*movement cost map*/
-				if(movecost[x+xoffset][y+yoffset]>=0) mvprintw(y,2*x,"%d",movecost[x+xoffset][y+yoffset]);
-				else if(sct[x+xoffset][y+yoffset].altitude==WATER)
+				if(movecost[x+xoffset][y+yoffset]>=0) {
+					if(movecost[x+xoffset][y+yoffset]>=10)
+						mvaddch(y,2*x,'+');
+					else mvprintw(y,2*x,"%d",movecost[x+xoffset][y+yoffset]);
+				} else if(sct[x+xoffset][y+yoffset].altitude==WATER)
 					mvaddch(y,2*x,WATER);
 				else
 					mvaddch(y,2*x,'X');
@@ -235,16 +216,18 @@ see(x,y)
 			case DI_DEFE:   /*Defence*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
 					mvaddch(y,2*x,WATER);
-				else if (movecost[x+xoffset][y+yoffset]<0)
-					mvaddch(y,2*x,'*');
+				else if(movecost[x+xoffset][y+yoffset]<0)
+					mvaddch(y,2*x,'X');
 				else {
 
 					/*Racial combat bonus due to terrain (the faster you move the better)*/
 					armbonus=0;
 					armbonus+=5*(9-movecost[x+xoffset][y+yoffset]);
 
-					if(sct[x+xoffset][y+yoffset].altitude==MOUNTAIN) armbonus+=40;
-					else if(sct[x+xoffset][y+yoffset].altitude==HILL) armbonus+=20;
+					if(sct[x+xoffset][y+yoffset].altitude==MOUNTAIN)
+						armbonus+=40;
+					else if(sct[x+xoffset][y+yoffset].altitude==HILL)
+						armbonus+=20;
 
 					if(sct[x+xoffset][y+yoffset].vegetation==JUNGLE)
 						armbonus+=30;
@@ -253,51 +236,58 @@ see(x,y)
 					else if(sct[x+xoffset][y+yoffset].vegetation==WOOD)
 						armbonus+=10;
 
-			if((sct[x+xoffset][y+yoffset].designation==DCASTLE)
-			||(sct[x+xoffset][y+yoffset].designation==DCITY)
-			||(sct[x+xoffset][y+yoffset].designation==DCAPITOL))
-						armbonus+=8*sct[x+xoffset][y+yoffset].fortress;
+					armbonus+=fort_val(&sct[x+xoffset][y+yoffset]);
 
-					mvprintw(y,2*x,"%d",armbonus/20);
+					if(armbonus<200) mvprintw(y,2*x,"%d",armbonus/20);
+					else mvaddch(y,2*x,'+');
 				}
 				break;
 			case DI_PEOP:   /*People*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
 					mvaddch(y,2*x,WATER);
+				else if (sct[x+xoffset][y+yoffset].people>=9950)
+					mvaddch(y,2*x,'X');
 				else if (sct[x+xoffset][y+yoffset].people>=4950)
-					mvaddch(y,2*x,'+');
+					mvaddch(y,2*x,'V');
 				else if (sct[x+xoffset][y+yoffset].people>=950)
-					mvaddch(y,2*x,'>');
+					mvaddch(y,2*x,'I');
 				else
 				mvprintw(y,2*x,"%d",(50+sct[x+xoffset][y+yoffset].people)/100);
 				break;
 			case DI_GOLD:  /*Gold*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
 					mvaddch(y,2*x,WATER);
-				else if(tofood(sct[x+xoffset][y+yoffset].vegetation,country)==0)
+				else if(tofood( &sct[x+xoffset][y+yoffset],country)==0)
 					mvaddch(y,2*x,'X');
-				else if((sct[x+xoffset][y+yoffset].owner!=0)
-				&&(country!=0)
-				&&(sct[x+xoffset][y+yoffset].owner!=country))
-					mvaddch(y,2*x,'?');
-				else if(sct[x+xoffset][y+yoffset].gold>=10)
-					mvaddch(y,2*x,'+');
-				else
-					mvprintw(y,2*x,"%d",sct[x+xoffset][y+yoffset].gold);
+				else if (tg_ok(country,&sct[x+xoffset][y+yoffset])){
+					if (sct[x+xoffset][y+yoffset].jewels>=10)
+						mvaddch(y,2*x,'+');
+					else
+						mvprintw(y,2*x,"%d",sct[x+xoffset][y+yoffset].jewels);
+				} else mvprintw(y,2*x,"0");
 				break;
-			case DI_IRON:  /*Iron*/
+			case DI_METAL:  /*Metal*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
 					mvaddch(y,2*x,WATER);
-				else if(tofood(sct[x+xoffset][y+yoffset].vegetation,country)==0)
+				else if(tofood( &sct[x+xoffset][y+yoffset],country)==0)
 					mvaddch(y,2*x,'X');
-				else if((sct[x+xoffset][y+yoffset].owner!=0)
-				&&(country!=0)
-				&&(sct[x+xoffset][y+yoffset].owner!=country))
-					mvaddch(y,2*x,'?');
-				else if (sct[x+xoffset][y+yoffset].iron>=10)
-					mvaddch(y,2*x,'+');
-				else
-					mvprintw(y,2*x,"%d",sct[x+xoffset][y+yoffset].iron);
+				else if (tg_ok(country,&sct[x+xoffset][y+yoffset])){
+					if (sct[x+xoffset][y+yoffset].metal>=10)
+						mvaddch(y,2*x,'+');
+					else
+						mvprintw(y,2*x,"%d",sct[x+xoffset][y+yoffset].metal);
+				} else mvprintw(y,2*x,"0");
+				break;
+			case DI_ITEMS:	/* designations needed for tradegoods */
+				if (sct[x+xoffset][y+yoffset].altitude==WATER)
+					mvaddch(y,2*x,WATER);
+				else if(tofood( &sct[x+xoffset][y+yoffset],country)==0)
+					mvaddch(y,2*x,'X');
+				else if (sct[x+xoffset][y+yoffset].tradegood!=TG_none
+				&& (*(tg_stype+sct[x+xoffset][y+yoffset].tradegood)!='x')
+				&& tg_ok(country,&sct[x+xoffset][y+yoffset]))
+					mvaddch(y,2*x,*(tg_stype+sct[x+xoffset][y+yoffset].tradegood));
+				else mvaddch(y,2*x,'-');
 				break;
 			default:
 				break;
@@ -305,30 +295,60 @@ see(x,y)
 		}
 	}
 	else mvaddch(y,2*x,' ');
-	standend();
+
+	if( movmode==TRUE )
+	if(movecost[x+xoffset][y+yoffset]>=10) {
+		mvaddch(y,2*x+1,"+");
+	} else if(movecost[x+xoffset][y+yoffset]>=0) {
+		mvprintw(y,2*x+1,"%d",movecost[x+xoffset][y+yoffset]);
+	}
 }
 
 /*highlight what is in xy as per highlight mode*/
 void
 highlight(x,y)
 {
-	if((x<0)||(y<0)||(x>COLS-21)||(y>=LINES-4)) return;
-	if(((y+yoffset)<MAPY)&&((x+xoffset)<MAPX)) {
-		switch(hilmode){
-		case HI_OWN: /*ownership*/
-			if(country==0) {
-				if(sct[x+xoffset][y+yoffset].owner>0)
-					standout();
-			}
-			else if(sct[x+xoffset][y+yoffset].owner==country)
+	int	armynum;
+	if((x<0)||(y<0)||(x>=SCREEN_X_SIZE)||(y>=SCREEN_Y_SIZE)
+	||((y+yoffset)>=MAPY)||((x+xoffset)>=MAPX)) return;
+	standend();
+	switch(hilmode){
+	case HI_MOVE:	/* your armies w/ move left */
+		for(armynum=0;armynum<MAXARM;armynum++)
+			if(( P_ASOLD>0 )
+			&&( P_AMOVE>0 )
+			&&( P_AXLOC==(x+xoffset ))
+			&&( P_AYLOC==(y+yoffset ))) break;
+		if(armynum<MAXARM) standout();
+		break;
+	case HI_YARM:	/* your armies */
+		for(armynum=0;armynum<MAXARM;armynum++)
+			if(( P_ASOLD>0)
+			&&( P_AXLOC==x+xoffset)
+			&&( P_AYLOC==y+yoffset)) break;
+		if(armynum<MAXARM) standout();
+		break;
+	case HI_GOOD:	/* trade goods */
+		if(tg_ok( country, &sct[x+xoffset][y+yoffset])
+		 &&(sct[x+xoffset][y+yoffset].tradegood != TG_none)
+		 &&(magic(sct[x+xoffset][y+yoffset].owner,THE_VOID)!=TRUE
+			|| country==0
+		 	|| country==sct[x+xoffset][y+yoffset].owner
+			|| magic(country,NINJA)==TRUE)
+		 &&(sct[x+xoffset][y+yoffset].altitude!=WATER)) standout();
+		break;
+	case HI_OWN: /* ownership */
+		if(country==0) {
+			if(sct[x+xoffset][y+yoffset].owner!=0)
 				standout();
-			break;
-		case HI_ARMY: /*army map*/
-			if(occ[x+xoffset][y+yoffset]!=0) standout();
-			break;
-		default:
-			break;
-		}
+		} else if(sct[x+xoffset][y+yoffset].owner==country)
+			standout();
+		break;
+	case HI_ARMY: /* any armies */
+		if(occ[x+xoffset][y+yoffset]!=0) standout();
+		break;
+	default:
+		break;
 	}
 }
 
@@ -336,19 +356,69 @@ highlight(x,y)
 void
 coffmap()
 {
-	if((xcurs<0)||(ycurs<0)||(xcurs>=SCREEN_X_SIZE)
-	||((ycurs>=SCREEN_Y_SIZE))||((XREAL)>=MAPX)
+	if((xcurs<=0)||(ycurs<=0)||(xcurs>=SCREEN_X_SIZE-1)
+	||((ycurs>=SCREEN_Y_SIZE-1))||((XREAL)>=MAPX)
 	||((YREAL)>=MAPY)) offmap();
 
-	/*update map*/
-	if(redraw==TRUE) {
+	if( redraw==TRUE) {
 		clear();
-		makemap(); /* update map*/
+		makemap();	 /* update map */
 		makebottom();
 		redraw=FALSE;
 	}
 	move(ycurs,2*xcurs);
-	makeside();  /*update side*/
+	makeside(FALSE);  /*update side*/
 	move(ycurs,2*xcurs);
 	refresh();
+}
+
+int
+canbeseen(x,y)
+int	x,y;
+{
+	if(!ONMAP(x,y)) return(FALSE);
+	return( (int) HAS_SEEN(x-xoffset,y-yoffset) );
+}
+
+/** CANSEE() fills seen[SCREEN_X_SIZE][SCREEN_Y_SIZE] */
+void
+whatcansee()
+{
+	register int x,y;
+	int	i,j;
+	short	armynum,nvynum;
+
+	if((magic(country,KNOWALL)==1)||(country==0)) {
+		for(x=0;x<SCREEN_X_SIZE;x++) for(y=0;y<SCREEN_Y_SIZE;y++)
+			HAS_SEEN(x,y)=TRUE;
+		return;
+	}
+	for(x=0;x<SCREEN_X_SIZE;x++) for(y=0;y<SCREEN_Y_SIZE;y++)
+		HAS_SEEN(x,y)=FALSE;
+
+	for(x=(-LANDSEE);(x<SCREEN_X_SIZE+LANDSEE);x++)
+	for(y=(-LANDSEE);(y<SCREEN_Y_SIZE+LANDSEE);y++)
+	if((ONMAP(x+xoffset,y+yoffset))
+	&&(sct[x+xoffset][y+yoffset].owner==country)){
+		for(i=x-LANDSEE;i<=x+LANDSEE;i++)
+		for(j=y-LANDSEE;j<=y+LANDSEE;j++)
+		if(i>=0 && j>=0 && i<SCREEN_X_SIZE && j<SCREEN_Y_SIZE)
+			HAS_SEEN(i,j)=TRUE;
+	}
+
+	for(nvynum=0;nvynum<MAXNAVY;nvynum++)
+		if((P_NMSHP!=0)||(P_NWSHP!=0)||(P_NGSHP!=0))
+		for(i=P_NXLOC-xoffset-NAVYSEE;i<=P_NXLOC-xoffset+NAVYSEE;i++)
+		for(j=P_NYLOC-yoffset-NAVYSEE;j<=P_NYLOC-yoffset+NAVYSEE;j++)
+		if(i>=0 && j>=0 && i<SCREEN_X_SIZE && j<SCREEN_Y_SIZE)
+			HAS_SEEN(i,j)=TRUE;
+
+	for(armynum=0;armynum<MAXARM;armynum++)
+		if(P_ASOLD>0)
+		for(i=P_AXLOC-xoffset-ARMYSEE;i<=P_AXLOC-xoffset+ARMYSEE;i++)
+		for(j=P_AYLOC-yoffset-ARMYSEE;j<=P_AYLOC-yoffset+ARMYSEE;j++)
+		if(i>=0 && j>=0 && i<SCREEN_X_SIZE && j<SCREEN_Y_SIZE)
+			HAS_SEEN(i,j)=TRUE;
+
+	return;
 }

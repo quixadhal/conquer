@@ -1,0 +1,795 @@
+------------------------------------------------------------------------------
+| THIS FILE CONTAINS RELEASE NOTES FOR CONQUER V4.0 			     |
+| It is broken into 3 sections.  Section 1 reflects changes from v3.5 to v4. |
+| Section 2 reflects bugs in v4.0.  Section 3 reflects. Future ideas.        |
+------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+| 1.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V4		|
+-------------------------------------------------------------------------
+o fix the helpfiles to reflect current changes in game as noted later in this
+	file.
+o there is some overflow somewhere, which creates a huge amount of gold
+	sometimes when your treasury is negative...
+o wizard/others should get an additional bonus for knowledge (extra spell pts?)
+o work on reputation and other nation attributes... they might not work as
+	advertised
+o adjust spew.c and write new rules files for
+	1) random npc mail
+	2) npc delcarations of war
+o Treaty war delcarations only last one turn ????  It seems to revert sometimes.
+o reward for killing monsters 10K Gold and 1K Jewels per 50 men-equivalent.
+o implement sacking of capitol instead of destruction of nation.  This
+	should award all iron, gold and jewels to the successor, but leave
+	food (or a good portion of it) with the nation owner.  This should
+	be implemented on all nations, including pcs.
+o implement new method for detection of captured lands.  if any allies of
+	sector owner in sector, prevent taking of sector;  otherwise, award
+	sector to nation with more troops if troops are twice the remaining
+	troops in sector.
+o provide a way for displaying monster nations properly... must also assure
+	accurate information in tmil and tciv.
+--------------------------------------------------------------------------
+| 2) The Following are Good Ideas, But are not going to be done soon	 |
+--------------------------------------------------------------------------
+o Ruling leaders can ruthlesly supress revolts... 
+
+	Gorbag (leader 1) ruthlessly kill off the revolt.
+	1000 civilian rebel leaders and their wives and children exterminated.
+	Gorbag get experience for stopping revolt.
+
+o Ruling leaders work to the benefit of the nation.  Each leader in ruling
+  in a city will have a 50% (+5% for added leader) chance of stopping a bad 
+  event.
+o All units should have loyalty ratings, and can revolt.  
+o Newlogin setup should be revamped to use curses display.  Better control.
+o Revamp user help interface to allow searching through help files.
+o leader experience.  mail to nation if happen.  This has untold impacts on
+	combat... and i dont want to touch it yet. sorry.
+o You should not be able to use captured sectors right away. 
+o Religions. Evil nations could serve Baal by sacrificing people 
+o Add Halfling, Gnome, Hobgoblin npc nations.  Would be under elf restrictions
+  but would print differently.
+o Add expertise level for players.  Set yourself when YOU LOG IN.
+		novice	      +5 points at beginning
+		learner	      	
+		skilled	
+		expert	      10% chance of met NPC going to war per turn
+		guru	      only get 30% of civilians in captured sctr.
+o Some npcs should have insane rulers
+o nomad generator (from nations file - place in given turn)  This will simulate
+	random attack by nomad nations.  nomad nations should have teritorial
+	objectives (a hex id), and will move as straight as possible towards
+	that objective, blowing anybody in their path away.  Nomad NATIONS
+	will exist, and they will never designatie to towns/cities and can
+	never be destroyed.   Nomads should have civilians, but their race
+	is nomad so these civilians can not be captured. 
+o Diplomatic ability could be an atribute of leaders.
+	Perhaps a player could have several different types of leaders. 
+	Minor ones (appointees, and real ones).  Leaders could have stats
+	as GENERAL/LIEUTENANT, AMBASADOR/EMMISARIES, RULER/SPY, WIZARD/MAGI
+	a group leader is a general/lieutenant.  Diplomats can be
+	use against any nation, and they add
+	to chance of friendliness.  They are same cost... as spys!  
+	can disband minor leaders... and can recruit them as you would spys.
+	you can use diplomat/ambassador/emmisary/courier to alter diplomacy 
+	with nations.  They might be killed by the enemy nation if war is
+	declared or on a random chance (and your reputation is reduced if you
+	dont declare war back)... might be ambassadors give +20% on diplomacy
+	emmisaries +5%.  Must have an ambasador to get a treaty signed.
+o ADDITIONAL SPELLS THAT COULD BE CAST
+Spell Id	Description					    Spell Pts
+1		Kill 50% of civilians in non city sector		10
+2		Kill all civilians in non city sector			20
+3		Kill 50% of civilians in city sector			20
+4		Kill all civilians in city sector			36
+5		Kill all military in any sector				40
+6		Kill 50% of military in any sector			15
+7		Freeze movement of 1 npc nation for turn		36
+9		Slow movement of 1 npc nation for turn (-2 move) 	7
+10		Slow movement of 1 pc nation for turn (-2 move)		10
+11		Strengthen fort walls 10% (any sector)			4
+12		Destroy fort walls 5% (any sector)			8
+13		Destroy forts walls (any sector)			7
+14		Summon undead army (VAMPIRE ONLY, 500 skeletons) 	8
+15		Summon undead legion (VAMPIRE ONLY, 1500 skeletons)	13
+16		Warm Permanently  (+1 vegitation to sector)		12
+17		Freeze Permanently (-1 vegitation to sector)		12
+18		Teleport one army (up to 100 men)			6
+19		Teleport one army (up to 1000 men)			10
+20		Teleport one army (any # men)				14
+21		Transmute iron to jewels (per 1000)			1
+21		Transmute gold to jewels (per 1000)			3
+21		Transmute gold to iron (per 1000)			3
+22		Cause fear (route 1 oposing army to home capitol)	2
+
+o Rewrite weather() routine (randevent.c) and make more seasonal effects.
+o Possible idea for future designations:
+	have lower order bits represent number ( 0 - 2*n-1 ) for 2*n-1
+	possible MAJOR designations.  The remaining 16-n bits are used
+        for MINOR designations. This is an increase in size.  Worth it?
+MAJOR DESIGNATIONS:				<new ones>
+	capitol		mine
+	city		goldmine
+	town		stockade
+	fort		special
+	nodesig		farm
+	ruin		devastated		[total bits: 4 bits]
+MINOR DESIGNATIONS:	[ THESE REPRESENT PRODUCTS OF THE PLACE ]
+	church		university		harbor
+	roads		blacksmith		traded
+	mill		granary			
+	lumberyard	trading post
+						seiged
+	[total bits: 12 bits]			[overal bits: 16 bits]
+o HAVE ONLY PARTIALLY IMPLEMENT TREATIES.  THEY SHOULD END AT END OF TURN IF
+ BOTH SIDES DONT HAVE.  NPC's should be given an option to accept treaty.
+ PC's should get mail - forcing them to make a decision then and there.
+	p_requesttreaty(), n_requesttreaty(), breaktreaty()
+	Offer treaty, Accept Treaty... Bribe only one level per turn.  Variable
+	bribe costs.
+o spies should give you more details than normal troops
+o scouts should have a chance of being captured when going into occupied areas
+o experience for leaders
+o names for leaders, cities, regions
+o Modem wars - remote login supported
+o Scenarios  - napoleonic, roman, middle earth
+o Clocked Turns - updates when clock runs out
+o Screen Front End
+o Auto Generated Graphics Front End
+o Reduce Sector Datacount by improving looping and going to more pointers
+o Add nomad objectives - to capture their capx,capy.  Any nation that has
+	the right types tries to capture a given sector.
+o Change trading to have an open market for prices (ie. Market price
+	of iron is 20 gold up from 18 last turn, (you can sell it for 10 
+	percent less).  
+
+-----------------------------------------------------------------
+| 3) Release notes for V4.0.  Changes from v3.5			|
+-----------------------------------------------------------------
+1) gave god NINJA power to see troops on the map
+2) fixed message bug (printed blanks).
+3) changed ONMAP to onmap(x,y) (in data.h). Used it several new places.
+4) fixed fact that i_people (being short) broke if you had too many people
+	by having i_people store 1/256th of the people in the sector.
+5) changed 'R' message when nation has no messages
+6) changed password not to echo
+7) changed 'Z' command to not redraw whole screen
+8) added absolute maximum people per sector
+9) changed trade.c
+10) fixed peasant rebellion bug
+11) changed 'Z' command
+13) conquer -s prints version & patchlevel: version number is now v3.patchlevel
+14) changed lrand48 to extern long
+15) turn is now displayed next to version number
+17) placed standend() in hilight... so random sectors are no longer lit
+18) modified help file code into 4 sections
+19) added fix to updcapture for randomly taken land.
+20) added fix so destroyer power only impacts in an update
+21) changed update procedure so it only tries each nation once (faster)
+22) Change combat: The rolls can go from -30 to 130. (I add 30 to
+make the calculations based on 0 to 160, and therefore easier)
+removed the "combat table" array and changed to a simple formula.
+take the roll from 0 to 100 and add the average attackers bonus and subtract
+the defenders average bonus. calculate for the losses based on a 1:1 battle.
+
+ PAloss = (160 - roll) * MAXLOSS / 160
+ PDloss = roll * MAXLOSS / 160
+
+Where MAXLOSS is #defined as 60. The odds then increase the damage
+to the weaker opponent by 10% per ratio.
+
+if(odds>100) PDloss += odds / 10 - 10;
+else PAloss += 1000 / odds - 10;
+
+So, a roll of 50 for two evenly matched armys will result in a 30%
+loss for each army. (I found this a more reasonable method than your
+proposal that each army lose 50%). And, an adjusted roll of -30 for
+a battle with 2:1 odds will result in an attacker loss of 60% and a
+defender loss of 10%.
+formulas over arrays will result
+in % values that vary by 1% increments as opposed to 5 or 10 like the
+array system, and the percentages are much more in line with actual
+battle styles, ie, it would take luck and a large army to totally
+erradicate a side with no losses. But, as this system is setup, an
+army will be totally wiped out if the odds are 11:1. (most likely
+with odds a little lower since it would take great defense to obtain
+that)
+23) eliminated leading tabs from reports
+24) Forts are now damaged by combat
+25) Fix for catapult additions to combat
+26) Change mercenary code: 15% of disbanded become mercenaries. Mercenaries
+	have global average bonus based on disband type. Each nation can draft
+	#mercenaries/MAXNTN each turn, and every time an army is disbanded
+	15% of the troops will join the mercenaries
+27) keep backups of news files. Allow reading them.
+28) Added flight army status
+29) to summon a CENTAUR, need CAVALRY power.
+30) added new command called 'w'izardy where the following
+	spells are possible: summon (moved from magic board), flight (give
+	flight to a unit), enhance attack and enhance defense (enhance the
+	combat by 30% if attacking or defending respectively).
+31) fixed misdeclaration of fison (didn't matter much)
+32) made input of adjust army status quicker.
+33) makes sure that an UNMET nation isn't bribed.
+34) adjusted mail reader ( 'R' command ) to take longer than screen
+	length messages
+35) changed reading of helpfile to take place from DEFAULTDIR
+	changed checking of helpfile to just making sure it was installed in
+	DEFAULTDIR... no longer moves it into the current working directory.
+36) Change attractiveness ratios for civilians into #defines
+37) changed the army and navy reports so that it doesn't fill whole screen
+	for no armies or navies, errormsg in bottom.
+38) repro now on a yearly basis (ie divided everything by 4)
+39) made newlogin.c be insensitive to changes in values in newlogin.h
+40) allowed redesignation to devastated, stockades, castles, and ruins
+41) fixed bugs with gods removal of magic
+42) fixed display to avoid random characters shown in lower right of screen
+43) added standend() to makebottom so it will always be unhighlighted
+	[still need to find the loose standout()]
+44) separated out the "SUPER USER; WHAT NATION..." into a subroutine that
+	checks that the nation is valid and returns a 1 if it isn't
+45) altered the data structures for future enhancements; must look later
+46) adjusted the combat routines for navies; will upgrade with new
+	ship types later
+47) adjusted randomevents to fix bugs with peasant revolt
+48) adjusted randomevents to make selection of iron and gold mines random
+49) added check for users if the game is being updated
+50) added check for update if users are logged in. #ifdef RUNSTOP
+	not recommeded for use with automatic updates.
+51) fixed some problems with the help.txt1 documentation. Especially
+	since the & is used by sed as a command.
+52) made major changes to the Makefile; note that ln or ln -s will not
+	work properly on this system.
+53) added whatever ONMAP(x,y) calls I could find.
+54) fixed scrolling bug. Now scrolls one sector from edge.
+55) fixed misdefinition of WINTER, SPRING, SUMMER and FALL.
+56) fixed integer division bug in mercenary code; would lose a point
+	in attack and defense if entered values were less. Now it
+	will only recalculate to increase the attack or defense.
+57) changed requirements to take sector to be based on minimum of
+	75 and tciv/250.
+58) changed ntn[country] to curptr-> in many places.
+58) shortened code which reads in unit types from case statemtnt to for loop
+59) added leader units -> just like monsters only born.
+60) changed startup code for NPC's to use points from newlogin.h
+61) fixed combat code so that odds also effect %loss of side favored
+	by odds to decrease by %4 for each odds level.  Note that
+	there is a limit of roll/10 as a minimum for decrease.
+62) fixed bug in magic.c (#ifdef HIDLOC -> #ifdef HIDELOC)
+63) fixed bug in update.c resulting from non-assignment of curntn->.
+64) fixed bug in SEASON and PSEASON #defines (x%4 != (x)%4).
+65) accounted for integer division in reproduction calculation.
+66) made sure to exclude LEADER and MONSTER troops from vampire
+	calculations in combat.c.
+67) made sure that vampires collect dead NON-vampire men not dead vampire men.
+68) add dates to mail messages and battle reports.
+69) reduces fortification values due to change in combat; fort/town ->
+	10 + 5 * fort, and city -> 10+ 8 * fort.  Double for Architect;
+70) changed code to allow for multiple cities.
+71) added TURN to output of conquer -s option.
+72) added trade items of iron, jewels, and food available for gold put
+	up for sale by the game itself.
+73) set the fortification values to be #define in the header.h file
+74) added exotic trade goods.  added special sector designation.  changed
+	structures to accommodate national abilities.
+75) detoned leaders by a factor of 2.  reduced starting # by 1/3;
+76) changed screen layout for trade goods
+77) put conditional on "unable to take sector" message so only <MINLEADER.
+78) fixed spelling errors with tradegoods
+79) made lizard fortifications relative to gold value.
+80) made destroying a nation possible on 1st turn.
+81) added nation attributes.  
+82) added # leaders as a purchasable option at the beginning of the game.
+83) made move /=2 for normal units if leader more than communications/50 range
+84) added LATESTART bonus... if you start the game late
+85) made npc leaders/monsters move based on their soldiers in the sector
+86) added mail subroutines to send 1 line mail messages.  changed mail method.
+87) added #defines for npc activity level
+88) changed npc algorithm to go to war.  much less likely now if they have
+	a place to expand into.  Added mail to pc's when npc's go to war
+	with them.  NPC_2FREE... value in active is determinant.
+	+10% to hostility if differing races.
+89) lowered maintenance and enlistment costs of expensive army units...
+	they were too costly and were not effective.
+90) added ability to break jihad for a $cost
+91) documented diplomacy.  
+92) fixed bribery. adds correctly to enemy gold & has a 50% chance of working
+	CHANGED THIS 11/11 - variable chance of working & only in update.
+93) added storerate and eatrate to picture.
+94) made cities and capitols consistent (i think)
+95) moved stuff from bugs file to help.txtX file
+96) added #defines for a nations class
+97) changes sct.gold to sct.jewels to make things consistent.
+98) added random monsters... created at setup as barbarian units.  fixed update
+	of barbarians.  changed display of monsters.
+99) made initial status of npc nations vs anybody be close to neutral.
+100) fixed printf problems and floating point problems due to integer division
+	of reproduction, eatrate...
+101) changed vampire power -> now have zombie units.  changed democracy
+	eat rate.  made elite units require armor power.  made monster power
+	give you monsters each spring.
+102) redesignate as ? converts to appropriate trade good type.
+103) reordered the random events file
+104) black plague only effects your cities/towns/forts and capitol
+105) added npc and pc allignments.  changed diplomacy again.  added macros
+	for npc types.
+106) added (killed) in combat mail for leaders and monsters
+107) eliminated combat divisor.  added rand%11*rand%11 / 25 (average = 1)
+	multiplier to all combat losses.  NEED TO DOCUMENT THIS.
+108) eliminated bug that allowed bribing unmet nations
+109) eliminated printing of extraneous revolts and events.  added revolt
+	percent in case formulae are not adequate (PREVOLT).
+110) improved npc algorithm to attack cities towns and capitols - they
+	now only go in if armed to the teeth.  They now defend also based
+	on population.  npc nations now act more aggressively if you are
+	next to their capitol.  never defend in your own capitol.  
+110) can only be garrison in your own city/town/fort sector
+111) add -r<scenario> option to conqrun. This option allows you to
+	read in mapfile at create time.  It will read in as follows:     
+	scene.veg - vegetation, scene.ele - elevation, scene.nat - nation marks
+	Also permitted the addition of x,y locations to nations file.  
+	if -1, dont use, else place capitol there if not water.  The order
+	the files are read in is elevation, followed by veg, followed by
+	marks.  The only error detection is that veg must be ~ in ele ~
+	sectors, and mark must be ~ in ele ~ sectors.  NEED TO ADD READ
+	NATION MARKS STUFF!!!  NEED TO ALLOW CHANGING FROM NPC TO PC.
+112) made magic costs #defines.  modified rates so mines run out quicker.
+	make new magic dependent on both jewels and magic ability. 
+	changed healer power to religion power.  magic screens auto regen.
+113) Must be at war to enter sector. added errormsg in move.c.  prevented
+	npc nations from tresspassing too.
+114) added initial screen, fixed bug with cursor placement when starting as 
+	god/nomad...
+115) BIG BUG FIX - Some monsters would not fit in unsigned char... changed
+	divisor for unit type throughtout (to 75 from 100) this seems to
+	have fixed the problem.
+116) ARMY GROUPS.  All units in group move together.  Break out of group
+	if you move by yourself.  Will check this!  +20% to combat if in
+	group.  +2 move in group but all move at speed of slowest unit.
+	Moved leaders to low numbered units!!!
+117) put some error correction into execute() - cant take others land
+	like you used to be able to do. Added adjustable tax rate (0-20).
+	made spreadsheet() to taxes right
+118) made combat more bloody in cities.  loss increased 20%, so 40% loss
+	converts to 48% loss.
+119) increased leader birth rate.  decreased lizard repro to 8% per year, 
+	and nomad repro to 12% per year.
+120) PORTED TO MY EPSON PC...
+	FIXED UP MAKEWORLD
+	anybody can add nation if turn <= 5
+	added to makefile structure to make it redundant
+	tested & played with graphics & history routines. made directory.
+	played with new fractal algorithm
+121) Mercenaries should run away from battles 
+	1) if odds are worse than 2:1
+	2) 15% of the time
+  	for npc types.
+122) npc nations now efficiently utilize unit types.  fixed bug so that
+	npcs now get appropriate numbers of leaders.
+123) added checks to make sure report screens for army, navy and nations do
+	not print out a blank page.
+124) added check to make sure "Battle occurs, defender, attacker...."
+	does not overflow screen.
+125) added fix to allow newspaper function to access last paper (MAXNEWS)
+126) if you lose your main leader - you freeze your move for the turn 
+	works for npcs too (no armies move).  There is now a 30% chance per 
+	turn that you get your leader back per turn. NPC armies with 0
+	move cant move now (used to be only militia).
+127) added spy and scout unit types.  drafted on 1 or 2.  spys put in
+	particular nations capitol. removed magic roll. changed a bunch
+	of minor bugs. added status MILITIA.  changed printf for population
+	(IVXL... roman numerals).  must draft in multiples of 10 men (but
+	scout and spy units).  basically eliminated scout status. fixed
+	some printing stuff in makeside.  made npc types not use goods in
+	areas they cant use.
+128) made sure all returns from subroutines in GODMODE are performed correctly
+129) fixed bug in detection of lowercase/uppercase characters for
+	country mark.
+130) fixed highlighting of helpfile topic so leading spaces are dark.
+131) fixed killmagk routine so displayed magic numbers are correct.
+132) fixed up the help files so they were up to date and properly formatted.
+133) made number of pirates, etc. created more consistant with map size.
+134) changed naval code throughout... still have to fix loading and combat
+135) fixed loading and movement for ships
+136) fixed a bug which caused nations food to be multiplied by 100.
+137) switched ships around so that galleys hold armies and merchants
+	hold people... warships just fight (still not done, *sigh*)
+138) fixed bug which caused npc's to change all statuses (even TRADED)
+	to DEFEND.
+139) made sure that statuses like TRADED/ONBOARD remain.
+140) added attrition for naval transportation of civilians.
+141) improved npc redesignation algorithm.  Fixed food*=100 bug.  Fixed
+	tradegood not allowing redesignation bug.  Fixed random metals
+	and jewels showing up bug. Playtested some more.  Putzed around.
+	Changed several calculations for nation attributes.  Happiness.
+142) made it so that towns could no longer build heavy ships.
+143) made it so that only MARINE units could be unloading in unowned sectors.
+144) made corrections to man.page
+145) changed format for attack/defense bonus to %+4d%% so that +/- is right.
+146) fixed overflow chances in att_bonus routine
+147) changed wealth calculation to be based on percentage of positive wealth
+148) changed calculation for spoilrate and eatrate to match help screen.
+149) minepts too harshly treated... adjusted to allow any mining at all.
+150) made cities and capitols contain university if proper tradegood.
+151) fixed bug with tradegoods and DESFOOD sectors not working.
+152) made sure that armies with zero soldiers where not used in movement
+	calculations for groups.
+153) SCOUT status units no longer get "cannot take sector" message.
+154) made sure that HIDELOC was in effect for volcano eruptions
+155) fixed bug in print statement "30% die" should be "30%% die".
+156) fixed bug in pwrname array reference in randeven.c
+157) fixed bug which did not set militia status to MILITIA
+158) fixed modulus by zero bug for movement of ships
+159) adjusted 'r'edesignation command to only display possible designations
+160) added new help file for designations only
+161) if have destroyer, cant get dervish power
+	made light cavlry better than dragoons.  Made dragoons weaker and not
+	require cavalry power. allowed god to change sectors tradegoods.
+	allowed players to add themselves.
+162) reordered metals. 
+163) change orctake to only vs neutral+.  orctake now
+	takes 10 spell points, and if you fail, nation goes one spot more
+	hostile.  Major monster gives 2 spell pts per turn.  Average gives 1,
+	Minor gives 1/2. 
+164) added move mode for display purposes.  
+165) moved spot to change taxes. added inflation rate and charity as a 
+	percent of taxes.  inflation is 0-2% if tax rate is 10% about +1 
+	per tax rate increase. 
+	it will devalue your currency & lower your nations popularity
+166) changed random event method to be % chance per nation (modified)
+	tradegoods no longer modify eatrate, but now modify food value of
+	a sector.  changed tofood to take tradegoods into account.
+	added a few food trade goods.  eliminated a few magic ones
+167) made tradegoods, gold and metals hidden if wealth and mining
+	ability are too low.
+168) made sure retreat message is only displayed during actual retreat
+169) made sure report for new leader being made was correct
+170) added ability to toggle from PC to npc nation.  Added NPC nations
+	having classes (with associated abilities at start of game).
+171) fixed godmode display of mercenary information in file forms.c
+172) made sure dwarves cannot become wizards... dwarves are anti-magical.
+173) made sure that MINOR_MONSTERS/Orc nations could not get Infantry.
+174) fixed bug in god redesignation to allow normal designations.
+175) fixed bugs with NAMELTH in get_nname and scenario declaration.
+176) adjusted display of budget and production reports.
+177) adjusted wizardry to allow MI_MONST power to cast spells.
+178) changed formula for eatrate to prior eatrate/2 + tfood/5*tciv.
+179) made get_nname() void and fixed it to not overstep NAMELTH.
+180) made magics for classes cost same as purchased magic in making new nation.
+181) fixed armyrpt so it would not print out blank pages.
+182) fixed charity calculation and effect.
+183) fixed major bug in spreadsheet; would break out for all !tg_ok(),
+	including even farm designations.
+184) added alignment to 's'core display of nations. (not yet in conquer -s)
+185) added alignment to 'conquer -s' display.... (may need more touch up)
+186) changed cost of 'trader' and 'theocracy' for 2*NLMAGIC to 1*NLMAGIC
+	to make them more attractive.
+187) reduced MILITIA defense but gave them GARRISON protection for realism.
+188) FINISHED NAVAL COMBAT!!!!!  (debug time)
+189) fixed bug in SPY request for null spy name.
+190) fixed division by zero bug in fleetrpt join option.
+191) fixed other bugs in fleetrpt section.
+192) fixed bugs in naval combat... especially with battle tracking.
+193) fixed bugs in npc routines which unset TRADED or ON_BOARD status.
+194) made sure update destroys ships without crew.
+195) fixed many possible overflows on password entries.
+196) you can only get infantry units if that is your default unit type now.
+197) changed people distribution slightly (away from farms to cities).
+198) fixed problem with inflation rate.
+199) changed budget report to only show actual troops
+200) changed display options to remove (i)ron item.
+201) added hilight trade good sectors option
+202) added ability of people to want to move to non mine/city... sectors
+203) added npcs in army groups
+204) changed tax rates - added tax other
+205) eliminated charity multiplier - it is done wrong
+206) civilians to farms changed - was based on eatrate - it always thought
+	your nation was starving though
+207) road and special had the same names
+208) couldnt use any good with mine required - couldnt redecignate to mines 
+209) added some road stuff - two max per turn.  Cant des to mine/gold if
+	not enough metals in sector
+210) Changed hasseen to be dynamically allocated 
+211) Changed diplomacy screen so that it pages between 2 screens worth
+212) Raised max no of nations (I notice you've already done the bit about
+having more nation marks).
+213) Added a trap for SIGTERM as well as SIGHUP. to stop cheating
+214) Set a umask in main.c if the game is running setuid. This is to
+ensure people can't access the data file etc 
+215) Fixed what seems to me to be a bug in mailing PCs when NPCs go to war
+or whatever with them. 
+216) Changed the reading mail bit so that now pressing any key EXCEPT for
+return saves the message. This was after complaints from people on noisy
+modem lines, where spurious characters made the messages flash past and
+get lost. Also it makes the user interface a bit more consistent with
+the news reader, say.
+217) Added a facility for people to post messages to the news board. To do
+this they write a message to "news" which gets appended to the news
+file. These messages can then be read using the 'N' command. I think
+this is great fun.
+218) Added ability for the NPC's to mail players from time to time, based
+on the "spew" program I told you about. If an NPC is HOSTILE or worse
+towards a player, then on a 25% chance it will send a random message to
+that player. These messages are composed using the "rules" file. This
+file is obviously open to amendment; at the moment it contains one or
+two things specific to QMC and possibly the UK which you wouldn't want!
+A couple of example messages:
+
+What a paltry nation of street-cleaners you have! 
+Your puny peasants are only good at sleeping. 
+Even Dickie Davies could make a better job of controlling your nation! 
+If I were you I'd give up. 
+Even Edwina Currie could make a better job of running your nation! 
+Your nation should be holding a free rock festival. 
+Go stick your private parts up a large purple elephant 
+What a useless nation of tiolet-cleaners you have! 
+
+219) Finally I have the "-z" option;
+allows a player to ignore their lock file and play regardless
+(dangerous, I know, perhaps it should be an #ifdef). This is essential
+for us since we have people dotted all over the place using workstations
+that go down a lot.
+220) changed news reader... does not read blank pages!
+221) 	elimiated TRADEGOOD compiler option
+	changed attractiveness some more
+	takeover - must be at least met
+	Eliminate Orc-take if <HOSTILE or UNMET (for npc's too)
+	eliminated dwarven traders.
+222) removed highlighted blanks at end of nation names in forms.c.
+223) fixed bug with birth of monsters for MONSTER POWER nations.
+224) made it so that only troops explicitely attacking will attack.
+225) fixed bug with display of treaties.
+226) made it so that unmet nations could not have status changed. Must
+	meet with nation first.  This prevents trading between unknown
+	nations and moving into a nation too quickly.
+227) fixed up newspaper function for better display and no blank pages.
+228) fixed old bug (see #125) about not being able to read newspaper MAXNEWS.
+229) fixed bug so that mail is sent to owners of scaredy-cat mercs and orcs.
+230) made it so that people are less attracted to ROAD, NODESIG and DEVASTATED.
+231) fixed bug with randevents (world.nations was always zero).
+232) added temp routine to move savages (what happened?? why was it gone??).
+233) fixed bug with having no cargo spaces available during load.
+234) fixed some bugs in trade.c; probably still buggy though.
+235) made it so that only SUMMON power allows summoning.
+236) minor mods to magic.c: for destroyer food<=6 is desert; #ifdef ordering.
+237) rewrote removemgk and added a magic remover to random events.
+238) changed the sub[wmg]ships routines to be voids.
+239) made sure that random monsters (savages) do not reproduce.
+240) fixed redesignate tradegood option in god mode.  no longer seg faults.
+241) made general npc army status redo; npcs and lizards will no longer
+	attack from own city/fort.  lizards will attempt to relieve a siege.
+	routines changed: redomil(), nationrun(), armymove() and updlizard().
+	slightly uncertain about changes in armymove() and nationrun().
+242) made sure void usage of functions was cast as such.
+243) removed Check() from npc.c (now checkout() in check.c; only my version?)
+244) changed TRADEGOOD to TRADEGOODS in update.c should now work.
+245) made it so that anyone with spellpoints could cast all but summon spell.
+246) changed food production to be seasonal.
+247) made units in army groups not run away from combat due to leader presence.
+248) fixed display for ship landing messages.
+249) added the magic power costs to the helpfile building program.
+250) switched display (M)etal and (m)ove cost to (m)etal and (M)ove cost.
+	[due to metal display being more important than move cost display.]
+251) added a "Disband your X?" question to the disband option.
+252) adjust calculation methods for monster costs and also added to reports.
+	Also added monster disbanding if not enough jewels.
+253) fixed bug with 'dissarray' in updmil() routine.
+254) fixed bug that prevented NPC's from receiving magics... but still cost
+	them points.  race magics were given via = instead of |=.  Should
+	now receive them because they may be toggled to PCs.
+255) adjusted scoring for countries and fixed txt5 to match.
+256) fixed bug with error check for XSAOWN, people in sect, and SLAVER power.
+257) adjusted attractiveness of mines and goldmines to be based on sect values.
+258) fixed bugs with giving spell point to AVG and MINOR monsters.
+259) made sure that cities can become capitals.
+260) made get_god() recognize names and numbers. [later changed with #215]
+261) fixed bug with new password setup.  should now work properly.
+262) wrote SORTIE, RULE and SEIGED into combat routines. need to add elsewhere.
+263) added above to helpfiles and everywhere but in NPCs.  DEBUG time.
+264) fixed possible division by zeros when tciv or tmil becomes zero.
+265) wrote get_country() that accepts either numbers or names as a country
+	and then returns an integer.  used for input on a number of routines.
+266) fixed 'z' redisplay [since I was doing get_country... I figured, why not!]
+267) fixed 's'pecial tradegood display to make sure nation could see tradegood.
+268) made display 'd'esignation make movmode ('/') false... now 'd''d'
+	resets default display.
+269) made routine for password in forms.c accept up to PASSLTH length.
+270) added check in desg_ok() for redesignation to same sector.
+271) fix to make sure that no attempt is made to redesignate unowned capitol.
+272) added "elsewhere" to budget report.  (How did I miss this???)
+273) decreased combat bonuses for marines, should not fight that well on land.
+274) made it so that sailors and marines could only be raised in harbors.
+275) fixed major bugs in newspaper function and made sure to ignore blanks.
+276) changed 'W'rite to news function so that it did not create multiple pages.
+277) added (d)isplay (i)tems to display the designation needed for (i)tems.
+278) changed (d)isplay special so it did not hilight the VOIDED sectors.
+279) extracted fort_val() [fortification bonus value] into a subroutine.
+280) changed many ISCITY() to fort_val() > 0 to allow GARRISON in stockades.
+281) changed TAXCAP to TAXCITY and TAXCITY to TAXTOWN for accuracy in names.
+282) rewrote diplomacy screen to support all screen sizes; fixed paging.
+283) fixed various bugs throughout.  (many caused by bad patching).
+284) adjusted the wmessage() function slightly. (don't go into zero column)
+285) adjusted various displays to match side.  (Ie., only voids show '?')
+286) fixed bug with RULE in battle alone that caused exit from battle.
+287) implemented file locks on all lock files so players may ignore if
+	the process is dead.
+288) removed zflag stuff since it is not neccesary and a definite cheat.
+289) added check to make sure that there was only one capitol per nation.
+290) added "chicken" armies to battle report.  only sends full report
+	to that nation if others units actually participate.
+	[Made sure that army leaves sector... unfair to leave army there]
+291) added check in wmessage() for GOD writing to news.
+292) fixed bug with vegetation display not being show for VOID owners.
+293) fixed bug with sending to non-pcs in siege notification.  (woops)
+294) did the above for losing monsters. (double woops)
+295) switched space bar from toggle to exit in the diplomacy screen.
+	[To be consistant with all of the other displays]
+296) fixed % in string error for lack of leader message.
+297) wrote conqsort program to implement sorting only on 1st two characters.
+298) fixed misalignment of displaying of output for magic removal.
+299) cleared bottom after selection of troop type to remove unwanted display.
+300) fixed promblems with information being kept with chicken orcs/mercs.
+301) fixed hard coded lines in diplomacy display.
+302) raised min strgth for WARLORD & LORD since they should be better soldiers.
+303) fixed error with 'else' on SIEGED status that removed fort_bonus().
+304) changed variable 'cbonus' to 'intval' to avoid confusion with cbonus().
+305) restructured armyrpt() to be independent of screen size.
+306) added check that terminal size was at least 80x24.
+307) added mail checking routine to watch conquer and system mail.
+	system mail is checked only given that SYSMAIL is defined.
+308) changed 'treasury' displays to show initial (startgold) value.
+309) added malloc for sector read and write
+310) added 1 sector range for npc nations
+311) putzed a little - added adams name to copyscreen, moved conqsort in,
+	added bits here and there
+312) worked on poverty and charity
+313) redid classs limits (who can be whom)
+314) people limit raised so you can start with all people in one sector
+315) modified some stuff for HP-UX
+316) add nation attribute - poverty & charity - MUST CHANGE 
+	TO CHARACTERS (from shorts) PRIOR TO RELEASE
+317) Added nation ability bonus as per txt5.
+318) Slow you down to change status (1MPs)
+319) Cant go from march to other so easilly - costs unit march bonus
+320) Overrun not work - eliminated it.
+321) Increased garrison for npc nations.
+322) Made payment for mercenaries that are drowned.
+323) add variable pwater - entered at world creation time not compile time.
+324) made fleetrpt() independent of screen size.
+325) fixed error in calculation of NET INCOME in budget().
+326) restructured change() routine to be variable with screensize.
+327) restructured makeside() routine to be variable with screensize.
+328) fixed bug in movement routine that subtracted move on unmet movement.
+329) changed combat routine:
+	- moved bonus adjustment from roll to odds.
+	- fixed bug in tracking neutral troops.
+330) fixed little display bugs in form.c file.
+331) fixed charity display in budget. (should be percent of income not
+	percent of treasury).  Also, charity is >= 0.
+332) placed FINDLOCK #ifdefs in for support of BSD flock.  Must investigate
+	system V and also PC before doing anything else with it.
+333) added camp_info() routine to display some statistics to users.
+334) adjusted calculation of 50% mercenaries in commands.c
+335) changed fight() and navalcbt() "rolls" to be yield 0 to 100 with
+	a bell curve probability.
+336) removed limitation on drafting only multiples of 10 men and instead added
+	a limitation that armies must be greater than 25 unless scout or spy.
+337) added checks on changing of terror.  imposed the 5% limit and may
+	use once per turn only.
+338) fixed major bug in clearing of magic before finishing with it in newlogin.
+339) fixed magic stones
+340) made slightly more likely that only 1 npc army ends in spot in their
+	own nation (unless city...)
+341) repair now an option from construct... not a suboption
+342) fixed bribery - based on number of 1000 troops in the nation now.
+343) add to attractiveness of owned sectors based on people/4.  Subtract
+	this number before leaders move.
+344) changed routines to add monsters to world.  Must check them.
+345) tidied up many of the screen display functions in a number of files.
+346) fixed bug with P_ATYPE==MARCH instead of P_ASTAT==MARCH.
+347) changed limitation on deep water from warships to light ships.
+348) fixed major bugs in MONSTER creation code.  should work properly now.
+349) AAAARRRRGGGGHHH!!!! I had a big error in my code.  never gave any gold
+	from spreadsheets if the charity was zero.  Sorry about that Ed.
+350) fixed bug with calling of prep() with country value improperly set.
+351) redid prep routine for speedup sake and for sake of bug catching.
+352) fixed one (hopely final) bug in combat... adjustment for attacker odds
+	bonus was wrong.  It was accidently only 2% adjustment.
+353) fixed some bugs in the rebuilding code and changed some messages.
+354) added two new constant definitions MEETNTN and PRTZONE.  see header.h.
+355) added prevention of god overwriting data file during player addition.
+356) separated out locking routine into a subroutine check_lock and placed
+	it in check.c.  Now all FILELOCKing is done in just this routine.
+357) leaders no longer have size consideration in loading onto ships.
+358) big fix of npc nations.  THEY DIDNT KNOW HOW VALUABLE THEIR OWN LAND
+	REALLY WAS!  It was a massive oversite!!!  If you wish to work
+	on the npc code, there are come commented out printf statements
+	in npc.c around line 793.  They will print attractivenss of sctrs
+	around your capitol, so you can see if npcs are working right.
+359) gave wandering pirate fleets a base of operations... now stay around that.
+360) fixed navy movement core dump.
+361) allowed sailors to disembark from a fleet in unowned land.  changed msgs.
+362) corrected display of move cost in "MOVESCREEN" for flight.
+363) putzed around with status messages.  now prevent setting of same status.
+364) reduced odds bonuses in fight().  will test with 8% and 6%.
+365) fixed bug with fison instead of filename in check_lock() for non FLOCK.
+366) altered movement to allow scouts into unmet land.
+367) allow spys to disband anywhere, but they now must be payed twice the
+	enlistment cost to be encouraged to remain quiet.
+368) added query for creation of NPC nations in makeworl.c.
+369) changed wizardry() function to work on characters instead of numbers.
+370) wrote routine compass() to return compass direction given from and to.
+371) used compass() routine in new starting routine for spys.
+372) implemented capturing of scouts:   PFINDSCOUT now set to 50%.
+	- alone with a hostile army     [PFINDSCOUT% chance]
+	- alone in someone else's territory with one of
+	   their armies (non-allied)    [(PFINDSCOUT/5)% chance]
+373) in draft() made it so both spys and scouts are assumed to be separate
+	armies of 1 man each.  Useless for nations to have otherwise.
+374) implemented mills.  farm may only be effected by one mill.
+	MILLSIZE people needed in a mill to have it function.
+375) no fix
+376) added mail information display to make_bottom() routine. should
+	work fine from now on.
+377) made it cost no metal to redesignate a capitol from a city.
+	[This makes sense, since no increase in fortification is needed]
+378) implemented sackem() routine for loss of Capitol.  Must add info in txt4.
+379) implemented deplete() routine for nations without Capitol.
+380) doubled movement rate of scouts and spys.  (usually not near leaders)
+381) fixed bug in check_lock(); would accidently remove locks after checking.
+382) Zones of control: slow you down - inverse ratio 100 men through 50 - lose 
+  1/2 starting movement points
+383) Fixed GOLDTHRESH conversion of gold to jewels - automatic now at current
+	tradgood rate.
+384) sailor nations dont get hit by storms.
+385) fixed getnewname in randevent.c
+386) performance enhancements to tofood, prep, is_habitable.
+387) added EXEDIR to compile time definitions
+388) reduced power of zombies.  may not longer MARCH or follow a
+	leader.  This is realistic since they should be braindead.
+389) fixed a bug with drowning flyers taking land in move.c.
+390) removed the restriction on the number of men drafted being > 25.  The
+	battle calculations now handle that properly.
+391) fixed a division by zero bug for tciv in npc.c
+392) TRADING BUNGED.... suspended trading for food, land, and ships.  Will
+	probably restore ship and food trading in the future, but for now
+	they are broken in such a way to damage nations.  Trading as a whole
+	also sucks.  Will fix for 5.0 when actual carrying of goods is needed.
+393) made mail messages being read wrap at LINES-3 instead of the constant 21.
+394) draft: made subtraction of population take place after spy verification.
+395) revamped combat once again.  should be all fixed except for the
+	one bug with retreat of monsters being reported.
+396) gave ability to draft dragoons without any magic requirments as per txt2.
+397) made sure zombie losses do not add to 1/3 zombie additions.
+398) made many fixes to patch as I put it in place:
+	- little bug fixes throughout.
+	- fixed curntn misassignment during monster placement in makeworl.c.
+	- fixed diplomacy screen detection of monsters.
+399) made it so that any grouped army that gets drafted into is set to ATTACK.
+400) changed Spy and Scout to singular in *unittype[], file data.c.
+401) fixed bug with isactive(country) != isactive(curntn->active) in sackem().
+402) only give half bonus to zombies for fortification; too stupid to use well.
+403) made sure that zombies only earned dead if they survived.
+	(all of my zombie changes are because zombies would never die)
+404) had to change "Guards" back into "Elite" because "Goblin" and "griffon"
+	could not fit into a non-'g' name while Elite was viable.
+405) added season to conquer -s output.
+406) added a line telling what nation the peasant rebellions join if it doesn't
+	form a new nation.
+407) added weighting of prior eatrate and seasonal variation to eatrate.
+408) added change to budget/production flip flop
+409) make NPCRANGE create start_x,y end_x,y for n_ routine speedup
+410) everybody on your side can participate in battle.  This permits
+	defense even if have general in sector.
+411) higher number nations now are the default attackers... means nomads...
+	atacking
+412) The order of combat is high nation to low.  This is very disadvantageous
+	to PCs.  The owner of land is now defender.  If that isnt clear,
+	it is 50/50;
+413) orcs are a little weaker... they got too many initial points.
+414) played with code a little in newlogin... cleaned it up a touch.
+415) cleaned up location adding in newlogin.c  
+416) can now go to war with peasants.
+417) added revolt percent chance to change screen
+

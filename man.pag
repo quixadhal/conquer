@@ -3,9 +3,9 @@
 conquer \- multiuser game of strategy
 .SH SYNOPSIS
 .B conquer
-[-maxhps -nNAT -dDIR]
+[-hs -nNAT -dDIR]
 .sp
-.B admin
+.B conqrun
 [-maxp -dDIR ]
 .SH DESCRIPTION
 .I CONQUER
@@ -16,28 +16,28 @@ each player is the leader of a nation,
 composed of people (humans, orcs, elves, dwarves), recourses, and land.
 Rulers customize their nation at creation by chosing their race and by giving
 their nation special powers (magic, combat factor, location, speed...)
-and resources (civilians, troops, iron, gold...).  Play involves building,
+and resources (civilians, troops, metal, gold...).  Play involves building,
 moving, and controlling armies and navies, diplomacy with other players,
 and adjusting economic activity, which is primarily geared to the production
-of gold for your treasury.  Iron is needed, however to build ships & armies,
+of gold for your treasury.  Metal is needed, however to build ships & armies,
 and food is needed to prevent revolts and keep people alive.
 .SH ON LINE HELP
 For detailed information, run conquer with the -h option (see below).
-.SH OPTIONS
+.SH GAME OPTIONS
 .B conquer
 [-hs -nNAT -dDIR]
-.IP \-h     
+.IP \-h
 print this help text
 .IP "\-n NTN"
 run as nation NTN
-.IP "\-d DIR" 
+.IP "\-d DIR"
 Run on data in directory DIR.  Each game has its own data directory.  The
 default is set up at compile time and should only be used if only one game
 is run.
-.IP \-s     
+.IP \-s
 print out scores
-.B
-admin
+.SH CONTROL OPTIONS
+.B conqrun
 [-maxp -dDIR ]
 .IP \-a     
 add new player	
@@ -51,8 +51,10 @@ execute program
 run on data in directory DIR
 It is suggested that each player set up an alias for their game & nation.
 My alias, for example, is
-.I conquer -d/d7/c7913/smile/oldgame/lib -norcland
+.br
+.I conquer -nMordor -d/usr4/adb/games/conqlib2
 .SH CURSOR MOVEMENT
+.nf
 h: move west
 y: move north-west
 k: move north
@@ -65,13 +67,14 @@ J: scroll south
 K: scroll north
 L: scroll east
 H: scroll west
+.fi
 .SH COMMANDS
-.TP
+.TP 
 \'a\':
 .B army report:
 Gives army details & permits changing army status, merging 2 armies,
 splitting armies, and disbanding armies.
-.TP
+.TP 
 \'c\':
 .B administration:
 Report on nation status and then change name, password,
@@ -80,7 +83,9 @@ add to combat bonus, or (if god) destroy a nation.
 \'d\':
 .B change display:
 Change display mode.  Numbers in gold screens... are
-relative values of the materials.
+relative values of the materials.  People are displayed
+by hundreds as arabic digits and by thousands with roman
+numerals.
 .TP
 \'f\':
 .B fleet report:
@@ -109,15 +114,21 @@ require cities.  God can redesignate anything.
 .TP
 \'s\':
 .B score:
-print out a screen showing the scores
+print out a screen showing the scores.
+.TP
+\'t\':
+.B transport:
+unload or load a fleet with soldiers or civilians.
+.bp
+.TP
+\'w\':
+.B wizardry:
+you may cast spell to allow flight, increase battle
+performance or summon monsters if you have the ability.
 .TP
 \'?\':
 .B help screen:
 print out help text
-.TP
-\'A\':
-.B adjust army:
-The quick way to adjust the status of your armies.
 .TP
 \'B\':
 .B budget :
@@ -180,14 +191,16 @@ Write mail messages
 Civilians can move between two of your sectors at a cost
 of 50 per civilian.  Civilians move naturally in the update.
 .SH FILES
-/usr/local/games/src/conquer/data	datafile for the running game
+/usr/games/lib/conquerdir/data	datafile for the running game
 .SH BUGS
-Probably lots, if you find any please mail them to homxc!smile.
+Probably lots, if you find any please mail them to adb@bucsf
 .sp
 1) Security is not as tight as it should be.  People might be able to alter
-the data of others nations... this is cheating and unacceptable. 
+the data of others nations... this is cheating and unacceptable.  
 .br
-2) Naval battles do not handle capturing merchant ships correctly.
+2) Naval battles do not work properly.
 .br
 3) NPC nations can not build navies or move over water.  God should be
 sure that all NPC nations have a minimum of 5 sectors to move to.
+.br
+4) No comments about the documentation...  It needs to be updated.

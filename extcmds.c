@@ -3,9 +3,8 @@
 * for more information ask from mta@tut.fi or esc@tut.fi
 */
 
-/* THESE COMMANDS APPEAR USEFUL and (of course) I have heavily
-	modified them.  I basically decided to use these subroutines in
-	my code too. - The Ed */
+/* THESE COMMANDS are neat and I have used them throughout my code. 
+			- The Ed */
 
 /* ext_cmd()			run extended commands	*/
 /* clear_bottom(i)		clear bottom min(i,4) lines of the map */
@@ -24,45 +23,58 @@ extern short selector;
 extern short country;
 extern short xcurs, ycurs, xoffset, yoffset;
 
-ext_cmd()
+void
+ext_cmd(armie)
+int	armie;
 {
 	int stat=0,armynum,army2,men;
 
 	clear_bottom(0);
 
-	mvprintw(LINES-3, 0,
-	" (+) combine,(-) split n men,(/) divide by 2,([1-5]) chg status");
+	if( armie == -1 ) armynum = getselunit();
+	else armynum=armie;
+
+	mvaddstr(LINES-2, 0,
+	" (+) combine, (-) split n men, (/) divide by 2, (G)roup");
+	mvaddstr(LINES-3, 0,
+	" (a)ttack, (d)efend, (s)cout, (m)arch, (g)arrison");
+	if(fort_val(&sct[P_AXLOC][P_AYLOC]) > 0) {
+		if (sct[P_AXLOC][P_AYLOC].owner==country) addstr(", (S)ortie");
+		else addstr(", (S)iege");
+		if (P_ATYPE>=MINLEADER && P_ATYPE<MINMONSTER &&
+		ISCITY(sct[P_AXLOC][P_AYLOC].designation)) addstr(", (R)ule");
+	}
 	mvprintw(LINES-4, 0, "Extended command:");
 	refresh();
 
 	switch(getch()) {
 	case '-':		/* split army */
-		armynum = getselunit();
 		splitarmy(armynum);
 		break;
 	case '/':		/* divide army */
-		armynum = getselunit();
-		men = ASOLD/2;
+		men = P_ASOLD/2;
 		reducearmy(armynum,men);
 		break;
 	case '+':		/* combine armies */
-		armynum = getselunit();
 		selector +=2;
 		army2 = getselunit();
 		selector -=2;
 		combinearmies(armynum,army2);
 		break;
-	case '5':		/* Army status */
-		stat++;
-	case '4':
-		stat++;
-	case '3':
-		stat++;
-	case '2':
-		stat++;
-	case '1':
-		stat++;
-		armynum = getselunit();
+	case 'G':
+		addgroup(armynum);
+		break;
+	case 'a': if(stat==0) stat=ATTACK;
+	case 'd': if(stat==0) stat=DEFEND;
+	case 'm': if(stat==0) stat=MARCH;
+	case 's': if(stat==0) stat=SCOUT;
+	case 'g': if(stat==0) stat=GARRISON;
+	case 'R': if(stat==0) stat=RULE;
+	case 'S':
+		if(stat==0) {
+			if(sct[P_AXLOC][P_AYLOC].owner==country) stat=SORTIE;
+			else stat=SIEGE;
+		}
 		change_status(armynum,stat);
 		break;
 	default:		/* unimplemented? */
@@ -72,6 +84,7 @@ ext_cmd()
 	refresh();
 }
 
+void
 combinearmies(armynum,army2)
 int armynum, army2;
 {
@@ -79,80 +92,175 @@ int armynum, army2;
 		army2 < 0 || army2 >= MAXARM ||
 		armynum == army2 ||
 #ifdef TRADE
-		ASTAT == TRADED ||
-		ntn[country].arm[army2].stat == TRADED ||
+		P_ASTAT == TRADED ||
+		curntn->arm[army2].stat == TRADED ||
 #endif TRADE
-		ASTAT == SCOUT ||
-		ntn[country].arm[army2].stat == SCOUT ||
-		ATYPE >= MINMONSTER ||
-		ATYPE!=ntn[country].arm[army2].unittyp) {
+		P_ASTAT == FLIGHT ||
+		curntn->arm[army2].stat == FLIGHT ||
+		P_ASTAT == MAGATT ||
+		curntn->arm[army2].stat == MAGATT ||
+		P_ASTAT == MAGDEF ||
+		curntn->arm[army2].stat == MAGDEF ||
+		P_ASTAT == SCOUT ||
+		curntn->arm[army2].stat == SCOUT ||
+		P_ASTAT == ONBOARD ||
+		curntn->arm[army2].stat == ONBOARD ||
+		curntn->arm[army2].stat == SIEGE ||    /* may not jump out  */
+		curntn->arm[army2].stat == SORTIE ||   /* of these statuses */
+		P_ATYPE >= MINLEADER ||
+		P_ATYPE!=curntn->arm[army2].unittyp) {
 			errormsg("Selected armies not legal");
 			return;
 	}
-	if((ntn[country].arm[army2].xloc!=AXLOC)
-	&&(ntn[country].arm[army2].yloc!=AYLOC)) {
+	if((curntn->arm[army2].xloc!=P_AXLOC)
+	||(curntn->arm[army2].yloc!=P_AYLOC)) {
 		errormsg("Selected armies not together");
 		return;
 	}
-	ASOLD += ntn[country].arm[army2].sold;
-	ntn[country].arm[army2].sold = 0;
-	AMOVE=min(AMOVE,ntn[country].arm[army2].smove);
+	P_ASOLD += curntn->arm[army2].sold;
+	curntn->arm[army2].sold = 0;
+	P_AMOVE=min(P_AMOVE,curntn->arm[army2].smove);
 	AADJMEN;
 	AADJMOV;
+	if (P_ASTAT>NUMSTATUS) {
+		curntn->arm[P_ASTAT-NUMSTATUS].smove=P_AMOVE;
+		armynum = P_ASTAT-NUMSTATUS;
+		AADJMOV;
+	}
 	armynum = army2;
 	AADJMEN;
 }
 
+void
 change_status(armynum,new_stat)
 int armynum,new_stat;
 {
-#ifdef TRADE
-	if (armynum < 0 || armynum >= MAXARM || ASTAT==SCOUT || ASTAT==TRADED) {
-#else
-	if (armynum < 0 || armynum >= MAXARM || ASTAT==SCOUT) {
-#endif TRADE
-		errormsg("Selected army not legal");
+	int	i;
+	if(armynum<0 || armynum >= MAXARM || P_ASTAT==SCOUT ||
+		P_ASTAT==TRADED || P_ASTAT==ONBOARD || P_ASTAT==SORTIE){
+		errormsg("Can't change status on that army");
 		return;
 	}
-	if (new_stat == SCOUT && ASOLD > 25) {
-		errormsg("Need less than 26 men to scout");
+	if( P_ATYPE == A_MILITIA && new_stat!=MILITIA ) {
+		errormsg("Militia is all you get");
 		return;
 	}
-	ASTAT = new_stat;
+	if( P_ATYPE == A_ZOMBIE && new_stat==MARCH ) {
+		errormsg("Duh?  Your Zombies just lumber about.");
+		return;
+	}
+	if(P_ASTAT == SIEGED && new_stat != SORTIE && new_stat != RULE) {
+		errormsg("Sieged troops may only switch to sortie");
+		return;
+	}
+	if(P_ASTAT == new_stat) {
+		errormsg("Uh, sir.  Aren't we doing that already?");
+		return;
+	}
+	/* eliminate half starting movement if start out on march */
+	if( P_ASTAT==MARCH && new_stat!=MARCH ) {
+		if(P_AMOVE<(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/5){
+			errormsg("That troop has gone too far to stop marching");
+			return;
+		}
+		P_AMOVE-=(curntn->maxmove * *(unitmove+(P_ATYPE%UTYPE)))/5;
+		AADJMOV;
+	}
+	if(new_stat == SCOUT) {
+		if(( P_ATYPE != A_SCOUT )&&( P_ASOLD >= 25)) {
+			errormsg("Need less than 25 men to scout");
+			return;
+		} else {
+			P_ATYPE=A_SCOUT;
+			AADJMEN;
+		}
+	}
+	if(P_ASTAT == GENERAL ){
+		i=armynum;
+		for(armynum=0;armynum<MAXARM;armynum++){
+			if(( P_ASOLD>0) && (P_ASTAT==i+NUMSTATUS)){
+				P_ASTAT = ATTACK;
+				AADJSTAT;
+			}
+		}
+		armynum=i;
+	}
+	if(new_stat == GARRISON) {
+		if((sct[P_AXLOC][P_AYLOC].owner!=country)
+		||(fort_val(&sct[P_AXLOC][P_AYLOC])==0)) {
+			errormsg("Just how do you want to garrison that?");
+			return;
+		}
+	} else if(new_stat == SORTIE) {
+		if((sct[P_AXLOC][P_AYLOC].owner!=country)
+		||(fort_val(&sct[P_AXLOC][P_AYLOC])==0)) {
+			errormsg("Hmmm... How do you figure to sortie from there?");
+			return;
+		}
+	} else if(new_stat == SIEGE) {
+		if((sct[P_AXLOC][P_AYLOC].owner==country)
+		||(fort_val(&sct[P_AXLOC][P_AYLOC])==0)) {
+			errormsg("You want to lay seige to this??");
+			return;
+		}
+	} else if(new_stat == RULE) {
+		if((sct[P_AXLOC][P_AYLOC].owner!=country)
+		||(!ISCITY(sct[P_AXLOC][P_AYLOC].designation))
+		||(P_ATYPE<MINLEADER)
+		||(P_ATYPE>=MINMONSTER)) {
+			errormsg("Sorry, but you can't rule in that sector");
+			return;
+		}
+	}
+
+	/* location dependent statuses make armies stay in place */
+	if((new_stat==RULE)||(new_stat==SORTIE)
+	||(new_stat==SIEGE)||(new_stat==GARRISON)) {
+		P_AMOVE=0;
+		AADJMOV;
+	}
+	P_ASTAT = new_stat;
 	AADJSTAT;
+	if( P_AMOVE>0 ) P_AMOVE--;
+	AADJMOV;
 }
 
+void
 reducearmy(armynum,men)
 int armynum,men;
 {
 	int army2;
 	int oldx, oldy, army;
 
-	if(ATYPE>=MINMONSTER){
+	if(P_ATYPE>=MINMONSTER){
 		errormsg("sorry -- army is monster");
 		return;
 	}
+	if(P_ATYPE>=MINLEADER){
+		errormsg("sorry -- army is leader");
+		return;
+	}
 #ifdef TRADE
-	if(men<0 || armynum < 0 || armynum >= MAXARM || ASOLD < men+25 || ASTAT==TRADED) {
-#else 
-	if(men<0 || armynum < 0 || armynum >= MAXARM || ASOLD < men+25) {
+	if(men<25 || armynum < 0 || armynum >= MAXARM || P_ASOLD < men+25 || P_ASTAT==ONBOARD || P_ASTAT==TRADED) {
+#else
+	if(men<25 || armynum < 0 || armynum >= MAXARM || P_ASOLD < men+25 || P_ASTAT==ONBOARD) {
 #endif TRADE
 		errormsg("Selected army too small or illegal");
 		return;
 	}
 
-	if(ASOLD < men) {
+	if(P_ASOLD < men) {
 		errormsg("Too many men to split from army");
 		return;
 	}
 
-	oldx=AXLOC;
-	oldy=AYLOC;
+	oldx=P_AXLOC;
+	oldy=P_AYLOC;
 	army2=armynum;
 
 	armynum=(-1);
 	for(army=0;army<MAXARM;army++)
-		if(ntn[country].arm[army].sold==0){
+		if(curntn->arm[army].sold==0){
 			if(armynum==(-1)) armynum=army;
 		}
 	/*overflow*/
@@ -160,13 +268,13 @@ int armynum,men;
 		errormsg("TOO MANY ARMIES");
 		return;
 	} else {
-		AMOVE=ntn[country].arm[army2].smove;
-		ATYPE=ntn[country].arm[army2].unittyp;
-		ASTAT=ntn[country].arm[army2].stat;
-		AXLOC=oldx;
-		AYLOC=oldy;
-		ASOLD=men;
-		ntn[country].arm[army2].sold-=ASOLD;
+		P_AMOVE=curntn->arm[army2].smove;
+		P_ATYPE=curntn->arm[army2].unittyp;
+		P_ASTAT=curntn->arm[army2].stat;
+		P_AXLOC=oldx;
+		P_AYLOC=oldy;
+		P_ASOLD=men;
+		curntn->arm[army2].sold-=P_ASOLD;
 		AADJSTAT;
 		AADJMEN;
 		AADJLOC;
@@ -176,6 +284,7 @@ int armynum,men;
 	}
 }
 
+void
 splitarmy(armynum)
 int armynum;
 {
@@ -187,16 +296,19 @@ int armynum;
 	reducearmy(armynum,men);
 }
 
+void
 errormsg(str)
 char *str;
 {
-	mvprintw(LINES-1, 0, str);
-	mvprintw(LINES-1, 60, "PRESS ANY KEY");
+	mvaddstr(LINES-1, 0, str);
+	clrtoeol();
+	mvaddstr(LINES-1, 60, "PRESS ANY KEY");
 	beep();
 	refresh();
 	getch();
 }
 
+void
 clear_bottom(i)
 int i;
 {
@@ -204,5 +316,58 @@ int i;
 	for (; i>0 ; i--) {
 		move( LINES-i, 0);
 		clrtoeol();
+	}
+}
+
+/* add army to a group */
+void
+addgroup(armynum)
+int	armynum;
+{
+	int	moverate,group;
+
+	if((P_ATYPE>=MINLEADER)&&(P_ATYPE<MINMONSTER)){
+		errormsg("Can't add leader to group");
+		return;
+	}
+	if(P_ATYPE==A_ZOMBIE) {
+		errormsg("Your Zombies just don't seem inspired");
+		return;
+	}
+	if(armynum<0 || armynum >= MAXARM || P_ASTAT==SCOUT ||
+		P_ASTAT==TRADED || P_ASTAT==ONBOARD || P_ATYPE==A_MILITIA ){
+		errormsg("Selected army not groupable");
+		return;
+	}
+	mvaddstr(LINES-4,0,"enter a valid leader unit/army group id: ");
+	refresh();
+	group = get_number();
+	if( group < 0 || group > MAXARM || curntn->arm[group].sold <=0){
+		errormsg("invalid unit number");
+		return;
+	}
+	if((P_AXLOC != curntn->arm[group].xloc)
+	&&(P_AXLOC != curntn->arm[group].xloc)){
+		errormsg("units are not in same sector");
+		return;
+	}
+	if((curntn->arm[group].unittyp <MINLEADER)
+	||( curntn->arm[group].unittyp >=MINMONSTER)){
+		errormsg("Group leader not a leader unit");
+		return;
+	} else if(curntn->arm[group].stat==ONBOARD){
+		errormsg("Cannot group onto a transport");
+		return;
+	}
+
+	P_ASTAT=group+NUMSTATUS;
+	moverate = P_AMOVE;
+	AADJSTAT;
+	armynum = group;
+	P_ASTAT=GENERAL;
+	AADJSTAT;
+	if( P_AMOVE > moverate ){
+		P_AMOVE = moverate;
+		AADJMOV;
 	}
 }

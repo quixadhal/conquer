@@ -2,66 +2,66 @@
 /* initial starting stats */
 
 /*dwarf*/
-#define	NLDGOLD		100000		/* 1 */
-#define	NLDFOOD		25000		/* 0 */
-#define	NLDJEWEL	15000		/* 0 */
-#define	NLDIRON		15000		/* 0 */
-#define	NLDCIVIL	6000		/* 6 */
-#define	NLDMILIT	1000		/* 1 */
-#define	NLDREPRO	4		/* 8 */
-#define	NLDMMOVE	6		/* 2 */
-#define	NLDAPLUS	20		/* 0 */
-#define	NLDDPLUS	20		/* 5 */
-#define	NLPTDW		23		/* point loss */
+#define	NLDGOLD		100000L
+#define	NLDFOOD		35000L
+#define	NLDJEWEL	15000L
+#define	NLDMETAL	15000L
+#define	NLDCIVIL	6000L
+#define	NLDMILIT	1000L
+#define	NLDREPRO	4
+#define	NLDMMOVE	6
+#define	NLDAPLUS	20
+#define	NLDDPLUS	20
 
 /*elf*/
-#define	NLEGOLD		100000		/* 1 */
-#define	NLEFOOD		25000		/* 0 */
-#define	NLEJEWEL	15000		/* 0 */
-#define	NLEIRON		15000		/* 0 */
-#define	NLECIVIL	7000		/* 7 */
-#define	NLEMILIT	200		/* 0 */
-#define	NLEREPRO	5		/* 10 */
-#define	NLEMMOVE	8		/* 3 */
-#define	NLEAPLUS	10		/* 0 */
-#define	NLEDPLUS	40		/* 6 */
-#define	NLPTEL		27		/* point loss */
+#define	NLEGOLD		100000L
+#define	NLEFOOD		35000L
+#define	NLEJEWEL	15000L
+#define	NLEMETAL	15000L
+#define	NLECIVIL	7000L
+#define	NLEMILIT	200L
+#define	NLEREPRO	5
+#define	NLEMMOVE	8
+#define	NLEAPLUS	10
+#define	NLEDPLUS	40
 
 /*orc*/
-#define	NLOGOLD		1000		/* 0 */
-#define	NLOFOOD		25000		/* 0 */
-#define	NLOJEWEL	15000		/* 0 */
-#define	NLOIRON		15000		/* 0 */
-#define	NLOCIVIL	6000		/* 6 */
-#define	NLOMILIT	2000		/* 2 */
-#define	NLOREPRO	8		/* 16 */
-#define	NLOMMOVE	6		/* 2 */
-#define	NLOAPLUS	0		/* 0 */
-#define	NLODPLUS	0		/* 0 */
-#define	NLPTOR		26		/* point loss */
+#define	NLOGOLD		1000L
+#define	NLOFOOD		35000L
+#define	NLOJEWEL	15000L
+#define	NLOMETAL	15000L
+#define	NLOCIVIL	6000L
+#define	NLOMILIT	2000L
+#define	NLOREPRO	8
+#define	NLOMMOVE	6
+#define	NLOAPLUS	0
+#define	NLODPLUS	0
 
 /*human*/
-#define	NLHGOLD		1000		/* 0 */
-#define	NLHFOOD		25000		/* 0 */
-#define	NLHJEWEL	15000		/* 0 */
-#define	NLHIRON		15000		/* 0 */
-#define	NLHCIVIL	6000		/* 6 */
-#define	NLHMILIT	1000		/* 1 */
-#define	NLHREPRO	5		/* 10 */
-#define	NLHMMOVE	10		/* 3 */
-#define	NLHAPLUS	15		/* 0 */
-#define	NLHDPLUS	10		/* 3 */
-#define	NLPTHU		23		/* point loss */
+#define	NLHGOLD		1000L
+#define	NLHFOOD		35000L
+#define	NLHJEWEL	15000L
+#define	NLHMETAL	15000L
+#define	NLHCIVIL	6000L
+#define	NLHMILIT	1000L
+#define	NLHREPRO	5
+#define	NLHMMOVE	10
+#define	NLHAPLUS	15
+#define	NLHDPLUS	10
 
 /* the purchase definitions and/or costs */
-#define	NLPOP		1000
-#define	NLGOLD		100000
+#define	NLPOP		1000L
+#define	NLGOLD		100000L
 #define	NLLOCCOST	1
-#define	NLSOLD		900
-#define	NLATTACK	8
-#define	NLDEFENCE	8
-#define	NLREPRO		1
-#define	NLREPCOST	2
-#define	NLMOVE		3
+#define	NLSOLD		900L
+#define	NLATTACK	10
+#define	NLDEFENCE	10
+#define	NLREPRO_ORC	2	/* repro points per NLREPCOST for orcs */
+#define	NLREPRO		1	/* repro points per NLREPCOST for others */
+#define	NLREPCOST	3
+#define	NLMOVE		2
 #define	NLDBLCOST	1
-#define	NLMAGIC		2
+#define	NLMAGIC		3
+/* get NLEADER leaders for NLEADPT points */
+#define	NLEADER		3
+#define	NLEADPT		1

@@ -16,185 +16,294 @@
 
 extern FILE *fnews;
 
-extern short country;
-extern int attr[MAPX][MAPY];     /*sector attactiveness*/
-extern short movecost[MAPX][MAPY];
-int peace;	/*is 8 if at peace, 12 if at war*/
+int	stx, sty, endx, endy;	/* npc range of operations */
+extern	short country;
+extern	int **attr;     	/*sector attactiveness*/
+extern	int	dissarray;	/* has nation lost its leader */
+int	peace;	/*is 8 if at peace, 12 if at war*/
 
-/*ntn 1 is nation you are updating*/
 void
-newdip(ntn1,ntn2)
+prtattr()
 {
-	if(ntn[ntn1].active<2) {
-		if(ntn[ntn1].dstatus[ntn2]==UNMET)
-			ntn[ntn1].dstatus[ntn2]=NEUTRAL;
+#ifdef DEBUG
+	int x,y;
+/*	FOR TESTING OF WHAT THE ATTRACTIVENESS ENDS UP LIKE  */
+	printf("Attractiveness for sectors around CAPITAL at %d %d veg alt des\n",curntn->capx,curntn->capy);
+	for(y=curntn->capy-3;y<curntn->capy+4;y++) {
+		printf("\n");
+		for(x=curntn->capx-3;x<curntn->capx+4;x++) if(ONMAP(x,y)) {
+			if( sct[x][y].altitude != WATER ) {
+				printf("[%2d,%2d]   ",x,y);
+			}
+		}
+		printf("\n");
+		for(x=curntn->capx-3;x<curntn->capx+4;x++) if(ONMAP(x,y)) {
+			if( sct[x][y].altitude != WATER ) {
+				printf("%5d %c%c%c "
+					,attr[x][y]
+					,sct[x][y].vegetation
+					,sct[x][y].altitude
+					,sct[x][y].designation);
+			} else	printf("0      ~  ");
+		}
+		printf("\n");
 	}
-	else if(ntn[ntn1].race==ntn[ntn2].race){
-		if(rand()%5<3) ntn[ntn1].dstatus[ntn2]=FRIENDLY;
-		else if(rand()%2==0) ntn[ntn1].dstatus[ntn2]=ALLIED;
-		else ntn[ntn1].dstatus[ntn2]=NEUTRAL;
-	}
-	else switch(ntn[ntn1].race) {
-	case DWARF:
-		switch(ntn[ntn2].race) {
-		case ELF:
-			ntn[ntn1].dstatus[ntn2]=HOSTILE;
-			break;
-		case HUMAN:
-			ntn[ntn1].dstatus[ntn2]=NEUTRAL;
-			break;
-		case ORC:
-		default:
-			ntn[ntn1].dstatus[ntn2]=WAR;
-			break;
-		}
-		break;
-	case ELF:
-		switch(ntn[ntn2].race) {
-		case DWARF:
-			ntn[ntn1].dstatus[ntn2]=HOSTILE;
-			break;
-		case HUMAN:
-			ntn[ntn1].dstatus[ntn2]=NEUTRAL;
-			break;
-		case ORC:
-		default:
-			ntn[ntn1].dstatus[ntn2]=WAR;
-			break;
-		}
-		break;
-	case ORC:
-		switch(ntn[ntn2].race) {
-		case HUMAN:
-			ntn[ntn1].dstatus[ntn2]=NEUTRAL;
-			break;
-		case DWARF:
-		case ELF:
-		default:
-			ntn[ntn1].dstatus[ntn2]=WAR;
-			break;
-		}
-		break;
-	case HUMAN:
-		switch(ntn[ntn2].race) {
-		case DWARF:
-		case ELF:
-			ntn[ntn1].dstatus[ntn2]=NEUTRAL;
-			break;
-		case ORC:
-			ntn[ntn1].dstatus[ntn2]=HOSTILE;
-			break;
-		default:
-			ntn[ntn1].dstatus[ntn2]=WAR;
-			break;
-		}
-		break;
-	default:
-		ntn[ntn1].dstatus[ntn2]=WAR;
-		break;
-	}
+#endif DEBUG
 }
 
+/*newdip() diplomacy if unmet - ntn 1 is nation you are updating*/
+void
+newdip(ntn1,ntn2)
+int	ntn1,ntn2;
+{
+	if( ispc( ntn[ntn1].active ) ) {
+		if( ntn[ntn2].race==ORC ) 
+			ntn[ntn1].dstatus[ntn2]=HOSTILE;
+		else	ntn[ntn1].dstatus[ntn2]=NEUTRAL;
+		return;
+	}
+	if((ntn[ntn1].race==ORC)
+	||( ntn[ntn2].race==ORC)) {
+		if(ntn[ntn1].dstatus[ntn2]==UNMET)
+			if((rand()%2==0)|| ispc(ntn[ntn1].active))
+				ntn[ntn1].dstatus[ntn2]=HOSTILE;
+			else
+				ntn[ntn1].dstatus[ntn2]=WAR;
+	} else if(ismonst(ntn[ntn2].active)) {
+		ntn[ntn1].dstatus[ntn2]=WAR;
+	} else if(ispc(ntn[ntn1].active)) {
+		if(ntn[ntn1].dstatus[ntn2]==UNMET)
+			ntn[ntn1].dstatus[ntn2]=NEUTRAL;
+	} else if(ntn[ntn1].race==ntn[ntn2].race){
+		if(rand()%2<1) ntn[ntn1].dstatus[ntn2]=FRIENDLY;
+		else ntn[ntn1].dstatus[ntn2]=NEUTRAL;
+	} else ntn[ntn1].dstatus[ntn2]=NEUTRAL;
+}
+
+#ifdef MONSTER
 void
 monster()
 {
-	short nvynum,armynum;
-	int x, y;
+	for(country=1;country<NTOTAL;country++) {
+		curntn = &ntn[country];
+		if( curntn->active==NPC_NOMAD ) do_nomad();
+		else if( curntn->active==NPC_PIRATE ) do_pirate();
+		else if( curntn->active==NPC_BARBARIAN ) do_barbarian();
+		else if( curntn->active==NPC_LIZARD ) do_lizard();
+	}
+}
 
-	/*move nomads randomly until within 2 of city then attack*/
-	country=NNOMAD;
-	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0){
-		ASOLD *= 11;
-		ASOLD /= 10;
-		x=AXLOC+rand()%4-2;
-		y=AYLOC+rand()%4-2;
-		if(ONMAP&&(is_habitable(x,y))
-		&&(land_reachp(AXLOC,AYLOC,x,y,ntn[country].arm[armynum].smove,country))){
-			AXLOC=x;
-			AYLOC=y;
-			/*if owned & unoccupied you take & people flee*/
-			if( (sct[x][y].owner) == 0 || solds_in_sector( x, y, sct[x][y].owner) == 0 ) {
-				if(sct[x][y].owner==0)
-					fprintf(fnews,"3.\tnomads take sector %d,%d\n",x,y);
-				else fprintf(fnews,"3.\tnomads capture sector %d,%d\n",x,y);
-				if(sct[x][y].owner!=0) flee(x,y,1,FALSE);
-				sct[x][y].owner=NNOMAD;
-				sct[x][y].designation=DDEVASTATED;
+void
+do_nomad()
+{
+	int	count;
+	short	armynum;
+	int	x, y;
+
+	/*move nomads */
+	printf("updating nomad nation %d\n",country);
+	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD>0){
+		P_ASTAT=ATTACK;
+		P_AMOVE=(curntn->maxmove * *(unitmove+P_ATYPE%UTYPE))/10;
+		if(P_ATYPE<MINLEADER) {
+			P_ASOLD *= 102;
+			P_ASOLD /= 100;
+		}
+		count=0;
+		while( TRUE ) {
+			x=P_AXLOC+rand()%5-2;
+			y=P_AYLOC+rand()%5-2;
+
+			if( count++ > 100 ) {
+				P_ASOLD=0;
+				break;
 			}
+			/* nomads cant stay in the same spot */
+			if(( x==P_AXLOC && y==P_AYLOC )
+			||(!ONMAP(x,y)
+			||(!is_habitable(x,y))) 
+			||(!land_reachp(P_AXLOC,P_AYLOC,x,y,curntn->maxmove,country))) continue;
+
+			P_AXLOC=x;
+			P_AYLOC=y;
+			/*if owned & unoccupied you take & people flee*/
+			if( ((sct[x][y].owner) == 0
+			|| solds_in_sector( x, y, sct[x][y].owner) == 0 )
+			&& (ntn[sct[x][y].owner].active!=NPC_NOMAD) ) {
+				fprintf(fnews,"3.\tnomads capture sector %d,%d\n",x,y);
+				if(sct[x][y].owner!=0) flee(x,y,1,FALSE);
+				sct[x][y].owner=country;
+				DEVASTATE(x,y);
+			}
+			break;
 		}
 	}
 	/* place a few new Nomad armies */
-	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD<=0){
+	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD<=0){
+		if(rand()%4!=0) continue;
 		x=(rand()%(MAPX-8))+4;
 		y=(rand()%(MAPY-8))+4;
-		if((rand()%4==0)&&(is_habitable(x,y))) {
-			AXLOC=x;
-			AYLOC=y;
-			ASOLD=100+100*(rand()%10);
-			ATYPE=A_LT_CAV;
-			ASTAT=ATTACK;
-		}
-		if(rand()%3==0) break;
-	}
-	country=NLIZARD;
-	for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD>0){
-		ASOLD*=105;
-		ASOLD/=100;
-	}
-	country=NPIRATE;
-	fprintf(fnews,"2.\t%s are updated\n",ntn[NPIRATE].name);
-	/*if pirate fleet within 3 attack if outnumber any fleets */
-	for(nvynum=0;nvynum<MAXNAVY;nvynum++){
-		for(x=1;x<MAXNTN;x++) for(y=0;y<MAXNAVY;y++)
-		if((ntn[x].nvy[y].xloc-NXLOC<2)
-		&&(sct[ntn[x].nvy[y].xloc][ntn[x].nvy[y].yloc].altitude==WATER)
-		&&(ntn[x].nvy[y].xloc-NXLOC>(-2))
-		&&(ntn[x].nvy[y].yloc-NYLOC<2)
-		&&(ntn[x].nvy[y].yloc-NYLOC>(-2))){
-			NXLOC= ntn[x].nvy[y].xloc;
-			NYLOC= ntn[x].nvy[y].yloc;
-		}
-		/*add one warship to random pirate fleet*/
-		if((NWAR>0)&&(rand()%3==0)) {
-			NWAR++;
-			NCREW+=SHIPCREW;
+		if(is_habitable(x,y)) {
+			P_AXLOC=x;
+			P_AYLOC=y;
+			P_ASOLD=100+100*(rand()%6);
+			P_ATYPE=A_LT_CAV;
+			P_ASTAT=ATTACK;
 		}
 	}
 }
 
-#ifdef NPC
+void
+do_barbarian()
+{
+	short armynum;
+	int x, y;
+
+	printf("updating barbarian nation %d\n",country);
+	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD>0){
+		P_ASTAT=ATTACK;
+		if(P_ATYPE<MINLEADER) {
+			P_ASOLD *= 102;
+			P_ASOLD /= 100;
+		}
+		P_AMOVE=(curntn->maxmove * *(unitmove+P_ATYPE%UTYPE))/10;
+		x=P_AXLOC+rand()%2-1;
+		y=P_AYLOC+rand()%2-1;
+		if(ONMAP(x,y)&&(is_habitable(x,y)) 
+		&&(land_reachp(P_AXLOC,P_AYLOC,x,y,P_AMOVE,country))){
+			P_AXLOC=x;
+			P_AYLOC=y;
+			/*if owned & unoccupied you take & people flee*/
+			if( ((sct[x][y].owner == 0)
+			|| (solds_in_sector( x, y, sct[x][y].owner) == 0))
+			&& (ntn[sct[x][y].owner].active != NPC_BARBARIAN)) {
+				fprintf(fnews,"3.\tbarbarians capture sector %d,%d\n",x,y);
+				if(P_ATYPE<MINLEADER) {
+					if(sct[x][y].owner!=0) flee(x,y,1,FALSE);
+					sct[x][y].owner=country;
+				}
+				DEVASTATE(x,y);
+			}
+		}
+	}
+	/* place a few new Barbarian armies */
+	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD<=0){
+		x=(rand()%(MAPX-8))+4;
+		y=(rand()%(MAPY-8))+4;
+		if((rand()%4!=0) 
+		||( sct[x][y].altitude == PEAK)
+		||( sct[x][y].altitude == WATER))
+			continue;
+		if(sct[x][y].owner==0 || sct[x][y].owner==country 
+		||(sct[x][y].people< 50)) {
+			P_AXLOC=x;
+			P_AYLOC=y;
+			P_ASOLD=100+100*(rand()%3);
+			P_ATYPE=defaultunit(country);
+			P_ASTAT=ATTACK;
+		}
+	}
+}
 
 void
-n_redes(x,y,goldthresh,ironthresh,citythresh)
-int goldthresh,ironthresh,citythresh;
+do_lizard()
+{
+	short armynum;
+
+	printf("updating lizard nation %d\n",country);
+	for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD>0){
+		P_ASOLD*=102;
+		P_ASOLD/=100;
+	}
+}
+
+void
+do_pirate()
+{
+	short nvynum,shipsize;
+	int x, y, campx, campy;
+
+	printf("updating pirate nation %d\n",country);
+
+	/* if pirate fleet within 3 attack if outnumber any fleets */
+	/* automatically find their base first */
+	for(nvynum=0;nvynum<MAXNAVY;nvynum++) if(P_NWSHP!=0) {
+		int temp=TRUE;
+
+		campx=P_NXLOC; campy=P_NYLOC;
+		for(x=P_NXLOC-PRTZONE;x<=P_NXLOC+PRTZONE;x++)
+		for(y=P_NYLOC-PRTZONE;y<=P_NYLOC+PRTZONE;y++) {
+			if((ONMAP(x,y)) && sct[x][y].designation==DBASECAMP ) {
+				temp=FALSE;
+				campx=x;
+				campy=y;
+			}
+		}
+		if(temp==TRUE) {
+			fprintf(stderr,"Pirate fleet %d away from base\n",nvynum);
+		} else {
+			if (sct[campx][campy].designation!=DBASECAMP) {
+				fprintf(stderr,"BASECAMP NOT FOUND!!!\n");
+			} else {
+				P_NXLOC=campx;
+				P_NYLOC=campy;
+			}
+		}
+	}
+		
+	for(nvynum=0;nvynum<MAXNAVY;nvynum++) if (P_NWSHP!=0) {
+		for(x=1;x<NTOTAL;x++) if(isntn(ntn[x].active))
+		for(y=0;y<MAXNAVY;y++)
+		if(ntn[x].nvy[y].warships!=0 || ntn[x].nvy[y].merchant!=0 
+		  || ntn[x].nvy[y].galleys!=0) {
+			if((abs(ntn[x].nvy[y].xloc-P_NXLOC)<=PRTZONE)
+			&&(abs(ntn[x].nvy[y].yloc-P_NYLOC)<=PRTZONE)) {
+				P_NXLOC= ntn[x].nvy[y].xloc;
+				P_NYLOC= ntn[x].nvy[y].yloc;
+			}
+		}
+		if(rand()%15==0) {
+			/*randomly add one warship to pirate fleet*/
+			shipsize = rand()%(N_HEAVY-N_LIGHT+1);
+			(void) NADD_WAR(1);
+		}
+	}
+}
+#endif MONSTER
+
+#ifdef NPC
+void
+n_redes(x,y,goldthresh,metalthresh,citythresh,hunger)
+int	x,y,goldthresh,metalthresh,citythresh;
+float	hunger;
 {
 	register struct s_sector	*sptr = &sct[x][y];
 
-	if(sptr->designation == DCAPITOL) return;
+	if((sptr->designation == DCAPITOL)
+	||(sptr->designation == DCITY)) return;
 
 	/*large enough for a city now?*/
 	if(((sptr->people > (spread.civilians/CITYLIMIT))
 	||((spread.civilians<30000)&&(sptr->people>1000)))
-	&&( spread.food > spread.civilians*3)
-	&&( sptr->iron < ironthresh)
+	&&( hunger > P_EATRATE*1.5 )
 	&&( spread.incity+spread.incap < spread.civilians * CITYPERCENT / 100)
 	&&( spread.sectors > 10)
-	&&( sptr->gold < goldthresh)){
-		sptr->designation=DCITY;
+	&&( sptr->tradegood == TG_none )){
+		sptr->designation=DTOWN;
 		spread.incity+=sptr->people;
 		spread.infarm-=sptr->people;
 	}
 
-	/*not large enough for city and not enough food*/
-	if((sptr->designation==DCITY)
-	&&( spread.food < spread.civilians*2)
-	&&( tofood(sptr->vegetation,sptr->owner) > citythresh )){
+	/* large enough for city and not enough food*/
+	if((sptr->designation==DTOWN)
+	&&( hunger < P_EATRATE)
+	&&( tofood(sptr,sptr->owner) > citythresh )){
 		sptr->designation=DFARM;
 		spread.incity-=sptr->people;
 		spread.infarm+=sptr->people;
 	}
 
-	if((sptr->designation==DCITY)
+	if((sptr->designation==DTOWN)
 	&&( spread.incity+spread.incap > spread.civilians * CITYPERCENT / 66)){
 		sptr->designation=DFARM;
 		spread.incity-=sptr->people;
@@ -202,445 +311,587 @@ int goldthresh,ironthresh,citythresh;
 	}
 
 	/*what if it is not a city*/
-	if((sptr->designation!=DCITY)&&(sptr->designation!=DCAPITOL)){
-		if(( sptr->gold >= goldthresh+2 )
-		&&( sptr->iron < sptr->gold )){
-			sptr->designation=DGOLDMINE;
-		}
-		else if( sptr->iron >= ironthresh ){
-			sptr->designation=DMINE;
-		}
-		else if( sptr->gold >= goldthresh ){
-			sptr->designation=DGOLDMINE;
-		}
-		else sptr->designation=DFARM;
+	if((sptr->designation!=DTOWN)
+	&&(sptr->designation!=DCITY)
+	&&(sptr->designation!=DCAPITOL)){
+		if(( sptr->tradegood != TG_none )
+		&&( tg_ok( sptr->owner, sptr ))) {
+			if(( metalthresh+goldthresh > 8 )
+			||(( sptr->metal < metalthresh )
+			  &&( sptr->metal != 0 ))
+			||(( sptr->jewels < goldthresh )
+			  &&( sptr->jewels != 0 ))) {
+				sptr->designation = DFARM;
+			} else	sptr->designation= *(tg_stype+sptr->tradegood);
+
+			if(( sptr->metal < metalthresh )
+			  &&( sptr->metal != 0 ))
+				sptr->designation=DBLKSMITH;
+
+			if(( sptr->designation== 'x' )
+			||(( sptr->designation== DCITY )&&(sptr->people<1000)))
+				sptr->designation=DFARM;
+		} else if( tofood(sptr,sptr->owner) >= 4 ){
+			sptr->designation=DFARM;
+		} else	sptr->designation=DSTOCKADE;
+	}
+	if(( sptr->designation==DFARM)
+	&&( hunger > P_EATRATE*1.5 )
+	&&(  tofood(sptr,sptr->owner) <= 6 )){
+		if(( rand()%2 == 0 )&&( curntn->mine_ability<30 ))
+			sptr->designation=DBLKSMITH;
+		else if(( rand()%2 == 0 )
+		&&( sptr->people<100 )
+		&&( curntn->spoilrate >15))
+			sptr->designation=DGRANARY;
+		else if(( rand()%2 == 0 )&&( curntn->popularity<50 ))
+			sptr->designation=DCHURCH;
+		else if( sptr->people>1000 )
+			sptr->designation=DTOWN;
 	}
 }
 
 void
 redomil()
 {
-	short x,y,armynum;
-	int i, free, done, ideal, militia=0;
-	long diff=0;
+	short x,y,armynum,nvynum;
+	int i, free, done;
+	long militia=0l,ideal;
+	long diff=0l;
 	int ok;
 
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
+	check();
 	/* check out any ship crews */
-	for(armynum=1;armynum<MAXNAVY;armynum++) {
-		if((ntn[country].nvy[armynum].merchant>0)
-		|| (ntn[country].nvy[armynum].warships>0))
-		ntn[country].nvy[armynum].crew =
-		(ntn[country].nvy[armynum].merchant+ntn[country].nvy[armynum].warships)*SHIPCREW;
+	for(nvynum=1;nvynum<MAXNAVY;nvynum++) {
+		/* definite cheat -- add some random */
+		if((P_NMSHP!=0)||(P_NWSHP!=0)||(P_NGSHP != 0))
+			if(rand()%2==0) P_NCREW = SHIPCREW;
 	}
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
-	/* code to check and move armies back if they are too far out */
-	for(armynum=1;armynum<MAXARM;armynum++) if(ASOLD>0){
+	check();
+	for(armynum=1;armynum<MAXARM;armynum++) if(P_ASOLD>0){
+		/* move army back if too far out */
 		ok = 0;
-		for(x=AXLOC-3;x<=AXLOC+3;x++)
-			for(y=AYLOC-3;y<=AYLOC+3;y++)
-				if((ONMAP)&&(sct[x][y].owner==country)) ok=1;
+		for(x=P_AXLOC-3;x<=P_AXLOC+3;x++)
+			for(y=P_AYLOC-3;y<=P_AYLOC+3;y++)
+				if((ONMAP(x,y))&&(sct[x][y].owner==country)) ok=1;
 		if(ok==0){
-			AXLOC=ntn[country].capx;
-			AYLOC=ntn[country].capy;
+			P_AXLOC=curntn->capx;
+			P_AYLOC=curntn->capy;
+		}
+
+		/* count and verify militia */
+		if(P_ATYPE==A_MILITIA) {
+			/* eliminate invalid militia */
+			if(((sct[P_AXLOC][P_AYLOC].designation!=DTOWN)
+			&&(sct[P_AXLOC][P_AYLOC].designation!=DCAPITOL)
+			&&(sct[P_AXLOC][P_AYLOC].designation!=DCITY))
+			||(sct[P_AXLOC][P_AYLOC].owner!=country)){
+#ifdef DEBUG
+				printf("\teliminating %s army %d as %d %d is des:%c alt:%c own:%d\n",unittype[P_ATYPE],armynum,P_AXLOC,P_AYLOC,sct[P_AXLOC][P_AYLOC].designation,sct[P_AXLOC][P_AYLOC].altitude,sct[P_AXLOC][P_AYLOC].owner);
+#endif DEBUG
+				if(sct[P_AXLOC][P_AYLOC].owner == country)
+					sct[P_AXLOC][P_AYLOC].people+=P_ASOLD;
+				else sct[curntn->capx][curntn->capy].people+=P_ASOLD;
+				P_ASOLD=0;
+			} else militia+=P_ASOLD;
+		}
+
+		/* set default status */
+		if(P_ASTAT<NUMSTATUS) switch(P_ASTAT) {
+		case MILITIA:
+		case SIEGED:
+		case TRADED:
+		case ONBOARD:
+		case GENERAL:
+			break;
+		default:
+			P_ASTAT=DEFEND;
+			break;
 		}
 	}
-	for(armynum=1;armynum<MAXARM;armynum++)
-	if((ASOLD>0)&&(ATYPE==A_MILITIA)){
-		militia+=ASOLD;
-	}
-	ntn[country].tmil -= militia;
-
-	for(armynum=1;armynum<MAXARM;armynum++)
-	if((ASOLD>0)&&(ATYPE==A_INFANTRY)) ASTAT = DEFEND;
+	curntn->tmil -= militia;
 
 	/*make sure enough men in army 0 -- garrison duty in capitol*/
 	armynum=0;
-	ASTAT=GARRISON;
-	ATYPE=A_INFANTRY;
-	AXLOC=ntn[country].capx;
-	AYLOC=ntn[country].capy;
+	P_ASTAT=GARRISON;
+	P_ATYPE=defaultunit(country);
+	P_AXLOC=curntn->capx;
+	P_AYLOC=curntn->capy;
 
-	/*Ideally ASOLD[0]*MILINCAP=tmil*peace/10*/
-	ideal = ntn[country].tmil * peace / (10*MILINCAP);
-	if(ntn[country].tgold < 0) ideal/=2;
+	/*Ideally P_ASOLD[0]*MILINCAP=tmil*peace/10*/
+	ideal = curntn->tmil * peace / (10L*MILINCAP);
+	if(curntn->tgold < 0) ideal/=2L;
 #ifdef DEBUG
 	if(peace==8)
-		printf("\t%s IS AT PEACE - garrison in cap is %d, ideal is %d\n",ntn[country].name,ASOLD,ideal);
+		printf("\t%s IS AT PEACE - garrison in cap is %ld, ideal is %ld\n",curntn->name,P_ASOLD,ideal);
 	else if(peace==12)
-		printf("\t%s IS AT WAR - garrison in cap is %d, ideal is %d\n",ntn[country].name,ASOLD,ideal);
-	else printf("error - incap is %d ideal is %d\n",ASOLD,ideal);
+		printf("\t%s IS AT WAR - garrison in cap is %d, ideal is %ld\n",curntn->name,P_ASOLD,ideal);
+	else printf("error - incap is %d ideal is %ld\n",P_ASOLD,ideal);
 #endif DEBUG
 
 	/*MILRATIO ratio mil:civ for non player countries*/
 	/*MILINCAP ratio (mil in cap):mil for NPCs*/
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
+	check();
 
-	if((ASOLD*10) < (9*ideal)){
+	if((P_ASOLD*10) < (9*ideal)){
 
 	/*too few soldiers on garrison*/
 	/*diff is number to change mil in cap (>0)*/
-	if(ntn[country].tgold<0L) diff=0;
-	else diff = (long) min(ideal-ASOLD,(int) (ntn[country].tiron / *(u_eniron + (ATYPE%100))));
+	if(curntn->tgold<0L) diff=0;
+	else diff = (long) min(ideal-P_ASOLD,(int) (curntn->metals / *(u_enmetal + (P_ATYPE%UTYPE))));
 
-	diff = (long) min ((int) diff, sct[ntn[country].capx][ntn[country].capy].people/2);
+	diff=(long) min((int) diff, sct[curntn->capx][curntn->capy].people/2L);
 
-	if(ntn[country].tgold<0 || ntn[country].tiron<0) if(diff > 0) diff=0;
+	if(curntn->tgold<0L || curntn->metals<0L) if(diff > 0L) diff=0;
 
 #ifdef DEBUG
 	printf("\tadding %d men to garrison (too few men on garrison)\n",diff);
 #endif DEBUG
 
-	sct[ntn[country].capx][ntn[country].capy].people-=diff;
-	ASOLD+=diff;
-	ntn[country].tciv-=diff;
-	ntn[country].tmil+=diff;
+	sct[curntn->capx][curntn->capy].people-=diff;
+	P_ASOLD+=diff;
+	curntn->tciv-=diff;
+	curntn->tmil+=diff;
 	if(magic(country,WARRIOR)==1)	/* take WARRIOR power into account */
-		ntn[country].tgold -= (diff * *(u_encost + (ATYPE%100))) / 2;
-	else ntn[country].tgold-=diff* *(u_encost + (ATYPE%100));
-	ntn[country].tiron-=(diff* *(u_eniron + (ATYPE%100)));
+		curntn->tgold -= (diff * *(u_encost + (P_ATYPE%UTYPE))) / 2;
+	else curntn->tgold-=diff* *(u_encost + (P_ATYPE%UTYPE));
+	curntn->metals-=(diff* *(u_enmetal + (P_ATYPE%UTYPE)));
 #ifdef DEBUG
-	if(ASOLD < 0) printf("error 2... ASOLD=%d <0\n",ASOLD);
+	if(P_ASOLD < 0L) printf("error 2... P_ASOLD=%d <0\n",P_ASOLD);
 #endif DEBUG
 	}
 	/*else split garrison army if 1.25* needed number*/
-	else if(ASOLD *4 > 5*ideal){
+	else if(P_ASOLD *4L > 5L*ideal){
 		/*diff here is a negative number*/
-		diff=((4*ASOLD)-(5*ideal))/4;
+		diff=((4L*P_ASOLD)-(5L*ideal))/4L;
 #ifdef DEBUG
 		printf("\tsplit garrison of %d men\n",diff);
 #endif DEBUG
-		free=0;
-		ASOLD-=diff;
+		free=FALSE;
+		P_ASOLD-=diff;
 #ifdef DEBUG
-		if(ASOLD < 0) printf("error... subtracting %d from %d\n",diff,ASOLD);
+		if(P_ASOLD < 0) printf("error... subtracting %d from %d\n",diff,P_ASOLD);
 #endif DEBUG
-		ntn[country].tmil-=diff;
-		ntn[country].tciv+=diff;
-		sct[ntn[country].capx][ntn[country].capy].people+=diff;
+		curntn->tmil-=diff;
+		curntn->tciv+=diff;
+		sct[curntn->capx][curntn->capy].people+=diff;
 		/*I add back gold as armies get redone anyway*/
-		ntn[country].tiron += (diff* *(u_eniron + (ATYPE%100)));
-		if(magic(country,WARRIOR)==1) /* WARRIOR power */
-			ntn[country].tgold+=(diff* *(u_encost + (ATYPE%100))) / 2;
-		else ntn[country].tgold+=diff* *(u_encost + (ATYPE%100));
+		curntn->metals += (diff* *(u_enmetal + (P_ATYPE%UTYPE)));
+		if(magic(country,WARRIOR)==TRUE) { /* WARRIOR power */
+			curntn->tgold+=(diff* *(u_encost + (P_ATYPE%UTYPE))) / 2;
+		} else curntn->tgold+=diff* *(u_encost + (P_ATYPE%UTYPE));
 	}
 #ifdef DEBUG
-	else printf("\tno action - ASOLD (%d) ~= ideal (%d)\n",ASOLD,ideal);
-	printf("\tFinal Garrison Army %d (%s) type is %s men is %d\n",armynum,ntn[country].name,*(unittype+(ATYPE)),ASOLD);
+	else printf("\tno action - P_ASOLD (%d) ~= ideal (%d)\n",P_ASOLD,ideal);
+	printf("\tFinal Garrison Army %d (%s) type is %s men is %d\n",armynum,curntn->name,*(unittype+(P_ATYPE)),P_ASOLD);
 #endif DEBUG
 
 	/*build ships and/or armies*/
 	done=FALSE;
-	ideal = ntn[country].tciv * peace / (10 * MILRATIO);
-	if(ntn[country].tgold<0) { ideal*=4; ideal/=5; }
+	ideal = curntn->tciv * peace / (10 * MILRATIO);
+	if(curntn->tgold<0) { ideal*=4; ideal/=5; }
 #ifdef DEBUG
-	printf("\t%s total military is %d -> ideal is %d\n",ntn[country].name,ntn[country].tmil,ideal);
-	check(__LINE__);
+	printf("\t%s total military is %d -> ideal is %d\n",curntn->name,curntn->tmil,ideal);
 #endif DEBUG
-	/*if < ideal build new army in the capitol - if possible*/
-	if(ntn[country].tmil < ((4*ideal)/5)) {
-		for(armynum=1;armynum<MAXARM;armynum++)
-		if((done==FALSE)&&(ASOLD==0)) {
-			done=TRUE;
-			ATYPE=A_INFANTRY;
-			ASOLD = min ((int) (ideal-ntn[country].tmil), (int) (ntn[country].tiron/ (*(u_eniron + (ATYPE%100)))));
+	check();
 
-			ASOLD = min (ASOLD,sct[ntn[country].capx][ntn[country].capy].people/2);
-			ASOLD = min (ASOLD, (int) (ntn[country].tgold/ *(u_encost+(ATYPE%100))));
-			if(ASOLD>0){
-#ifdef DEBUG
-printf("\tnot enough soldiers - build new army %d with %d men\n",armynum,ASOLD);
-#endif DEBUG
-			ntn[country].tiron-=(ASOLD* *(u_eniron + (ATYPE%100)));
-			AXLOC= ntn[country].capx;
-			AYLOC= ntn[country].capy;
-			ntn[country].tmil += ASOLD;
-			ntn[country].tciv -= ASOLD;
-			if(magic(country,WARRIOR)==1) /* WARRIOR power */
-				ntn[country].tgold-=(ASOLD* *(u_encost + (ATYPE%100))) / 2;
-			else ntn[country].tgold-=ASOLD* *(u_encost + (ATYPE%100));
-			sct[AXLOC][AYLOC].people-=ASOLD;
-			ASTAT= DEFEND;
-			AMOVE=0;
-			}
-			else ASOLD=0;
+	/* find leader and place on RULE in capitol */
+	for(armynum=0;armynum<MAXARM;armynum++)
+		if (P_ATYPE==getleader(curntn->class)-1) {
+			P_ASTAT=RULE;
+			P_AXLOC=curntn->capx;
+			P_AYLOC=curntn->capy;
+			break;
 		}
+
+	/* add to partial armies */
+	for(armynum=1;armynum<MAXARM;armynum++)
+	if((P_ASOLD>0)
+	&&( P_ATYPE!=A_MILITIA )
+	&&( P_ATYPE<MINLEADER )
+	&&( P_ASOLD < TAKESECTOR )
+	&&( curntn->tgold > 0 )
+	&&( fort_val(&sct[P_AXLOC][P_AYLOC]) > 0)
+	&&( sct[P_AXLOC][P_AYLOC].owner == country )) {
 #ifdef DEBUG
-	check(__LINE__);
+		printf("\tadding %d men to weakened army %d\n",TAKESECTOR+20-P_ASOLD,armynum);
 #endif DEBUG
-	} else if(ntn[country].tmil > (6*ideal/5)){
+		if(magic(country,WARRIOR)==TRUE) /* WARRIOR power */
+		curntn->tgold-=((TAKESECTOR+20-P_ASOLD)*
+			*(u_encost + (P_ATYPE%UTYPE))) / 2;
+		else curntn->tgold-=(TAKESECTOR+20-P_ASOLD)*
+			*(u_encost + (P_ATYPE%UTYPE));
+		curntn->tmil += TAKESECTOR+20-P_ASOLD;
+		P_ASOLD = TAKESECTOR+20;
+	}
+
+	/*if < ideal build new army in the capitol - if possible*/
+	if(curntn->tmil < ((4*ideal)/5)) {
+		for(armynum=1;armynum<MAXARM;armynum++)
+		if((done==FALSE)&&(P_ASOLD==0)) {
+			done=TRUE;
+			P_ATYPE = defaultunit(country);
+			P_ASOLD = min ((int) (ideal-curntn->tmil), (int) (curntn->metals/ (*(u_enmetal + (P_ATYPE%UTYPE)))));
+
+			P_ASOLD = min (P_ASOLD,sct[curntn->capx][curntn->capy].people/2);
+			P_ASOLD = min (P_ASOLD, (int) (curntn->tgold/ *(u_encost+(P_ATYPE%UTYPE))));
+			if(P_ASOLD>0){
 #ifdef DEBUG
-	check(__LINE__);
+				printf("\tnot enough soldiers - build new army %d with %d men\n",armynum,P_ASOLD);
 #endif DEBUG
+				curntn->metals-=(P_ASOLD* *(u_enmetal + (P_ATYPE%UTYPE)));
+				P_AXLOC= curntn->capx;
+				P_AYLOC= curntn->capy;
+				curntn->tmil += P_ASOLD;
+				curntn->tciv -= P_ASOLD;
+				if(magic(country,WARRIOR)==TRUE) /* WARRIOR power */
+					curntn->tgold-=(P_ASOLD* *(u_encost + (P_ATYPE%UTYPE))) / 2;
+				else curntn->tgold-=P_ASOLD* *(u_encost + (P_ATYPE%UTYPE));
+				sct[P_AXLOC][P_AYLOC].people-=P_ASOLD;
+				P_ASTAT= DEFEND;
+				P_AMOVE=0;
+			}
+			else P_ASOLD=0;
+		}
+		check();
+	} else if(curntn->tmil > (6*ideal/5)){
+		check();
 		/*disband a pseudo-random army*/
 		done=FALSE;
-		diff=ntn[country].tmil-(6*ideal/5);
+		diff=curntn->tmil-(6*ideal/5);
+		for(armynum=1;done==FALSE && armynum<MAXARM;armynum++){
+			if((P_ASOLD<=0)
+			||(P_ATYPE==A_MILITIA)
+			||(P_ATYPE>=MINLEADER)
+			||(P_ASTAT==ONBOARD)
+			||(P_ASTAT==TRADED)) continue;
+
+			if((sct[P_AXLOC][P_AYLOC].owner==country)
+			&&((sct[P_AXLOC][P_AYLOC].jewels>4)
+			  ||(sct[P_AXLOC][P_AYLOC].metal>4)
+			  ||(ISCITY(sct[P_AXLOC][P_AYLOC].designation)))){
 #ifdef DEBUG
-		if(ASOLD < 0) printf("\ndisbanding pseudo random army of about %d men\n",diff);
+				printf("\ttoo many soldiers eliminate army %d (%d men)\n",armynum,P_ASOLD);
 #endif DEBUG
-		for(armynum=1;armynum<MAXARM;armynum++){
-			if((done==FALSE)
-			&&(ASOLD>0)
-			&&(ATYPE!=A_MILITIA)
-			&&(sct[AXLOC][AYLOC].owner==country)
-			&&((sct[AXLOC][AYLOC].gold>4)
-				||(sct[AXLOC][AYLOC].iron>4)
-				||(sct[AXLOC][AYLOC].designation==DCITY))
-			&&(ASOLD<=diff)){
-#ifdef DEBUG
-				printf("\ttoo many soldiers eliminate army %d (%d men)\n",armynum,ASOLD);
-#endif DEBUG
-				diff-=ASOLD;
-				sct[AXLOC][AYLOC].people+=ASOLD;
-				ntn[country].tmil -= ASOLD;
-				ntn[country].tciv += ASOLD;
-				ASOLD=0;
+				diff-=P_ASOLD;
+				sct[P_AXLOC][P_AYLOC].people+=P_ASOLD;
+				curntn->tmil -= P_ASOLD;
+				curntn->tciv += P_ASOLD;
+				P_ASOLD=0;
 				if(diff<=50) done=TRUE;
 			}
-#ifdef DEBUG
-			if(ASOLD < 0) printf("error X... ASOLD=%d <0\n",ASOLD);
-#endif DEBUG
 		}
 	}
+	check();
 #ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
-#ifdef DEBUG
-	printf("\twhew... new tmil is %d\n",ntn[country].tmil);
+	printf("\twhew... new tmil is %d\n",curntn->tmil);
 #endif DEBUG
 
 	/*resize armies */
-	/*maximum npc army is 200 or tmil/20, minimum is 50*/
-	for(armynum=1;armynum<MAXARM;armynum++){
-		if((ASOLD>200)&&(ASOLD>ntn[country].tmil/20)) {
+	for(armynum=1;armynum<MAXARM;armynum++) if(P_ATYPE < MINLEADER) {
+		/*maximum npc army is 3*TAKESECTOR or 3*tmil/MAXARM */
+		/* also let militia get big */
+		if((P_ASOLD>(2*TAKESECTOR))
+		&&(P_ATYPE!=A_MILITIA && P_ASTAT!=ONBOARD && P_ASTAT!=TRADED)) {
 			free=FALSE;
-			for(i=1;i<MAXARM;i++){
-				if((free==0)&&(ntn[country].arm[i].sold==0)){
-					free=1;
-					ASOLD/=2;
-					ATYPE=A_INFANTRY;
-					ntn[country].arm[i].sold  = ASOLD;
-					ntn[country].arm[i].unittyp = A_INFANTRY;
-					ntn[country].arm[i].smove = AMOVE;
-					ntn[country].arm[i].stat  = DEFEND;
-					ntn[country].arm[i].xloc  = AXLOC;
-					ntn[country].arm[i].yloc  = AYLOC;
+			for(i=1;free==FALSE && i<MAXARM;i++){
+				if(curntn->arm[i].sold==0){
+					free=TRUE;
+					P_ASOLD/=2;
+#ifdef DEBUG
+	printf("\tSplitting %ld troops from army %d forming %s army %d \n"
+		,P_ASOLD,armynum,unittype[P_ATYPE],i);
+#endif DEBUG
+					curntn->arm[i].sold  = P_ASOLD;
+					curntn->arm[i].unittyp = P_ATYPE;
+					curntn->arm[i].smove = P_AMOVE;
+					curntn->arm[i].stat  = P_ASTAT;
+					curntn->arm[i].xloc  = P_AXLOC;
+					curntn->arm[i].yloc  = P_AYLOC;
 				}
 			}
 		}
-	/*minimum npc army is 50, merge them*/
-		else if(ASOLD<50) {
-			free=0;
-			for(i=1;i<MAXARM;i++){
-				if((ntn[country].arm[i].sold>0)
-				&&(ntn[country].arm[i].xloc==AXLOC)
-				&&(ntn[country].arm[i].yloc==AYLOC)
-				&&(ntn[country].arm[i].unittyp==ATYPE)
-				&&(i!=armynum)&&(free==0)){
-					free=1;
-					ntn[country].arm[i].sold += ASOLD;
-					ASOLD=0;
+	/*minimum npc army is TAKESECTOR, merge them*/
+		else if(P_ASOLD>0 && (P_ASOLD<TAKESECTOR || P_ASTAT==MILITIA)
+		&& P_ASTAT!=ONBOARD && P_ASTAT!=TRADED) {
+			free=FALSE;
+			for(i=1;free==FALSE && i<MAXARM;i++){
+				if((curntn->arm[i].sold>0)
+				&&(curntn->arm[i].stat!=ONBOARD)
+				&&(i!=armynum) 	/* don't use same army */
+						/* or it will be deleted */
+				&&(curntn->arm[i].stat!=TRADED)
+				&&(curntn->arm[i].xloc==P_AXLOC)
+				&&(curntn->arm[i].yloc==P_AYLOC)
+				&&(curntn->arm[i].unittyp==P_ATYPE)) {
+					free=TRUE;
+					curntn->arm[i].sold += P_ASOLD;
+#ifdef DEBUG
+	printf("\tMerge %ld men from army %d to make %ld troops in %s army %d \n"
+		,P_ASOLD,armynum,curntn->arm[i].sold,unittype[P_ATYPE],i);
+#endif DEBUG
+					P_ASOLD=0;
 				}
+
 			}
 		}
 	}
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
+	check();
 
-	/* assure that militia unit resides in each city */
-		for(armynum=0;armynum<MAXARM;armynum++)
-		if((ASOLD>0)&&(ATYPE==A_MILITIA)){
-#ifdef DEBUG
-		printf("\t\t%s army %d (now %d men - populace %d)\n",unittype[ATYPE],armynum,ASOLD,sct[AXLOC][AYLOC].people);
-#endif DEBUG
-			if((sct[AXLOC][AYLOC].designation!=DCITY)
-			&&(sct[AXLOC][AYLOC].designation!=DCAPITOL)){
-#ifdef DEBUG
-				printf("\teliminating %s army %d as %d %d is des:%c alt:%c own:%d\n",unittype[ATYPE],armynum,AXLOC,AYLOC,sct[AXLOC][AYLOC].designation,sct[AXLOC][AYLOC].altitude,sct[AXLOC][AYLOC].owner);
-#endif DEBUG
-				if(sct[AXLOC][AYLOC].owner == country)
-				sct[AXLOC][AYLOC].people+=ASOLD;
-				else
-				sct[ntn[country].capx][ntn[country].capy].people+=ASOLD;
-				ASOLD=0;
-			}
-		}
-
-	if(ntn[country].tgold > 0)
-	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
+	/* assure that a militia unit resides in each city */
+	if(curntn->tgold > 0)
+	for(x=stx;x<endx;x++) for(y=sty;y<endy;y++)
 	if((sct[x][y].owner==country)
-	&&((sct[x][y].designation==DCITY)||(sct[x][y].designation==DCAPITOL))){
+	&&((sct[x][y].designation==DTOWN)||(sct[x][y].designation==DCITY)||(sct[x][y].designation==DCAPITOL))){
 		free=FALSE;
 		for(armynum=0;armynum<MAXARM;armynum++){
-			if((ASOLD>0)
-			&&(AXLOC==x)&&(AYLOC==y)
-			&&(ATYPE==A_MILITIA)) {
+			if((P_ASOLD>0)
+			&&(P_AXLOC==x)&&(P_AYLOC==y)
+			&&(P_ATYPE==A_MILITIA)) {
 				free=TRUE;
 				break;
 			}
 		}
-		if(free==FALSE) {	 /* draft a new militia army */
-			for(armynum=0;armynum<MAXARM;armynum++) if(ASOLD==0){
-				AXLOC=x;
-				AYLOC=y;
+		if(free==FALSE) {	 /* draft new militia army */
+			for(armynum=0;armynum<MAXARM;armynum++) if(P_ASOLD==0){
+				P_AXLOC=x;
+				P_AYLOC=y;
 				free=TRUE;
 				break;
 			}
 		}
 		if((free==TRUE)) {
 			/* want to add ideal troops */
-			ideal = sct[x][y].people/MILINCITY - ASOLD;
+			ideal = sct[x][y].people/MILINCITY - P_ASOLD;
 			ideal = min(ideal, 250);
+			if (P_ASOLD < 50)	/* make the militia at least 50 */
+				ideal = max(ideal,50-P_ASOLD);
+			if (P_ASOLD + ideal < 50) /*don't let ideal bring it below 50*/
+				continue;
 			if(ideal>0){
 			if(magic(country,WARRIOR)==TRUE){ /* WARRIOR power */
-				ntn[country].tgold-=
-					(ideal* *(u_encost+ATYPE))/2;
+				curntn->tgold-=
+					(ideal* *(u_encost+P_ATYPE))/2;
 			} else {
-				ntn[country].tgold-=
-					ideal* *(u_encost + ATYPE);
+				curntn->tgold-=
+					ideal* *(u_encost + P_ATYPE);
 			}
 			}
-			ASOLD+=ideal;
-			ATYPE=A_MILITIA;
-			ASTAT=GARRISON;
+			P_ASOLD+=ideal;
+			P_ATYPE=A_MILITIA;
+			P_ASTAT=MILITIA;
 #ifdef DEBUG
-		printf("\tadding %d troops to %s army %d (now %d men - populace %d)\n",ideal,unittype[ATYPE],armynum,ASOLD,sct[x][y].people);
+		printf("\tadding %ld troops to %s army %d (now %ld men - populace %ld)\n",ideal,unittype[P_ATYPE],armynum,P_ASOLD,sct[x][y].people);
 #endif DEBUG
 		}
 	}
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
+	check();
 
-	/* if archer power - all units are archers */
-	if(magic(country,ARCHER)==1)
-	for(armynum=1;armynum<MAXARM;armynum++)
-		if((ASOLD>0)&&(ATYPE!=A_MILITIA)) ATYPE=A_ARCHER;
+  	/* setup default units */
+  	for(armynum=1;armynum<MAXARM;armynum++) 
+	if((P_ASOLD>0)&&(P_ATYPE!=A_MILITIA)&&(P_ATYPE<MINLEADER)) 
+		P_ATYPE=defaultunit(country);
 }
 
+/* getdstatus() - do diplomacy for current nation */
 void
 getdstatus()
 {
-	int x,oldstat[MAXNTN];
+	int x,oldstat[NTOTAL];
+	int X,Y;
+	int svhostile,hostile;	/* chance nation will react hostile */
+	int friendly;		/* chance nation will react favorably */
 
-	if(ntn[country].active<=1) return;
+	if(!isnpc(curntn->active)) return;
 
-	for(x=1;x<MAXNTN;x++) {
-		oldstat[x] = ntn[country].dstatus[x];
-		/*if they at war with you go to war with them*/
-		if(ntn[x].dstatus[country]>=WAR) {
-			if(ntn[country].dstatus[x]<WAR)
-			fprintf(fnews,"2.\tnation %s returns %s's declaration of war\n",ntn[country].name,ntn[x].name);
+	if(( curntn->active==GOOD_6FREE ) 
+	     ||( curntn->active==ISOLATIONIST )
+	     ||( curntn->active==NEUTRAL_6FREE )
+	     ||( curntn->active==EVIL_6FREE )) svhostile=5;
+	else if(( curntn->active==GOOD_4FREE ) 
+	     ||( curntn->active==NEUTRAL_4FREE )
+	     ||( curntn->active==EVIL_4FREE )) svhostile=10;
+	else if(( curntn->active==GOOD_2FREE ) 
+	     ||( curntn->active==NEUTRAL_2FREE )
+	     ||( curntn->active==EVIL_2FREE )) svhostile=20;
+	else if(( curntn->active==GOOD_0FREE ) 
+	     ||( curntn->active==NEUTRAL_0FREE )
+	     ||( curntn->active==EVIL_0FREE )) svhostile=35;
+	else svhostile=5;
 
-			ntn[country].dstatus[x]=WAR;
-		} else
-		if((ntn[country].dstatus[x]!=UNMET)
-		&&(ntn[country].dstatus[x]!=JIHAD)
-		&&(ntn[country].dstatus[x]!=CONFEDERACY)
-		&&(ntn[country].active!=1)){
-			if((ntn[x].tmil>4*ntn[country].tmil)
-			&&(ntn[x].score>4*ntn[country].score)){
-				if(rand()%3==0)  {
-					ntn[country].dstatus[x]=WAR;
-				} else if(rand()%8==0)  {
-					ntn[country].dstatus[x]=JIHAD;
-				}
-			}
-			/*if 2* mil and 2* score then not like them*/
-			else if((ntn[x].tmil>2*ntn[country].tmil)
-			&&(ntn[x].score>2*ntn[country].score)){
-				if((ntn[country].dstatus[x]!=WAR)
-				&&(ntn[x].race!=ntn[country].race)){
-					if(rand()%3==0)
-						ntn[country].dstatus[x]++;
-				}
-			}
-			/*adjust based on your status with them*/
-			if((ntn[country].dstatus[x]==WAR)
-			&&(ntn[x].dstatus[country]<WAR))
-				if(rand()%3==0) ntn[country].dstatus[x]--;
-
-			if((ntn[country].dstatus[x]<WAR)
-			&&(ntn[country].dstatus[x]>ALLIED)){
-				if(ntn[x].dstatus[country]>1+ntn[country].dstatus[x]){
-					if(rand()%3==0)
-						ntn[country].dstatus[x]++;
-				}
-				else
-				if(ntn[x].dstatus[country]+1<ntn[country].dstatus[x]){
-					if(rand()%3==0)
-						ntn[country].dstatus[x]--;
-				}
-				if(ntn[x].race==ntn[country].race)
-					if(rand()%3==0)
-						ntn[country].dstatus[x]--;
-			}
-			if(rand()%6==0) {
-				if(ntn[country].dstatus[x]!=JIHAD)
-					ntn[country].dstatus[x]++;
-			}
-			else if((rand()%5==0)
-			&&(ntn[country].dstatus[x]!=CONFEDERACY)) {
-				ntn[country].dstatus[x]--;
+	for(x=1;x<NTOTAL;x++) if( isntn(ntn[x].active) ){
+		hostile = svhostile;
+		if(npctype(curntn->active) != npctype(ntn[x].active)) 
+			hostile+=20;	/* not same allignment */
+		friendly = 60-hostile;
+	     	if( curntn->active==ISOLATIONIST ) friendly -= 20;
+		/* negate impact of above line on neutrals */
+		if(isneutral(ntn[x].active)) {
+			friendly-=10;
+			hostile-=10;
+		}
+		if(ntn[x].race==curntn->race){
+			friendly+=10;
+			hostile-=10;
+		}
+		if(isneutral(curntn->active)) {
+			friendly-=20;
+			hostile-=20;
+		}
+		/* if next to capitol, they dont like you */
+		for(X=curntn->capx-1;X<=curntn->capx+1;X++)
+		for(Y=curntn->capy-1;Y<=curntn->capy+1;Y++) if(ONMAP(X,Y)) {
+			if(sct[X][Y].owner == x) {
+				friendly-=10;
+				hostile +=10;
 			}
 		}
+
+		if( friendly < 0 )	friendly=0;
+		if( hostile < 0 )	hostile=0;
+
+		oldstat[x] = curntn->dstatus[x];
+
+		/* break bad treaties */
+		if(curntn->dstatus[x] == TREATY) {
+			if(ntn[x].dstatus[country]>=WAR) 
+				curntn->dstatus[x] = JIHAD;
+			continue;
+		}
+		
+		if((curntn->dstatus[x] == JIHAD)
+		||(curntn->dstatus[x]==UNMET)
+		||(ispc(curntn->active)))
+			continue;
+
+		/*if 4* mil and 4* score then not like them*/
+		if((ntn[x].tmil>4*curntn->tmil)
+		&&(ntn[x].score>4*curntn->score)){
+			if(curntn->dstatus[x]<WAR){
+				if(rand()%100<=hostile)
+					curntn->dstatus[x]++;
+			}
+		}
+		/*adjust based on your status with them*/
+		if((curntn->dstatus[x]==WAR)
+		&&(ntn[x].dstatus[country]<WAR))
+			if(rand()%100<=friendly) curntn->dstatus[x]--;
+
+		if((curntn->dstatus[x]<WAR)
+		&&(curntn->dstatus[x]>ALLIED)){
+			if(ntn[x].dstatus[country]>1+curntn->dstatus[x]){
+				if(rand()%100<=hostile)
+					curntn->dstatus[x]++;
+			} else if(ntn[x].dstatus[country]+1<curntn->dstatus[x]){
+				if(rand()%100<=friendly)
+					curntn->dstatus[x]--;
+			}
+		}
+		if(rand()%100<= hostile) {
+			if((curntn->dstatus[x]!=JIHAD)
+			&&(curntn->dstatus[x]!=TREATY))
+				curntn->dstatus[x]++;
+		}
+		if((rand()%100<= friendly)
+		&&(curntn->dstatus[x]!=TREATY)
+		&&(curntn->dstatus[x]!=JIHAD)
+		&&(curntn->dstatus[x]!=WAR)) curntn->dstatus[x]--;
 	}
 
-	for(x=1;x<MAXNTN;x++)
-	if(ntn[x].active>1){
+	for(x=1;x<NTOTAL;x++) if(isntn( ntn[x].active ) ){
 		if((rand()%5==0)
 		&&(ntn[x].dstatus[country]==WAR)
-		&&(ntn[country].dstatus[x]==WAR)) {
+		&&(curntn->dstatus[x]==WAR)) {
 			ntn[x].dstatus[country]=HOSTILE;
-			ntn[country].dstatus[x]=HOSTILE;
-			fprintf(fnews,"2.\tnation %s and %s announce ceasefire\n",ntn[country].name,ntn[x].name);
-		} else if((oldstat[x]==WAR)&&(ntn[country].dstatus[x]==WAR)){
-			fprintf(fnews,"2.\tnation %s stays at war with %s\n",ntn[country].name,ntn[x].name);
-		} else if((oldstat[x]<WAR)&&(ntn[country].dstatus[x]==WAR)){
-			fprintf(fnews,"2.\tnation %s goes to war with %s\n",ntn[country].name,ntn[x].name);
-		} else if((oldstat[x]!=JIHAD)&&(ntn[country].dstatus[x]==JIHAD)){
-			fprintf(fnews,"2.\tnation %s announces a jihad with %s\n",ntn[country].name,ntn[x].name);
+			curntn->dstatus[x]=HOSTILE;
+			fprintf(fnews,"2.\tnation %s and %s announce ceasefire\n",curntn->name,ntn[x].name);
+			if( isnotpc(ntn[x].active) ) continue;
+			mailopen(x);
+			fprintf(fm,"nation %s and you negotiate a ceasefire\n",curntn->name);
+			mailclose();
+		} else if((oldstat[x]==WAR)&&(curntn->dstatus[x]==WAR)){
+			fprintf(fnews,"2.\tnation %s stays at war with %s\n",curntn->name,ntn[x].name);
+		} else if((oldstat[x]<WAR)&&(curntn->dstatus[x]==WAR)){
+			fprintf(fnews,"2.\tnation %s goes to war with %s\n",curntn->name,ntn[x].name);
+			if( isnotpc(ntn[x].active) ) continue;
+			mailopen(x);
+			fprintf(fm,"nation %s goes to war with you\n",curntn->name);
+			mailclose();
+		} else if((oldstat[x]!=JIHAD)&&(curntn->dstatus[x]==JIHAD)){
+			fprintf(fnews,"2.\tnation %s announces a jihad with %s\n",curntn->name,ntn[x].name);
+			if( isnotpc(ntn[x].active) ) continue;
+			mailopen(x);
+			fprintf(fm,"nation %s announces a jihad with you\n",curntn->name);
+			mailclose();
 		}
 	}
 }
 
-int
+void
 nationrun()
 {
-	int goldthresh,ironthresh,citythresh;
+	int goldthresh,metalthresh,citythresh,useful;
 	int armynum,loop;
 	int x,y,i,p;
+	float	hunger;
 	long zz;
+	check();
+	prep(country,FALSE);
 
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
-	prep(country);
+	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) attr[x][y]=0;
 
 	/* is there an error*/
-	if((sct[ntn[country].capx][ntn[country].capy].owner==country)
-	&&(sct[ntn[country].capx][ntn[country].capy].designation!=DCAPITOL)){
-		sct[ntn[country].capx][ntn[country].capy].designation=DCAPITOL;
+	if((sct[curntn->capx][curntn->capy].owner==country)
+	&&(sct[curntn->capx][curntn->capy].designation!=DCAPITOL)){
+		sct[curntn->capx][curntn->capy].designation=DCAPITOL;
+	}
+
+	if( ispc( curntn->active )) {
+		stx=sty=0;
+		endx=MAPX;
+		endy=MAPY;
+	} else {
+		if( curntn->capx > NPCTOOFAR )
+			stx=curntn->capx-NPCTOOFAR;
+		else	stx=0;
+		if( curntn->capy > NPCTOOFAR )
+			sty=curntn->capy-NPCTOOFAR;
+		else	sty=0;
+		if( curntn->capx + NPCTOOFAR < MAPX )
+			endx=curntn->capx+NPCTOOFAR;
+		else	endx=MAPX;
+		if( curntn->capy + NPCTOOFAR < MAPY )
+			endy=curntn->capy+NPCTOOFAR;
+		else	endy=MAPY;
 	}
 
 	getdstatus();
 
+#ifdef SPEW
+	for(x=1;x<NTOTAL;x++) if(isntn( ntn[x].active )) {
+		/* here is the bit which will occasionally send a randomly
+		   generated message from a hostile NPC to a PC (25% chance) */
+		if((curntn->dstatus[x] >= HOSTILE) 
+		&& (ispc(ntn[x].active))) 
+		if (rand()%4 == 0) {	/* send the message!! */
+			printf("Sent message to %s\n",ntn[x].name);
+			mailopen(x);
+			fprintf(fm,"Message to %s from %s (%s of year %d)\n\n"
+		 	,ntn[x].name,curntn->name,PSEASON(TURN),YEAR(TURN));
+			makemess(rand()%5 +1,fm);
+			mailclose();
+		}
+	}
+#endif SPEW
 	/*move units */
 	/*are they at war with any normal countries*/
 	peace=0;
-	for(i=1;i<MAXNTN;i++) if(ntn[country].dstatus[i]>peace)
-		peace=ntn[country].dstatus[i];
+	for(i=1;i<NTOTAL;i++) 
+	if(isntn(ntn[i].active)&&(curntn->dstatus[i]>peace)) {
+		peace=curntn->dstatus[i];
+		if( peace>= WAR) break;
+	}
 
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
 	if(peace<WAR){
 		peace=8;
 		pceattr();
@@ -648,206 +899,272 @@ nationrun()
 	/*if war then attack &/or expand */
 		peace=12;
 		/*are they attacking or defending */
-		if(ntn[country].tmil==0) defattr();
-		else for(x=0;x<MAXNTN;x++) if(ntn[country].dstatus[x]>HOSTILE){
-			if(100*(ntn[country].tmil*(ntn[country].aplus+100))/((ntn[country].tmil*(ntn[country].aplus+100))+(ntn[x].tmil*(ntn[x].dplus+100)))>rand()%100){
+		if(curntn->tmil==0) defattr();
+		else for(x=0;x<NTOTAL;x++) 
+		if(isntn( ntn[x].active ) && (curntn->dstatus[x]>HOSTILE)){
+			if(100*(curntn->tmil*(curntn->aplus+100))/((curntn->tmil*(curntn->aplus+100))+(ntn[x].tmil*(ntn[x].dplus+100)))>rand()%100){
 				/*attacker*/
 				for(armynum=1;armynum<MAXARM;armynum++)
-					if((ASOLD>0)&&(ATYPE!=A_MILITIA))
-						ASTAT=ATTACK;
+					if((P_ASOLD>0)&&(P_ATYPE!=A_MILITIA)
+					&&(P_ASTAT!=ONBOARD)&&(P_ASTAT!=TRADED)
+					&&(P_ASTAT<NUMSTATUS)&&(P_ASTAT!=GENERAL))
+						P_ASTAT=ATTACK;
 				atkattr();
-			}
-			/*defender*/
-			else {
+			} else {	/*defender*/
 				for(armynum=1;armynum<MAXARM;armynum++)
-					if((ASOLD>0)&&(ATYPE!=A_MILITIA)){
-						if(ASOLD<350) ASTAT=DEFEND;
-						else ASTAT=ATTACK;
+					if((P_ASOLD>0)&&(P_ATYPE!=A_MILITIA)
+					&&(P_ASTAT!=ONBOARD)&&(P_ASTAT!=TRADED)
+					&&(P_ASTAT<NUMSTATUS)&&(P_ASTAT!=GENERAL)){
+						if(P_ASOLD<350) P_ASTAT=DEFEND;
+						else P_ASTAT=ATTACK;
 					}
 				defattr();
 			}
 		}
 	}
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
+	check();
+
+	/* move infantry then leader/monsters */
+	n_people(TRUE);			/* add to attr for people */
+
+	if( country < 5 ) prtattr();
+
+	loop=0;
 	for(armynum=1;armynum<MAXARM;armynum++)
-		if((ASOLD!=0)
-		&&(ATYPE!=A_MILITIA)) armymove(armynum);
+		if((P_ASOLD!=0)&&(P_ATYPE<MINLEADER)) loop+=armymove(armynum);
+	n_people(FALSE);		/* subtract to attr for people */
+	for(armynum=1;armynum<MAXARM;armynum++)
+		if((P_ASOLD!=0)&&(P_ATYPE>=MINLEADER)) loop+=armymove(armynum);
 
-	/* INTELLIGENT SECTOR REDESIGNATION */
-	if(ntn[country].active!=1) {		/* no pc's */
-		goldthresh=4;
-		ironthresh=4;
-		citythresh=10;
-		for(loop=1;loop<5;loop++) {
-#ifdef DEBUG
-			printf("\tnpcredes(): country %s, food %ld gold %d, iron %d, city %d\n",ntn[country].name,spread.food,goldthresh,ironthresh,citythresh);
-#endif DEBUG
-
-			for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
-				if((sct[x][y].owner==country)
-				&&(is_habitable(x,y)))
-				n_redes(x,y,goldthresh,ironthresh,citythresh);
-
-			spreadsheet(country);
-
-			if(spread.food < spread.civilians * 2L) {
-				goldthresh++;
-				ironthresh++;
-				citythresh--;
-			} else if(spread.food > spread.civilians * 3L) {
-				if(rand()%2==0) goldthresh--;
-				else ironthresh--;
-				if(goldthresh==0) goldthresh=1;
-				if(ironthresh==0) ironthresh=1;
-				citythresh++;
-			}
-			else break;
+	/* NPC ACTIVE STATUS CHANGE */
+	if(isnpc(curntn->active)
+	&&(curntn->active != ISOLATIONIST)) {
+		if(isgood(curntn->active)) {
+			if(loop<=1)	curntn->active=GOOD_0FREE;
+			else if(loop>=6) curntn->active=GOOD_6FREE;
+			else if(loop>=4) curntn->active=GOOD_4FREE;
+			else	curntn->active=GOOD_2FREE;
+		} else if(isneutral(curntn->active)) {
+			if(loop<=1)	curntn->active=NEUTRAL_0FREE;
+			else if(loop>=6) curntn->active=NEUTRAL_6FREE;
+			else if(loop>=4) curntn->active=NEUTRAL_4FREE;
+			else	curntn->active=NEUTRAL_2FREE;
+		} else if(isevil(curntn->active)) {
+			if(loop<=1)	curntn->active=EVIL_0FREE;
+			else if(loop>=6) curntn->active=EVIL_6FREE;
+			else if(loop>=4) curntn->active=EVIL_4FREE;
+			else	curntn->active=EVIL_2FREE;
 		}
 	}
 
+	if( curntn->tgold > curntn->tciv ) curntn->charity=10;
+	else curntn->charity=0;
+
+	/* INTELLIGENT SECTOR REDESIGNATION */
+	/* note that only redesignate pc's if not designated yet */
+	goldthresh=4;
+	metalthresh=4;
+	citythresh=10;
+	hunger = 5.0;
+	for(loop=1;loop<5;loop++) {
+#ifdef DEBUG
+		printf("\tnpcredes(): country %s gold=%d metal=%d, city=%d hunger=%f\n",curntn->name,goldthresh,metalthresh,citythresh,hunger);
+#endif DEBUG
+
+		useful=FALSE;
+		for(x=stx;x<endx;x++) for(y=sty;y<endy;y++)
+		if((sct[x][y].owner==country)
+		&&(is_habitable(x,y))
+		&&((isnotpc(curntn->active)) 
+		  ||(sct[x][y].designation==DNODESIG))) {
+			n_redes(x,y,goldthresh,metalthresh,citythresh,hunger);
+			useful=TRUE;
+		}
+		if(useful==FALSE) break;
+
+		spreadsheet(country);
+
+		hunger = spread.food/((float)(spread.civilians+2*curntn->tmil));
+		if(hunger < P_EATRATE ) {
+			goldthresh++;
+			metalthresh++;
+			citythresh--;
+		} else if(hunger > 2*P_EATRATE) {
+			if( goldthresh==1 && metalthresh==1 ) break;
+			goldthresh-=2;
+			metalthresh-=2;
+			citythresh+=2;
+		} else {
+			if( goldthresh==1 && metalthresh==1 ) break;
+			if(rand()%2==0) goldthresh--;
+			else metalthresh--;
+			if(goldthresh==0) goldthresh=1;
+			if(metalthresh==0) metalthresh=1;
+			citythresh++;
+		}
+		if(goldthresh<=0) goldthresh=1;
+		if(metalthresh<=0) metalthresh=1;
+	}
+
 	/*build forts in any cities*/
-	if(ntn[country].active!=1) for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
-		if(((sct[x][y].designation==DCITY)
-			||(sct[x][y].designation==DCAPITOL))
-			&&(sct[x][y].owner==country)
+	if(isnotpc(curntn->active)) for(x=stx;x<endx;x++) for(y=sty;y<endy;y++)
+		if((sct[x][y].owner==country)&&
+			((sct[x][y].designation==DTOWN)
+			||(sct[x][y].designation==DCITY)
+			||(sct[x][y].designation==DCAPITOL)
+			||(sct[x][y].designation==DFORT))
 			&&(sct[x][y].fortress<10)
-			&&(ntn[country].tgold>10000)
+			&&(curntn->tgold>10000)
 			&&(rand()%5==0)
 			&&(sct[x][y].fortress<(sct[x][y].people%1000)))
 				sct[x][y].fortress++;
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
+	check();
 	/*redo mil*/
-	if(ntn[country].active!=1) redomil();
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
+	if(isnotpc(curntn->active)) redomil();
+	check();
 
 	/*buy new powers and/or new weapons*/
 	if(getmgkcost(M_MIL,country) < getmgkcost(M_CIV,country)){
-		if(ntn[country].jewels > getmgkcost(M_MIL,country)) {
-			ntn[country].jewels-=getmgkcost(M_MIL,country);
+		if(curntn->jewels > getmgkcost(M_MIL,country)) {
+			curntn->jewels-=getmgkcost(M_MIL,country);
 			if((zz=getmagic(M_MIL))!=0){
-				for(p=S_MIL;p<=E_MIL;p++) if(powers[p]==zz){
-					fprintf(fnews,"1.\tnation %s gets combat power %s\n",ntn[country].name,pwrname[p]);
-					printf("\tnation %s gets combat power %s\n",ntn[country].name,pwrname[p]);
+				for(p=S_MIL;p<E_MIL;p++) if(powers[p]==zz){
+					fprintf(fnews,"1.\tnation %s gets combat power %s\n",curntn->name,pwrname[p]);
+					printf("\tnation %s gets combat power %s\n",curntn->name,pwrname[p]);
 					break;
 				}
 				exenewmgk(zz);
 			} else if((zz=getmagic(M_MIL))!=0){
-				for(p=S_MIL;p<=E_MIL;p++) if(powers[p]==zz){
-					fprintf(fnews,"1.\tnation %s gets combat power %s\n",ntn[country].name,pwrname[p]);
-					printf("\tnation %s gets combat power %s\n",ntn[country].name,pwrname[p]);
+				for(p=S_MIL;p<E_MIL;p++) if(powers[p]==zz){
+					fprintf(fnews,"1.\tnation %s gets combat power %s\n",curntn->name,pwrname[p]);
+					printf("\tnation %s gets combat power %s\n",curntn->name,pwrname[p]);
 					break;
 				}
 				exenewmgk(zz);
 			}
-			else	ntn[country].jewels+=getmgkcost(M_MIL,country);
+			else	curntn->jewels+=getmgkcost(M_MIL,country);
 		}
 	} else {
-		if(ntn[country].jewels > getmgkcost(M_CIV,country)) {
-			ntn[country].jewels-=getmgkcost(M_CIV,country);
+		if(curntn->jewels > getmgkcost(M_CIV,country)) {
+			curntn->jewels-=getmgkcost(M_CIV,country);
 			if((zz=getmagic(M_CIV))!=0){
-				for(p=S_CIV;p<=E_CIV;p++) if(powers[p]==zz){
-					fprintf(fnews,"1.\tnation %s gets civilian power %s\n",ntn[country].name,pwrname[p]);
-					printf("\tnation %s gets civilian power %s\n",ntn[country].name,pwrname[p]);
+				for(p=S_CIV;p<S_CIV+E_CIV;p++) if(powers[p]==zz){
+					fprintf(fnews,"1.\tnation %s gets civilian power %s\n",curntn->name,pwrname[p]);
+					printf("\tnation %s gets civilian power %s\n",curntn->name,pwrname[p]);
 					break;
 				}
 				exenewmgk(zz);
 			}
 			else if((zz=getmagic(M_CIV))!=0){
-				for(p=S_CIV;p<=E_CIV;p++) if(powers[p]==zz){
-					fprintf(fnews,"1.\tnation %s gets civilian power %s\n",ntn[country].name,pwrname[zz]);
-					printf("\tnation %s gets civilian power %s\n",ntn[country].name,pwrname[zz]);
+				for(p=S_CIV;p<S_CIV+E_CIV;p++) if(powers[p]==zz){
+					fprintf(fnews,"1.\tnation %s gets civilian power %s\n",curntn->name,pwrname[p]);
+					printf("\tnation %s gets civilian power %s\n",curntn->name,pwrname[p]);
 					break;
 				}
 				exenewmgk(zz);
 			}
-			else	ntn[country].jewels+=getmgkcost(M_CIV,country);
+			else	curntn->jewels+=getmgkcost(M_CIV,country);
 		}
 	}
 
-#ifdef DEBUG
-	check(__LINE__);
-#endif DEBUG
-	if(magic(country,VAMPIRE)!=1) {
+	check();
+	if(magic(country,VAMPIRE)!=TRUE) {
 		i=0;
-		if(magic(country,WARLORD)==1) i=30;
-		else if(magic(country,CAPTAIN)==1) i=20;
-		else if(magic(country,WARRIOR)==1) i=10;
-		x = max ( ntn[country].aplus-i, 10 ) / 10;
-		/* SHOULD USE spread.iron but it didnt work right */
-		if(ntn[country].tiron >  3 * IRONORE * ntn[country].tmil*x*x){
-			ntn[country].aplus+=1;
-			ntn[country].dplus+=1;
-			ntn[country].tiron-=2*IRONORE*ntn[country].tmil*x*x;
-			printf("\tnation %s buys +1 percent attack and defence\n",ntn[country].name);
+		if(magic(country,WARLORD)==TRUE) i=30;
+		else if(magic(country,CAPTAIN)==TRUE) i=20;
+		else if(magic(country,WARRIOR)==TRUE) i=10;
+		x = max ( curntn->aplus-i, 10 ) / 10;
+		x *= x;
+		if( curntn->race==ORC) x*=2;
+		/* SHOULD USE spread.metal but it didnt work right */
+		if(rand()%2==0)
+		if(curntn->metals >  3 * METALORE * curntn->tmil*x){
+			curntn->aplus+=1;
+			curntn->metals-=METALORE*curntn->tmil*x;
+			printf("\tnation %s buys +1 percent attack\n",curntn->name);
+		}
+		x = max ( curntn->dplus-i, 10 ) / 10;
+		x *= x;
+		if( curntn->race==ORC) x*=2;
+		if(curntn->metals >  3 * METALORE * curntn->tmil*x){
+			curntn->dplus+=1;
+			curntn->metals-=METALORE*curntn->tmil*x;
+			printf("\tnation %s buys +1 percent defence\n",curntn->name);
+		}
+	}
+	/* don't allow status ATTACK from own city */
+	for(armynum=0;armynum<MAXARM;armynum++) {
+		if (P_ASOLD<=0 || P_ASTAT!=ATTACK) continue;
+		if ((sct[P_AXLOC][P_AYLOC].owner==country)
+		&& (fort_val(&sct[P_AXLOC][P_AYLOC]) > 0)) {
+			if(rand()%2==0) P_ASTAT=DEFEND;
+			else P_ASTAT=GARRISON;
 		}
 	}
 }
 
-/* make sectors of those with whom you are peaceful attr = 1 */
-n_atpeace()
+/* dont allow npcs to trespass onto other nations land */
+void
+n_trespass()
 {
 	register int x,y;
-	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++)
-		if((sct[x][y].owner!=0)
-		&&(ntn[country].dstatus[sct[x][y].owner]<WAR)
-		&&(abs(x-ntn[country].capx)>2)
-		&&(abs(y-ntn[country].capy)>2))
+	for(x=stx;x<endx;x++) for(y=sty;y<endy;y++)  {
+		if((sct[x][y].owner != country )
+		&&( sct[x][y].owner != 0 )
+		&&( abs(x-curntn->capx)>2 )
+		&&( abs(y-curntn->capy)>2 )
+		&&( ntn[country].dstatus[sct[x][y].owner]<WAR)
+		&&( ntn[sct[x][y].owner].dstatus[country]<WAR)
+		&&( ntn[country].dstatus[sct[x][y].owner]>ALLIED))
 			attr[x][y]=1;
+	}
 }
 
 /* you are too far from capitol */
+void
 n_toofar()
 {
 	register int x,y;
-	for(x=ntn[country].capx+NPCTOOFAR;x<MAPX;x++)
-		for(y=0;y<MAPY;y++) if(ONMAP)
+	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {
+		if( x<stx || y<sty || x>=endx || y>=endy )
 			attr[x][y]=1;
-	for(y=ntn[country].capy+NPCTOOFAR;y<MAPY;y++)
-		for(x=0;x<MAPX;x++) if(ONMAP)
-			attr[x][y]=1;
-	for(x=0;x<ntn[country].capx-NPCTOOFAR;x++)
-		for(y=0;y<MAPY;y++) if(ONMAP)
-			attr[x][y]=1;
-	for(y=0;y<ntn[country].capy-NPCTOOFAR;y++)
-		for(x=0;x<MAPX;x++) if(ONMAP)
-			attr[x][y]=1;
+	}
 }
 
 /* take undefended land */
+void
 n_unowned()
 {
 	register int x,y;
-	int dist;
 
 	/* around capitol */
-	for(x=ntn[country].capx-4;x<=ntn[country].capx+4;x++){
-		for(y=ntn[country].capy-4;y<=ntn[country].capy+4;y++){
-			if((ONMAP)&&(sct[x][y].owner==0)) {
-				/* find distance btwn x,y and cap */
-				dist=abs(x-ntn[country].capx)+abs(y,ntn[country].capy);
-				if(dist<10) attr[x][y]+= 500 - 50*dist;
+	for(x=curntn->capx-4;x<=curntn->capx+4;x++){
+		for(y=curntn->capy-4;y<=curntn->capy+4;y++){
+			if((ONMAP(x,y))&&(sct[x][y].owner==0)) {
+				attr[x][y] += 700;
 			}
 		}
 	}
 
-	for(x=0;x<MAPX;x++) {
-		for(y=0;y<MAPY;y++) {
+	for(x=stx;x<endx;x++) {
+		for(y=sty;y<endy;y++) {
+			/* add if metal high */
+			if(sct[x][y].tradegood != TG_none) {
+				if(sct[x][y].metal != 0) attr[x][y]+=500;
+				else if(sct[x][y].jewels != 0) attr[x][y]+=500;
+				else attr[x][y]+=300;
+			}
 			/*add to attractiveness for unowned sectors*/
 			if(sct[x][y].owner == 0) {
-				attr[x][y]+=100;
+				attr[x][y]+=300;
 			} else	{
-			if(sct[x][y].owner == NNOMAD)
-				attr[x][y]+=25;
+			if(ntn[sct[x][y].owner].active == NPC_NOMAD)
+				attr[x][y]+=100;
 			}
+			attr[x][y] += 50*tofood(&sct[x][y],country); 
+			if(!is_habitable(x,y)) attr[x][y] /= 5;
 		}
 	}
-	if(is_habitable(x,y) == 0) attr[x][y] /= 5;
 }
 void
 n_defend(natn)
@@ -855,28 +1172,30 @@ register short natn;
 {
 	int x,y;
 
-	/* add 1/10th of soldiers in sector */
+	/* add 1/10th of their soldiers in sector */
 	for(x=1;x<MAXARM;x++) if(ntn[natn].arm[x].sold > 0)
 		if(sct[ntn[natn].arm[x].xloc][ntn[natn].arm[x].yloc].owner==country)
 			attr[ntn[natn].arm[x].xloc][ntn[natn].arm[x].yloc] +=
 				ntn[natn].arm[x].sold/10;
 
 	/*plus 80 if near your capitol */
-	for(x=ntn[country].capx-1;x<=ntn[country].capy+1;x++){
-		for(y=ntn[country].capy-1;y<=ntn[country].capy+1;y++){
-			if(ONMAP) attr[x][y]+=80;
+	for(x=curntn->capx-1;x<=curntn->capy+1;x++){
+		for(y=curntn->capy-1;y<=curntn->capy+1;y++){
+			if(ONMAP(x,y)) attr[x][y]+=80;
 		}
 	}
 
-	/*plus based on defensive value*/
-	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {
+	/*plus based on defensive value and population */
+	for(x=stx;x<endx;x++) for(y=sty;y<endy;y++) {
 		if(movecost[x][y]==1) attr[x][y] += 50;
 		else if(movecost[x][y]<=3) attr[x][y] += 20;
 		else if(movecost[x][y]<=5) attr[x][y] += 10;
 
-		if((sct[x][y].designation==DCITY)
-		&&((sct[x][y].owner==country)||(sct[x][y].owner==natn))){
-			attr[x][y] += 50;
+ 		if(sct[x][y].owner==country){
+			if(ISCITY(sct[x][y].designation))
+				attr[x][y] += 50;
+			/* should spread 3000 points over country */
+			attr[x][y]+=3000*sct[x][y].people/ntn[country].tciv;
 		}
 	}
 }
@@ -886,17 +1205,24 @@ n_attack(nation)
 register short nation;
 {
 	register int x,y;
+	int	armynum;
+	long	solds;	/* solds within 1 of capitol or city */
 
-	/*plus 40 if next to their capitol */
-	for(x=ntn[nation].capx-1;x<=ntn[nation].capy+1;x++){
-		for(y=ntn[nation].capy-1;y<=ntn[nation].capy+1;y++){
-			if((sct[x][y].owner==nation)&&(ONMAP))
-				attr[x][y]+=40;
+	for(x=stx;x<endx;x++) for(y=sty;y<endy;y++){
+		if((sct[x][y].owner==nation)&&
+		((sct[x][y].designation==DCITY)
+		||(sct[x][y].designation==DCAPITOL)
+		||(sct[x][y].designation==DTOWN))){
+			solds=0;
+			for(armynum=1;armynum<MAXARM;armynum++) 
+				if((ntn[country].arm[armynum].sold > 0)
+				&&(abs(AXLOC-x)<=1)
+				&&(abs(AYLOC-y)<=1)) solds+=ASOLD;
+
+			if(solds_in_sector(x,y,nation)*2 < 3*solds)
+				attr[x][y]+=500;
 		}
 	}
-
-	/*plus 100 if on their capitol*/
-	attr[ntn[nation].capx][ntn[nation].capy]+=100;
 }
 
 /* +100 if undefended sectors of nation, +60 if not */
@@ -904,13 +1230,29 @@ void
 n_undefended( nation )
 {
 	register int x,y;
-	for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) if(sct[x][y].owner==nation){
+	for(x=stx;x<endx;x++) for(y=sty;y<endy;y++) if(sct[x][y].owner==nation){
 		if(is_habitable(x,y) == 0) {
 			attr[x][y] += 30;
 		} else if(occ[x][y]==0) {
 			attr[x][y]+=100;
 		} else {
 			attr[x][y]+=60;
+		}
+	}
+}
+
+/* add 1/2 of people in owned sectors for small armies */
+void
+n_people(doadd)
+int doadd;	/* TRUE if adding, FALSE if subtracting */
+{
+	register int x,y;
+	for(x=stx;x<endx;x++) for(y=sty;y<endy;y++)
+	if(sct[x][y].owner==country){
+		if(is_habitable(x,y)){
+			if(doadd==TRUE) {
+				attr[x][y] += sct[x][y].people/4;
+			} else	attr[x][y] -= sct[x][y].people/4;
 		}
 	}
 }
@@ -925,24 +1267,24 @@ int nation;
 	/*plus if strategic blocking sector*/
 
 	/*+60 if between the two capitol*/
-	if (ntn[nation].capx < ntn[country].capx){
+	if (ntn[nation].capx < curntn->capx){
 		x1=ntn[nation].capx;
-		x2=ntn[country].capx;
+		x2=curntn->capx;
 	} else {
-		x1=ntn[country].capx;
+		x1=curntn->capx;
 		x2=ntn[nation].capx;
 	}
-	if (ntn[nation].capy < ntn[country].capy){
+	if (ntn[nation].capy < curntn->capy){
 		y1=ntn[nation].capy;
-		y2=ntn[country].capy;
+		y2=curntn->capy;
 	}
 	else {
-		y1=ntn[country].capy;
+		y1=curntn->capy;
 		y2=ntn[nation].capy;
 	}
 
 	for(x=x1;x<=x2;x++) for(y=y1;y<=y2;y++) {
-		if(ONMAP) attr[x][y]+=60;
+		if(ONMAP(x,y)) attr[x][y]+=60;
 	}
 }
 
@@ -953,39 +1295,32 @@ int nation;
 void
 n_survive()
 {
-	register struct army		*aptr;
 	int nation,armynum;
+	int capx,capy;
 
-	if(sct[ntn[country].capy][ntn[country].capy].owner!=country){
-		attr[ntn[country].capy][ntn[country].capy]=1000;
+	capx=curntn->capx;
+	capy=curntn->capy;
+
+	if(sct[capx][capy].owner!=country){
+		attr[capx][capy]=1000;
 	}
 
 	/*defend your capitol if occupied, +50 more if with their army*/
-	for(nation=1;nation<MAXNTN;nation++)
-	if((ntn[nation].active != 0)
+	for(nation=1;nation<NTOTAL;nation++)
+	if((isntn(ntn[nation].active))
 	&&((ntn[nation].dstatus[country]>=WAR)
-	||(ntn[country].dstatus[nation]>=WAR))){
+	  ||(curntn->dstatus[nation]>=WAR))){
 		for(armynum=1;armynum<MAXARM;armynum++)
-		if(ntn[nation].arm[armynum].sold > 0) {
-
-			aptr = &(ntn[nation].arm[armynum]);
-
-			if((aptr->xloc==ntn[nation].capx)
-			&&(aptr->yloc==ntn[nation].capy)){
-				if(aptr->sold>2*ntn[country].arm[0].sold){
-					attr[aptr->xloc][aptr->yloc]+=
-						aptr->sold/2;
-				} else {
-					attr[aptr->xloc][aptr->yloc]+=
-						aptr->sold/5;
-				}
-			}
-			else if((aptr->xloc<=ntn[nation].capx+2)
-			&&(aptr->xloc>=ntn[nation].capx-2)
-			&&(aptr->yloc<=ntn[nation].capy+2)
-			&&(aptr->yloc>=ntn[nation].capy-2)){
-				attr[aptr->xloc][aptr->yloc]+=aptr->sold/5;
-
+		if((ntn[nation].arm[armynum].sold > 0) 
+		&&( ntn[nation].arm[armynum].xloc<=capx+2)
+		&&( ntn[nation].arm[armynum].xloc>=capx-2)
+		&&( ntn[nation].arm[armynum].yloc<=capy+2)
+		&&( ntn[nation].arm[armynum].yloc>=capy-2)){
+			if((ntn[nation].arm[armynum].xloc==capx)
+			&&(ntn[nation].arm[armynum].yloc==capy)){
+				attr[capx][capy]+=2*ntn[nation].arm[armynum].sold;
+			} else {
+				attr[ntn[nation].arm[armynum].xloc][ntn[nation].arm[armynum].yloc]+=ntn[nation].arm[armynum].sold;
 			}
 		}
 	}
@@ -996,15 +1331,20 @@ defattr()
 {
 	int nation;
 
+#ifdef DEBUG
+	printf("atkattr()\n");
+#endif DEBUG
+
 	n_unowned();
 
-	for(nation=1;nation<MAXNTN;nation++)
-	if((ntn[nation].active!=0)&&(ntn[country].dstatus[nation]>=WAR)) {
+	for(nation=1;nation<NTOTAL;nation++)
+	if((isntn(ntn[nation].active))&&(curntn->dstatus[nation]>=WAR)) {
 		n_defend(nation);
 		n_between(nation);
 		n_undefended(nation);
 	}
 
+	n_trespass();
 	n_toofar();
 	n_survive();
 }
@@ -1014,69 +1354,46 @@ void
 atkattr()
 {
 	int nation;
+#ifdef DEBUG
+	printf("atkattr()\n");
+#endif DEBUG
 
 	n_unowned();
 
 	/*adjust for each nation that you are at war with*/
-	for(nation=1;nation<MAXNTN;nation++)
-		if(ntn[country].active!=0)
-			if(ntn[country].dstatus[nation]==WAR) {
-				n_between(nation);
-				n_undefended(nation);
-				n_attack(nation);
-			} else if(ntn[country].dstatus[nation]==JIHAD) {
-				n_attack(nation);
-				n_attack(nation);
-				n_between(nation);
-				n_undefended(nation);
-				n_attack(nation);
-				n_between(nation);
-				n_undefended(nation);
-				n_attack(nation);
-			}
+	for(nation=1;nation<NTOTAL;nation++) if( isntn(ntn[nation].active) ){
+		if(curntn->dstatus[nation]==WAR) {
+			n_between(nation);
+			n_undefended(nation);
+			n_attack(nation);
+		} else if(curntn->dstatus[nation]==JIHAD) {
+			n_attack(nation);
+			n_attack(nation);
+			n_between(nation);
+			n_undefended(nation);
+			n_attack(nation);
+			n_between(nation);
+			n_undefended(nation);
+			n_attack(nation);
+		}
+	}
 
 	n_toofar();
+	n_trespass();
 	n_survive();
 }
 
 /*calculate attractiveness when at peace*/
-int
+void
 pceattr()
 {
+#ifdef DEBUG
+	printf("pceattr()\n");
+#endif DEBUG
 	n_unowned();
-	n_atpeace();
+	n_unowned();
+	n_trespass();
 	n_toofar();
 	n_survive();
 }
-#endif
-
-#ifdef DEBUG
-check(line)
-int line;
-{
-	int armynum;
-	for(armynum=0;armynum<MAXARM;armynum++){
-		if(ASOLD<0) {
-		printf("ERROR: line %d army %d nation %s soldier %d\n",line,armynum,ntn[country].name,ASOLD);
-		ASOLD=0;
-		}
-		if((AXLOC>MAPX)||(AYLOC>MAPY)){
-		printf("CHECK ERROR: line %d army %d nation %s loc %d %d\n",line,armynum,ntn[country].name,AXLOC,AYLOC);
-		AXLOC = ntn[country].capx;
-		AYLOC = ntn[country].capy;
-		}
-	}
-	if(ntn[country].tiron < 0L){
-		printf("ERROR: line %d nation %s iron is %ld\n",line,ntn[country].name,ntn[country].tiron);
-		ntn[country].tiron = 0;
-	}
-	if(ntn[country].tfood < 0L){
-		printf("ERROR: line %d nation %s food is %ld\n",line,ntn[country].name,ntn[country].tfood);
-		ntn[country].tfood = 0;
-	}
-	if(ntn[country].jewels < 0L){
-		printf("ERROR: line %d nation %s jewels is %ld\n",line,ntn[country].name,ntn[country].jewels);
-		ntn[country].jewels = 0;
-	}
-}
-#endif DEBUG
+#endif NPC
