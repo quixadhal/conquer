@@ -131,10 +131,10 @@ Assasin       2      +20      x1      50      400      NINJA
 Efreet        2      +10      x1.5    50      400      DERVISH
 Gargoyl       2      +10      x1      75      450      MI_MONST
 Wraith        2      +10      x1      75      450      VAMPIRE
-Hero          2       +0      x1      75      200      WARLORD
+Hero          2       +0      x1      75      200      WARRIOR
 Centaur       2      +10      x1.5    50      200      CAVALRY
 Giant         5       +0      x1     150     2100
-Suphero       5      +15      x1     150      450      WARRIOR
+Suphero       5      +15      x1     150      450      WARLORD
 Mummy         5      +15      x1     150     1000      VAMPIRE
 Elmentl       5       +5      x1.5   175     1900      SORCERER
 Mintaur       5      +20      x1     150     2100      DESTROYER

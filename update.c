@@ -82,8 +82,9 @@ update()
 
 	/* check for destroyed nations */
 	for(country=1;country<NTOTAL;country++)
-	if(isntn(ntn[country].active)) {
-		if(ntn[country].tciv + ntn[country].tmil < 50)
+	if (isntn(ntn[country].active)) {
+		if (ntn[country].tciv < 100 &&
+		    ntn[country].tmil < TAKESECTOR)
 			destroy(country);
 	}
 
@@ -1295,7 +1296,7 @@ updmil()
 					if(armynum>=0&&armynum<MAXARM) {
 						P_ASOLD=0;
 					}
-					P_NARMY=0;
+					P_NARMY=MAXARM;
 					P_NPEOP=0;
 					P_NCREW=0;
 				}

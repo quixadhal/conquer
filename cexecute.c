@@ -51,7 +51,7 @@ int	isupdate;	/* 0 if not update, 1 if update */
 /* note: i_people is a short, so we must scale to allow for people >= 32K */
 				sct[x][y].i_people = sct[x][y].people/256;
 			else
-				sct[x][y].i_people = 0;
+				sct[x][y].i_people = -1;
 
 	/*open exefile file*/
 	sprintf(line,"%s%d",exefile,country);

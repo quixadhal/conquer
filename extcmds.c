@@ -125,6 +125,7 @@ int armynum, army2;
 	    || P_ASTAT == ONBOARD || P_ASTAT == TRADED) {
 	  if ((nocomb_stat(P_ASTAT) == TRUE) ||
 		(nocomb_stat(curntn->arm[army2].stat) == TRUE) ||
+	        curntn->arm[army2].stat == MARCH ||
 		curntn->arm[army2].stat == SIEGE ||    /* may not jump out  */
 		curntn->arm[army2].stat == SORTIE ||   /* of these statuses */
 		P_ATYPE >= MINLEADER ||

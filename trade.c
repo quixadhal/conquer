@@ -179,26 +179,29 @@ trade()
 			/* check for minor sales */
 			if (holdint==GETFOOD || holdint==GETMETAL || holdint==GETJEWL) {
 				/* strange flow but less control needed */
-				curntn->tgold-=GODPRICE;
+				mvaddstr(count++,0,"Spend how much gold? ");
+				refresh();
+				holdlong = get_number();
+				curntn->tgold-=holdlong;
 				if (curntn->tgold<0L) {
-					curntn->tgold+=GODPRICE;
+					curntn->tgold+=holdlong;
 					tradeerr("You do not have enough gold");
 				}
 				else switch (holdint) {
 				case GETFOOD:
-					curntn->tfood+=GODFOOD;
+					curntn->tfood+= (long)(GODFOOD * ((double)holdlong / GODPRICE));
 					if ( (tfile = fopen(tradefile,"a+"))==NULL) {
 						tradeerr("Error opening file for trading");
 						abrt();
 					}
-					fprintf(tfile, "%d %d %d %d %ld %ld %d\n",BUY, country, GETFOOD, 0, 0, 0, 0);
+					fprintf(tfile, "%d %d %d %d %ld %ld %d\n",BUY, country, GETFOOD, 0, curntn->tfood, 0, 0);
 					fclose(tfile);
 					break;
 				case GETMETAL:
-					curntn->metals+=GODMETAL;
+					curntn->metals+=(long)(GODMETAL * ((double)holdlong / GODPRICE));
 					break;
 				case GETJEWL:
-					curntn->jewels+=GODJEWL;
+					curntn->jewels+=(long)(GODMETAL * ((double)holdlong / GODPRICE));
 					break;
 				}
 				inloop=FALSE;
@@ -747,9 +750,9 @@ long longval;
 		break;
 	case TDSHIP:
 		/* give navy to cntry1 */
-		if(!(ntn[cntry1].nvy[extra].merchant!=0
-		   && ntn[cntry1].nvy[extra].warships!=0
-		   && ntn[cntry1].nvy[extra].galleys!=0) ) return -1;
+		if(ntn[cntry1].nvy[extra].merchant==0
+		   && ntn[cntry1].nvy[extra].warships==0
+		   && ntn[cntry1].nvy[extra].galleys==0) return -1;
 		while(unitnum==(-1)&&unitcount<MAXARM){
 			if ((int)ntn[cntry2].nvy[unitcount].merchant+ntn[cntry2].nvy[unitcount].warships+ntn[cntry2].nvy[unitcount].galleys == 0) {
 				/* give navy to cntry2 */
@@ -922,7 +925,7 @@ checktrade()
 			itemnum++;
 		} else if (deal[itemnum]==BUY) {
 			if (natn[itemnum]==country) {
-				if (type1[itemnum]==GETFOOD) ntn[country].tfood+=GODFOOD;
+				if (type1[itemnum]==GETFOOD) ntn[country].tfood=lvar1[itemnum];
 				else setaside(country,type2[type1[itemnum]],lvar1[itemnum],(int)lvar1[itemnum],TRUE);
 			}
 		}
@@ -990,6 +993,7 @@ uptrade()
 			}
 		}
 	}
+	fclose(tfile);
 	unlink(tradefile);
 	if (itemnum == 0) return;
 	/* reopen the file for unsold commodities */

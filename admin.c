@@ -75,7 +75,7 @@ char **argv;
 
 	/* check conquer options */
 	if (getenv(ENVIRON_OPTS)!=NULL) {
-		strncpy(cq_opts, getenv(ENVIRON_OPTS), BIGLTH-1);
+		strncpy(cq_opts, getenv(ENVIRON_OPTS), BIGLTH);
 	}
 	if (cq_opts[0] != '\0') {
 		l = strlen(cq_opts);

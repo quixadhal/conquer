@@ -61,7 +61,7 @@ char	**argv;
 	int geteuid(), getuid(), setuid();
 	register int i,j;
 	char name[NAMELTH+1],filename[FILELTH];
-#ifdef __STDC__
+#ifndef __STDC__
 	void srand();
 #endif
 	void init_hasseen(),mapprep();
@@ -86,7 +86,7 @@ char	**argv;
 
 	/* check conquer options */
 	if (getenv(ENVIRON_OPTS)!=NULL) {
-		strncpy(cq_opts, getenv(ENVIRON_OPTS), BIGLTH-1);
+		strncpy(cq_opts, getenv(ENVIRON_OPTS), BIGLTH);
 	}
 	if (cq_opts[0] != '\0') {
 		l = strlen(cq_opts);
@@ -313,13 +313,13 @@ char	**argv;
 
 	/*get encrypted password*/
 	fprintf(stderr,"\nWhat is your Nation's Password: ");
-	strncpy(tmppass,getpass(""),PASSLTH);
-	strncpy(passwd,crypt(tmppass,SALT),PASSLTH);
+	strncpy(tmppass,getpass(""),PASSLTH+1);
+	strncpy(passwd,crypt(tmppass,SALT),PASSLTH+1);
 	if((strncmp(passwd,curntn->passwd,PASSLTH)!=0)
 	&&(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
 		fprintf(stderr,"\nError: Reenter your Nation's Password: ");
-		strncpy(tmppass,getpass(""),PASSLTH);
-		strncpy(passwd,crypt(tmppass,SALT),PASSLTH);
+		strncpy(tmppass,getpass(""),PASSLTH+1);
+		strncpy(passwd,crypt(tmppass,SALT),PASSLTH+1);
 		if((strncmp(passwd,curntn->passwd,PASSLTH)!=0)
 		&&(strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)) {
 			fprintf(stderr,"\nSorry:");

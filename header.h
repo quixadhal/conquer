@@ -153,7 +153,7 @@
 #define LONGTRIP	100	/* navy trip lth for 100% attrition	*/
 
 /* min soldiers to take sector - either 75 or based on your civilians	*/
-#define TAKESECTOR	max(75,(ntn[country].tciv/350))
+#define TAKESECTOR	min(500,max(75,(ntn[country].tciv/350)))
 
 #define MAXLOSS		60	/* maximum % of men lost in 1:1 battle	*/
 #define	FINDPERCENT	1	/* percent to find gold/metal in sector	*/

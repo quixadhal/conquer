@@ -507,11 +507,13 @@ change()
 			break;
 		}
 		/*check if already used*/
-		else for(i=1;i<(country-1);i++){
+		else for(i=1;i<NTOTAL;i++){
+		    if (isactive(ntn[i].active)) {
 			if((strcmp(ntn[i].name,string)==0)&&(i!=country)) {
 				errormsg("Name already used");
 				break;
 			}
+		    }
 		}
 		errormsg("New name can be used following next update");
 		strcpy(curntn->name,string);
@@ -526,7 +528,7 @@ change()
 			mvaddstr(0,0,"What is your current password:");
 			refresh();
 			(void) get_pass(command);
-			strncpy(passwd,crypt(command,SALT),PASSLTH);
+			strncpy(passwd,crypt(command,SALT),PASSLTH+1);
 			if((strncmp(passwd,ntn[0].passwd,PASSLTH)!=0)
 			&&(strncmp(passwd,curntn->passwd,PASSLTH)!=0)){
 				break;

@@ -177,7 +177,7 @@ $(SORT):	sort.c
 	strip $(SORT)
 
 clobber:
-	-$(RM) *.o $(HELPOUT)[0-5] $(PSPROG) $(SORT) $(NULL)
+	-$(RM) *.o $(HELPOUT)[0-5] $(PSPROG) $(SORT) insthelp helpfile $(NULL)
 	-$(RM) newhelp in$(GAME) in$(SORT) in$(ADMIN) in$(PSPROG) $(NULL)
 	-$(RM) $(HELPSCR).[12] lint[ag] conquer.doc $(GAME) $(ADMIN) $(NULL)
 

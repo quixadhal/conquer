@@ -453,7 +453,7 @@ newlogin()
 				newerror("Invalid Password Match");
 			} else valid=TRUE;
 		}
-		strncpy(curntn->passwd,crypt(tempc,SALT),PASSLTH);
+		strncpy(curntn->passwd,crypt(tempc,SALT),PASSLTH+1);
 
 		/*get your name*/
 		valid=FALSE;

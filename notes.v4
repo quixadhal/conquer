@@ -378,6 +378,19 @@
 312. gave god the ability to adjust navy move values.
 313. fixed bug in reporting side during newspaper for naval battles.
 314. gave god the ability to adjust an army status.
+===4.0 patch number nine released => 4.9 ===============================
+315. adjusted the combat code so a unit must be on attack to attack.
+316. "#ifdef __STDC__" to "#ifndef __STDC__" typo fix. [Charles C. Fu]
+317. fixed summon documentation for Heros and Superheros.
+318. adjusted test stat in tradeit function of trade.c [Charles C. Fu]
+319. fixed password length termination bugs.
+320. raised the limit of nation destruction to under 250 civs and 50 mil.
+321. adjusted method of i_people calculation to improve accounting. [D. Brooks]
+322. fixed check on limit in cities [D. Brooks]
+323. make nation destruction occur for <100 people and <TAKESECTOR mil.
+324. put a 500 men cap on the amount needed to capture a sector.
+325. added in a query as to how much purchase should be made from God trades.
+326. made sure to close the commerce file before removing it.
 
 -------------------------------------------------------------------------
 | 2.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V5             |

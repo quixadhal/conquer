@@ -41,6 +41,8 @@ int	count=0;                /*number of armies or navies in sector*/
 #define COMBAT_X	0
 #define COMBAT_A	1
 #define COMBAT_N	2
+#define FOUGHT_A	4
+#define FOUGHT_N	8
 
 /************************************************************************/
 /*	COMBAT()	run all combat on the map			*/
@@ -259,9 +261,9 @@ fight()
 			continue;
 		}
 		else if(side[i]==ATKR){
-			if((ntn[owner[i]].arm[unit[i]].stat!=RULE)
-			&&( ntn[owner[i]].arm[unit[i]].stat!=TRADED)
-			&&( ntn[owner[i]].arm[unit[i]].stat!=SCOUT)) {
+			if ((ntn[owner[i]].arm[unit[i]].stat >= ATTACK)
+			 &&(ntn[owner[i]].arm[unit[i]].stat <= SORTIE
+			 ||ntn[owner[i]].arm[unit[i]].stat >= NUMSTATUS)) {
 				asold += ntn[owner[i]].arm[unit[i]].sold;
 			} else {
 				side[i]=NTRL;

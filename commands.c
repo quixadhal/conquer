@@ -751,14 +751,14 @@ draft()
 		return;
 	}
 	if(curntn->tgold <= 0){
-		errormsg("you are broke");
+		errormsg("You are broke");
 		if(isgod==TRUE) reset_god();
 		return;
 	}
 
-	if((sct[XREAL][YREAL].designation==DTOWN)
-	&&(sct[XREAL][YREAL].people*(2*CITYLIMIT+(curntn->tsctrs/2))<curntn->tciv)){
-		mvprintw(LINES-1,0,"need %d people in sector: hit any key",curntn->tciv/(2*CITYLIMIT+(curntn->tsctrs/2)));
+	if(ISCITY(sct[XREAL][YREAL].designation)
+	&&(sct[XREAL][YREAL].people*(3*CITYLIMIT+(curntn->tsctrs/2))<curntn->tciv)){
+		mvprintw(LINES-1,0,"Need %d people in sector: hit any key",curntn->tciv/(3*CITYLIMIT+(curntn->tsctrs/2)));
 		refresh();
 		getch();
 		if(isgod==TRUE) reset_god();
@@ -844,9 +844,9 @@ draft()
   	/*		  = imen/4 - ( imen - people)   */
   	/*		  = -3/4 * imen + people)  	*/
 	/*	192 comes from 3*256/4 			*/
-	if((men > sct[XREAL][YREAL].people - (sct[XREAL][YREAL].i_people*192))
-  	||(sct[XREAL][YREAL].i_people <= 0)) {
-  		if(sct[XREAL][YREAL].i_people <= 0)
+	if( (newtype != A_MERCENARY && (men > sct[XREAL][YREAL].people - (sct[XREAL][YREAL].i_people*192) ) )
+  	||(sct[XREAL][YREAL].i_people < 0)) {
+  		if(sct[XREAL][YREAL].i_people < 0)
   		errormsg("error: sector wasn't city at beginning of turn");
 		else errormsg("error: raising too many soldiers");
 		if(isgod==TRUE) reset_god();
@@ -1345,6 +1345,7 @@ moveciv()
 	}
 	if (people>sct[XREAL][YREAL].people) {
 		errormsg("Sorry, not that many people live there.");
+		return;
 	}
 	if (people*50>curntn->tgold) {
 		errormsg("Sorry, you do not have enough gold talons.");
