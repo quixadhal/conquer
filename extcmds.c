@@ -15,6 +15,10 @@
 /* combinearmies(army1,army2)	add army2 to army1 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <curses.h>
 #include "header.h"
 #include "data.h"
 

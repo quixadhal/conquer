@@ -1,12 +1,15 @@
 /* Conquer: Copyright (c) 1988 by Edward M Barlow */
-#include	<ctype.h>
-#include	<stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curses.h>
+#include <strings.h>
 #ifdef CONQUER
-#include	<sys/types.h>
-#include	<sys/stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #endif /*CONQUER*/
-#include	"header.h"
-#include	"data.h"
+#include "header.h"
+#include "data.h"
 
 extern FILE *fnews;
 extern short country,redraw;

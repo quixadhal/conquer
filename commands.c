@@ -10,13 +10,17 @@
  *                                                Ed
  */
 
-#include "header.h"
-#include "data.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
+#include <curses.h>
 #ifdef CONQUER
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif /*CONQUER*/
+#include "header.h"
+#include "data.h"
 
 extern long conq_mail_size;
 

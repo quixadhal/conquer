@@ -10,15 +10,18 @@
  *                                                Ed
  */
 
-#include "header.h"
-#include "data.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curses.h>
 #include <pwd.h>
 #include <ctype.h>
-
 #include <signal.h>
-
 #include <fcntl.h>
-#include  <pwd.h>
+#include <pwd.h>
+#include "header.h"
+#include "data.h"
+
 /*Declarations*/
 char	*getpass();
 struct	s_sector **sct;

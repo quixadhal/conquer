@@ -1,6 +1,10 @@
 /* conquer : Copyright (c) 1988 by Ed Barlow. */
 /* this code was initially written in January, 1989 by Adam Bryant */ 
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curses.h>
 #include "header.h"
 #include "data.h"
 

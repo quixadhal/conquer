@@ -15,17 +15,20 @@ static char *cpr[]={
 
 /* This in no way supersceedes the copyright notice noted above */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curses.h>
 #include "header.h"
 #include "data.h"
 #ifdef SPEW
-#include <stdio.h>
 #include <ctype.h>
+#include <strings.h>
 
-extern char *malloc();
-extern int atoi();
 char *my_alloc();
 char *save();
 
+#if 0
 #ifdef BSD
 extern char	*index();	/* This may be strchr	*/
 extern char	*rindex();	/* This may be strrchr	*/
@@ -34,6 +37,7 @@ extern char	*rindex();	/* This may be strrchr	*/
 #define rindex(s,c)	strrchr(s,c)
 extern char	*strchr();	/* This may be index	*/
 extern char	*strrchr();	/* This may be rindex	*/
+#endif
 #endif
 
 /*--------------- system configuration ------------------*/
@@ -193,7 +197,7 @@ FILE *fp;
 	p = index(cp->tags, deftag);		/* look it up */
 	if(p == NULL ){
 		variant = 0;
-		fprintf(fp,"??/%c??", deftag );
+		fprintf(fp,"\?\?/%c\?\?", deftag );
 		deftag = ' ';		/* for passing as deftag */
 	}else variant = p - cp->tags;
 

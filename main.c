@@ -10,14 +10,18 @@
  *                                                Ed
  */
 
-#include	<ctype.h>
-#include	<errno.h>
-#include	"header.h"
-#include	"data.h"
-#include	"patchlevel.h"
-
-#include	<signal.h>
-#include	<pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <curses.h>
+#include <errno.h>
+#include <signal.h>
+#include <pwd.h>
+#include <time.h>
+#include "header.h"
+#include "data.h"
+#include "patchlevel.h"
 
 extern	int armornvy,roads_this_turn,terror_adj;
 

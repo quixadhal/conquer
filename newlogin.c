@@ -11,6 +11,10 @@
  */
 
 /*create a new login for a new player*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curses.h>
 #include <ctype.h>
 #include <pwd.h>
 #include "patchlevel.h"

@@ -18,13 +18,13 @@
 #
 #	Conquer news mailing list: conquer-news-request@bu-cs.bu.edu.
 #
-MAKE	= /bin/make
-CC	= /bin/cc
+MAKE	= /usr/bin/make
+CC	= /usr/bin/gcc
 RM      = /bin/rm -f
 
 #	LN must be "ln -s" if source and default directories span disks
-LN	= ln
-CP	= cp
+LN	= /bin/ln
+CP	= /bin/cp
 NULL	= 2>/dev/null
 
 #	Flags to lint
@@ -51,7 +51,7 @@ PSPAGE  = LETTER
 #	SHARFILE name.
 #	[This is for a public domain shar from USENET, I can send
 #	copies if you wish - adb@bu-cs.bu.edu]
-SHAR	= xshar
+SHAR	= /usr/bin/shar
 SHARLIM	= 50
 SHARNAM	= shar.
 SHARFLG = -D -c -l$(SHARLIM) -o$(SHARNAM)
@@ -67,7 +67,7 @@ SHARFLG = -D -c -l$(SHARLIM) -o$(SHARNAM)
 
 #
 #	libraries for BSD systems:
-LIBRARIES = -lcurses -ltermcap
+LIBRARIES = -lcurses -ltermcap -lcrypt
 #
 #	libraries for SYSV systems:
 #LIBRARIES = -lcurses
@@ -77,15 +77,15 @@ LIBRARIES = -lcurses -ltermcap
 
 #	CURRENT is this directory.  The directory where the source
 #	and Makefile are located
-CURRENT = /usr/home/guest/adb/src/conquer
+CURRENT = /home/conquer/src
 
 #	DEFAULT is the directory where default nations & help files will be 
 #	stored.	 It is also the default directory = where players will play 
 #	if they do not use the -d option.
-DEFAULT = /usr/home/guest/adb/games/conqlib
+DEFAULT = /home/conquer/lib
 
 #	This directory is where the executables will be stored
-EXEDIR = /usr/home/guest/adb/games
+EXEDIR = /home/conquer/bin
 
 #	Definitions used for compiling conquer
 CDEFS  = -DDEFAULTDIR=\"$(DEFAULT)\" -DEXEDIR=\"$(EXEDIR)\"

@@ -13,10 +13,14 @@
  *                                                Ed
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curses.h>
+#include <ctype.h>
 #include "header.h"
 #include "data.h"
 #include "patchlevel.h"
-#include <ctype.h>
 
 extern FILE *fexe;
 /*offset of upper left hand corner*/

@@ -11,9 +11,13 @@
  */
 
 /*create a new login for a new player*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curses.h>
+#include <ctype.h>
 #include "header.h"
 #include "data.h"
-#include <ctype.h>
 
 extern short country;
 extern short redraw;

@@ -10,9 +10,13 @@
  *                                                Ed
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <curses.h>
 #include "header.h"
 #include "data.h"
-#include <ctype.h>
 
 extern FILE *fexe;
 extern short redraw;

@@ -31,6 +31,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 /* system definitions just in case */
@@ -74,7 +76,7 @@ int compnum=DEFAULT_COMP;
 int iflag=FALSE;
 
 /* file pointers to infile and outfile */
-FILE *infile=stdin, *outfile=stdout;
+FILE *infile, *outfile;
 
 /* macros */
 #define UPPER(x) ((islower(x))?(toupper(x)):(x))
@@ -89,6 +91,10 @@ main(argc, argv)
 	FILE *fopen();
 	int get_line();
 	void place(), send_out();
+
+        /* This needs to be done at run-time now */
+        infile=stdin;
+        outfile=stdout;
 
 	/* input string */
 	char data[MAX_STR];

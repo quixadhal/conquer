@@ -1,9 +1,12 @@
 /* Conquer: Copyright (c) 1988 by Edward M Barlow */
-#include	<stdio.h>
-#include 	<pwd.h>
-#include	<ctype.h>
-#include	"header.h"
-#include	"data.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curses.h>
+#include <pwd.h>
+#include <ctype.h>
+#include "header.h"
+#include "data.h"
 
 #ifdef RANEVENT
 char	*names[] = {		/* must end in single character name */

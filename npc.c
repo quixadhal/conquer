@@ -10,9 +10,13 @@
  *                                                Ed
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curses.h>
+#include <ctype.h>
 #include "header.h"
 #include "data.h"
-#include <ctype.h>
 
 extern FILE *fnews;
 
@@ -28,28 +32,28 @@ static	int Avg_tradegood;
 /* macros that indicate what the country can see */
 #ifdef	NPC_SEE_SECTORS
 #define		SEE_SECTOR(x,y,country)			TRUE
-#else	NPC_SEE_SECTORS
+#else	/* NPC_SEE_SECTORS */
 #define     SEE_SECTOR(x,y,country) \
                 ( (magic(sct[x][y].owner,THE_VOID)!=TRUE) \
                   || (magic(country,NINJA)==TRUE) )
-#endif	NPC_SEE_SECTORS
+#endif	/* NPC_SEE_SECTORS */
 
 #ifdef	NPC_SEE_CITIES
 #define		SEE_CITIES(city_nation,country)		TRUE
-#else	NPC_SEE_CITIES
+#else	/* NPC_SEE_CITIES */
 #define     SEE_CITIES(city_nation,country) \
                 ( (magic(city_nation,THE_VOID)!=TRUE) \
                   || (magic(country,NINJA)==TRUE) )
-#endif	NPC_SEE_CITIES
+#endif	/* NPC_SEE_CITIES */
 
 #ifdef	NPC_COUNT_ARMIES
 #define		COUNT_ARMIES(army_nation,country)	TRUE
-#else	NPC_COUNT_ARMIES
+#else	/* NPC_COUNT_ARMIES */
 #define     COUNT_ARMIES(army_nation,country) \
                 ( ( (magic(army_nation,THE_VOID)!=TRUE) \
                     && (magic(army_nation,HIDDEN)!=TRUE) \
                    ) || (magic(country,NINJA)==TRUE) )
-#endif	NPC_COUNT_ARMIES
+#endif	/* NPC_COUNT_ARMIES */
 
 /* When a sector cannot be seen by an npc nation because of
  * THE_VOID, a value must still be given to the

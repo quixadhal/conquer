@@ -8,11 +8,6 @@
 				/* this is used to protect against overflow */
 #define	SCRARM	((LINES-14)/2)	/* number of armies to fit on screen	*/
 
-extern	char	*strcpy(),*strncpy(),*strcat(),*strncat();
-
-#include <stdio.h>
-#include <curses.h>
-
 /* sometimes curses.h defines TRUE	*/
 #ifndef TRUE
 #define	TRUE		1
@@ -588,7 +583,7 @@ struct	s_nation		/* player nation stats	*/
 
 #ifndef HILIGHT
 #define	standout()
-#endif HILIGHT
+#endif /* HILIGHT */
 
 #ifdef BEEP
 #define	beep()		putc('\007',stderr)
@@ -611,7 +606,7 @@ extern	long		lrand48();
 #define	check()	;
 #else
 #define	check()	checkout(__FILE__,__LINE__)
-#endif DEBUG
+#endif /* DEBUG */
 
 #define	GOLDTHRESH	10L	/* min ratio of gold:jewels */
 
@@ -672,7 +667,7 @@ extern void	wizardry();
 extern	char	*crypt(),**m2alloc();
 #ifdef TRADE
 void trade(),uptrade(),checktrade();
-#endif TRADE
+#endif /* TRADE */
 
 #define	HI_OWN		0	/* hilight modes	*/
 #define	HI_ARMY		1
@@ -916,12 +911,12 @@ extern	char	*tg_value, *tg_name[], *tg_stype;	/* trade goods	*/
 
 #ifdef CONQUER
 extern	long	mercgot;
-#endif CONQUER
+#endif /* CONQUER */
 
 #ifdef ADMIN
 extern	char	*npcsfile;
 extern	char	scenario[];
-#endif ADMIN
+#endif /* ADMIN */
 extern	int	unitmove[], unitattack[], unitdefend[];
 
 /*	file name definitions	*/
@@ -934,11 +929,11 @@ extern	char	conqmail[];
 #ifdef SYSMAIL
 extern	int	sys_mail_status;
 extern	char	sysmail[];
-#endif SYSMAIL
-#endif CONQUER
+#endif /* SYSMAIL */
+#endif /* CONQUER */
 #ifdef TRADE
 extern	char	*tradefile;
-#endif TRADE
+#endif /* TRADE */
 
 #define EXT_CMD '\033'		/* ESC to start extended command */
 
@@ -950,7 +945,7 @@ extern	char	*tradefile;
 
 #ifdef HPUX
 #define SYSV
-#endif HPUX
+#endif /* HPUX */
 
 /* minor market items */
 #define GETFOOD		97		/* response needed to get food */
@@ -1015,4 +1010,4 @@ struct s_region
 	unsigned char revolt;	/* status of region	*/
 	unsigned char prestige;	/* prestige for owning	*/
 };
-#endif 0
+#endif /* 0 */
