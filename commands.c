@@ -1145,7 +1145,7 @@ rmessage()
 #ifdef SYSMAIL
 	/* increase size to ensure mail check works */
 	conq_mail_size++;
-#endif SYSMAIL
+#endif /* SYSMAIL */
 }
 
 void

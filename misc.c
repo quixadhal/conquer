@@ -44,7 +44,7 @@ register char	*to;
 
 	return( 0 );
 } /* move_file() */
-#endif CONQUER
+#endif /* CONQUER */
 
 /* returns integer input greater than zero or */
 /* -1 for no input.                           */
@@ -285,7 +285,7 @@ int	movee;
 	free(history_reachp);
 	return( result );
 } /* land_reachp() */
-#endif ADMIN
+#endif /* ADMIN */
 #ifdef ADMIN
 /*
  *	water_2reachp()
@@ -388,7 +388,7 @@ int	move_points;
 
 	return( 0 );
 } /* water_2reachp() */
-#endif ADMIN
+#endif /* ADMIN */
 #ifdef XYZ	/* XYZ never is defined */
 /*
  *	water_reachp()
@@ -428,7 +428,7 @@ int	movee;
 
 	return( water_2reachp( ax, ay, move_points ) );
 } /* water_reachp() */
-#endif 0
+#endif /* 0 */
 
 /*
  *	solds_in_sector()
@@ -538,7 +538,7 @@ int	nation;
 	total += bonus/10;
 	return( total );
 } /* score_one() */
-#endif ADMIN
+#endif /* ADMIN */
 /*
  *	print_accum()
  */
@@ -585,7 +585,7 @@ int	y;
 	curntn = nptr;
 	return(count);
 }
-#endif CONQUER
+#endif /* CONQUER */
 
 int
 num_powers(nation,type)
@@ -637,7 +637,7 @@ int	cntry;
 			if ((magic(cntry,DERVISH)||magic(cntry,DESTROYER))
 			&&(sptr->vegetation==DESERT || sptr->vegetation==ICE))
 				return(6);
-#endif DERVDESG
+#endif /* DERVDESG */
 			return( 0 );
 		}
 		if(ntn[cntry].race == ELF){
@@ -849,7 +849,7 @@ int nation;
 				if(ispc(curntn->active)) {
 					fprintf(fm,"\tsector %d, %d joins nation %s\n",ntn[nation].name);
 				}
-#endif NOTDONE
+#endif /* NOTDONE */
 			}
 		}
 	}
@@ -958,7 +958,7 @@ sackem(cntry)
 	/* restore */
 	curntn = saventn;
 }
-#endif ADMIN
+#endif /* ADMIN */
 
 /*destroy nation--special case if capitol not owned by other nation*/
 void
@@ -1161,7 +1161,7 @@ int i,j;
 
 	return(hold);
 }
-#endif CONQUER
+#endif /* CONQUER */
 #ifdef ADMIN
 /* determines whether or not a unit has the ability to fly */
 int
@@ -1180,7 +1180,7 @@ unsigned char typ;
 		return(FALSE);
 	}
 }
-#endif ADMIN
+#endif /* ADMIN */
 
 void
 spreadsheet(nation)
@@ -1326,7 +1326,7 @@ int nation;
 			}
 			spread.revfood += product*TAXFOOD*nptr->tax_rate/100L;
 		}
-#endif DERVDESG
+#endif /* DERVDESG */
 		else {	/* other sectors */
 			spread.inothr += sptr->people;
 			if(sptr->people>TOMANYPEOPLE) {
@@ -1446,7 +1446,7 @@ reset_god()
 	country=0;
 	curntn= &ntn[country];
 }
-#endif CONQUER
+#endif /* CONQUER */
 
 #ifdef ADMIN
 int
@@ -1471,7 +1471,7 @@ int	class;
 	}
 	return(-1);	/* shut lint up */
 }
-#endif ADMIN
+#endif /* ADMIN */
 
 /* name of the currently open mail file */
 char tmp_mail_name[LINELTH];
@@ -1625,7 +1625,7 @@ int prtflag;	/* if true printf reason */
 	}
 	return(TRUE);
 }
-#endif ADMIN
+#endif /* ADMIN */
 
 /*******************************************************************/
 /* DEFAULTUNIT() returns the default army type for a given country */
@@ -1721,7 +1721,7 @@ struct s_sector *sptr;
 		sptr->jewels = rand()%17 + 4;
 	}
 }
-#endif ADMIN
+#endif /* ADMIN */
 
 /* tg_ok returns true if a trade good can be seen by the owner of sector */
 int
@@ -1823,7 +1823,7 @@ extern short ycurs;
 off_t conq_mail_size=0;
 #ifdef SYSMAIL
 static off_t sys_mail_size=0;
-#endif SYSMAIL
+#endif /* SYSMAIL */
 void
 check_mail()
 {
@@ -1895,6 +1895,6 @@ check_mail()
 		move(ycurs,2*xcurs);
 		refresh();
 	}
-#endif SYSMAIL
+#endif /* SYSMAIL */
 }
-#endif CONQUER
+#endif /* CONQUER */

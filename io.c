@@ -209,7 +209,7 @@ printveg()
 		putc('\n',stdout);
 	}
 }
-#endif CONQUER
+#endif /* CONQUER */
 
 /************************************************************************/
 /*	WRITEDATA() - write data to datafile 				*/
@@ -223,7 +223,7 @@ writedata()
 
 	printf("\ndoing write of data\n");
 	if((fd = creat(datafile,0666))==-1) {
-		printf("cant open data.  check permissions\n");
+		printf("cannot open data.  check permissions\n");
 		abrt();
 	}
 
@@ -277,7 +277,7 @@ readdata()
 	}
 #ifdef DEBUG
 	fprintf(stderr,"reading %d bytes of world data\n",sizeof(struct s_world));
-#endif DEBUG
+#endif /* DEBUG */
 
 	getspace();
 
@@ -291,7 +291,7 @@ readdata()
 	}
 #ifdef DEBUG
 	fprintf(stderr,"reading %d bytes of sector data\n",n_read);
-#endif DEBUG
+#endif /* DEBUG */
 	if((n_read=read(fd,ntn,NTOTAL*sizeof(struct s_nation))) == -1)
 		printf("error reading s_nation data (ntn)\n");
 	else if(n_read!= NTOTAL*sizeof(struct s_nation)) {
@@ -301,7 +301,7 @@ readdata()
 	}
 #ifdef DEBUG
 	fprintf(stderr,"reading %d bytes of nation data\n",n_read);
-#endif DEBUG
+#endif /* DEBUG */
 	close(fd);
 } /* readdata() */
 
@@ -535,7 +535,7 @@ printscore()
 		}
 	}
 }
-#endif CONQUER
+#endif /* CONQUER */
 
 /************************************************************************/
 /*	FLEE() - civilains in x,y flee from somebody			*/
@@ -576,7 +576,7 @@ int x,y,isupd,slaver;
 			mvaddstr(LINES-2,20,"CIVILIANS ABANDON SECTOR");
 		}
 	}
-#endif CONQUER
+#endif /* CONQUER */
 	for(i=x-2;i<=x+2;i++) for(j=y-2;j<=y+2;j++)
 		if(ONMAP(i,j)
 		&&(ntn[sct[i][j].owner].race==ntn[sct[x][y].owner].race)) {
@@ -594,7 +594,7 @@ int x,y,isupd,slaver;
 		if(count>0) {
 #ifdef CONQUER
 		if(isupd==0) mvaddstr(LINES-2,20,"PEOPLE FLEE SECTOR AND HALF DIE");
-#endif CONQUER
+#endif /* CONQUER */
 		for(i=x-4;i<=x+4;i++) for(j=y-4;j<=y+4;j++)
 			if(ONMAP(i,j)
 			&&(ntn[sct[i][j].owner].race==ntn[sct[x][y].owner].race)) {
@@ -604,7 +604,7 @@ int x,y,isupd,slaver;
 		}
 #ifdef CONQUER
 		else if(isupd==0) mvaddstr(LINES-2,20,"PEOPLE IN SECTOR DIE");
-#endif CONQUER
+#endif /* CONQUER */
 	}
 
 	sct[x][y].people = slaves;
@@ -664,7 +664,7 @@ readmap()
 
 	return(TRUE);
 }
-#endif ADMIN
+#endif /* ADMIN */
 
 /*********************************************************************/
 /* M2ALLOC() - two dimensional array allocator (because C is stupid) */
@@ -681,7 +681,7 @@ int	entrysize;	/* # bytes in items to be stored */
 		malloc( (unsigned) (nrows*(sizeof(char *)+entrysize)));
 
 	if( baseaddr == (char **) NULL ) {
-		printf("OOPS - cant allocate %d by %d blocks of %d bytes\n",nrows,ncols,entrysize);
+		printf("OOPS - cannot allocate %d by %d blocks of %d bytes\n",nrows,ncols,entrysize);
 		abrt();
 	}
 	if(nrows>0){

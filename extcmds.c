@@ -92,7 +92,7 @@ nocomb_stat(astat)
 	switch(astat) {
 #ifdef TRADE
 	case TRADED:
-#endif TRADE
+#endif /* TRADE */
 	case FLIGHT:
 	case MAGATT:
 	case MAGDEF:
@@ -267,7 +267,7 @@ int armynum,men;
 	if(men<25 || armynum < 0 || armynum >= MAXARM || P_ASOLD < men+25 || P_ASTAT==ONBOARD || P_ASTAT==TRADED) {
 #else
 	if(men<25 || armynum < 0 || armynum >= MAXARM || P_ASOLD < men+25 || P_ASTAT==ONBOARD) {
-#endif TRADE
+#endif /* TRADE */
 		errormsg("Selected army too small or illegal");
 		return;
 	}

@@ -246,7 +246,7 @@ domagic()
 			refresh();
 			if (getch()=='y') god_magk();
 		} else
-#endif OGOD
+#endif /* OGOD */
 		if(price <= curntn->jewels){
 
 		mvaddstr(county++,0,"DO YOU WISH TO BUY A RANDOM NEW POWER? [yn]");
@@ -285,11 +285,11 @@ domagic()
 #ifdef ORCTAKE
 		if((curntn->race==ORC)&&(curntn->jewels>=ORCTAKE)&&(curntn->spellpts>=TAKEPOINTS))
 			done |= orctake(&county);
-#endif ORCTAKE
+#endif /* ORCTAKE */
 	}
 	if(isgod==TRUE) reset_god();
 }
-#endif CONQUER
+#endif /* CONQUER */
 #ifdef ORCTAKE
 /*do magic for both npcs and pcs in update*/
 /*if target is 0 then it is update and target will be picked randomly*/
@@ -341,7 +341,7 @@ int percent,target;
 	country=save;
 	return(0);
 }
-#endif ORCTAKE
+#endif /* ORCTAKE */
 
 /*execute new magic*/
 void
@@ -392,7 +392,7 @@ long newpower;
 				&&((rand()%2)==0)
 #else
 				&&(tofood( &sct[x][y],0)<6)
-#endif DERVDESG
+#endif /* DERVDESG */
 				&&((x!=curntn->capx)
 					||(y!=curntn->capy))){
 					sct[x][y].vegetation=DESERT;
@@ -401,7 +401,7 @@ long newpower;
 			}
 		}
 		fprintf(fnews,"1.\tnation %s gets destroyer power: land turns to desert\n",curntn->name);
-#endif ADMIN
+#endif /* ADMIN */
 		updmove(curntn->race,country);
 		return;
 	}
@@ -636,8 +636,8 @@ int *count;
 	}
 	return(done);
 }
-#endif ORCTAKE
-#endif CONQUER
+#endif /* ORCTAKE */
+#endif /* CONQUER */
 #ifdef CONQUER
 
 /**********************************************************************/
@@ -715,7 +715,7 @@ int type;
 	}
 	return(valid);
 }
-#endif CONQUER
+#endif /* CONQUER */
 
 /*remove properties of magic power; must first remove power */
 void
@@ -905,7 +905,7 @@ god_magk()
 		if (getch()=='y') done=FALSE;
 	}
 }
-#endif OGOD
+#endif /* OGOD */
 
 #define NUMSPELLS 4
 char *spellstr[NUMSPELLS]={"(S)ummon","(F)light","(A)ttack Enhancement",
@@ -993,4 +993,4 @@ wizardry()
 	else errormsg("You have no spell points for spell casting");
 	makebottom();
 }
-#endif CONQUER
+#endif /* CONQUER */

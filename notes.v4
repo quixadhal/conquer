@@ -391,6 +391,32 @@
 324. put a 500 men cap on the amount needed to capture a sector.
 325. added in a query as to how much purchase should be made from God trades.
 326. made sure to close the commerce file before removing it.
+===4.0 patch number ten released => 4.11 ==(spide)====================
+WARNING:  This patch may require re-creation of any worlds from scratch
+          (not compatible with worlds created under 4.10 if CHECKUSER set)
+	-spide (mcy1580@ultb.isc.rit.edu)
+327. added LASTADD 
+	o the last turn that players may add w/o the god password
+328. added CHECKUSER to enable uid locking on nations
+	o checks the uid of the player against the one who 
+	  created the nation - to prevent a player from creating
+	  two nations and using one to take over another.
+329. added USERLOG to turn on logging of game/nation usage
+	o sorta useful info - creates a .userlog file
+330. added MASK/umask in admin.c to allow group read/write as well
+	o so people in same group (games) could look at files
+331. added REVSPACE to be able to leave room in nation list for revolts
+	o allow space in nation list for revolts - to discourage
+	  players from setting take rate to 20% when no room for 
+	  revolts - leaves room at the beginning of game for them.
+332. modified spell sector effect to be 1 pt / 1000 people as documented
+	o something we wanted
+333. added -l (-ngod) option so god can list owners of nations (CHECKUSER)
+     added -u (-nNATION) option so god can modify owner of nations (CHECKUSER)
+	o necesary tools to go w/ CHECKUSER
+	o requires/uses god password
+334. made the CHECKUSER option change data structure only if enabled.
+335. changed all "#endif FOO" statements to "#endif /* FOO */".
 
 -------------------------------------------------------------------------
 | 2.0 POSSIBLE SHORT-TERM ENHANCEMENTS/FIXES FOR CONQUER V5             |
@@ -1209,4 +1235,3 @@ that go down a lot.
 415) cleaned up location adding in newlogin.c  
 416) can now go to war with peasants.
 417) added revolt percent chance to change screen
-

@@ -12,6 +12,7 @@
 
 /*create a new login for a new player*/
 #include <ctype.h>
+#include <pwd.h>
 #include "patchlevel.h"
 #include "header.h"
 #include "data.h"
@@ -342,10 +343,12 @@ convert()
 }
 
 void
-newlogin()
+newlogin(realuser)
+  int realuser;
 {
 	/* use points to create empire, add if late starter*/
 	int points, clr;
+	int pccount;
 	int choice, direct;
 	int valid=TRUE;  /*valid==FALSE means continue loop*/
 	int temp,ypos,xpos;
@@ -360,18 +363,37 @@ newlogin()
 
 	/*find valid nation number type*/
 	country=0;
-	for(i=1;i<NTOTAL;i++) if(ntn[i].active==INACTIVE) {
-		country=i;
-		curntn = &ntn[country];
-		break;
-	}
+        pccount=0;
+	for(i=1;i<NTOTAL;i++) 
+		if(ntn[i].active==INACTIVE) 
+		{
+			country=i;
+			curntn = &ntn[country];
+			break;
+		}
+		else
+		{
+#ifdef CHECKUSER
+			if ((ntn[i].uid == realuser) &&
+			    (ntn[0].uid != realuser))
+			{
+			   newerror ("You may only have one nation in this world.");
+			   newreset();
+			   return;
+			}
+#endif
+			pccount++;
+		}
 
+#ifdef MONSTER
+	pccount = pccount + 4;	/* space taken by monster nations */
+#endif
 	while(more==TRUE) {
 		clear();
 
 		sprintf(tempc,"Country #%d", country);
 		errorbar("Nation Builder",tempc);
-		if(country==0) {
+		if((country==0)||(pccount+1>=NTOTAL-REVSPACE)) {
 			newerror("No more nations available");
 			newreset();
 			return;
@@ -862,19 +884,24 @@ newlogin()
 			place(-1,-1);
 			newerror("Ok, Your Nation has been Added to the World");
 			att_setup(country);	/* setup values ntn attributes */
+#ifdef CHECKUSER
+			curntn->uid = realuser;
+#endif
 			fclose(fexe);
+			pccount++;
 			sprintf(tempc,"NOTICE: Nation %s added to world on turn %d\n",curntn->name,TURN);
 			mailtopc(tempc);
 			/* cannot clear until after placement and initializing */
 			curntn->powers=0;
 		}
+#ifndef CHECKUSER
 		country=0;
 		for(i=1;i<NTOTAL;i++) if (ntn[i].active==INACTIVE) {
 			country = i;
 			curntn = &ntn[country];
 			break;
 		}
-		if (country!=0) {
+		if ((country!=0)&&(pccount+1>=NTOTAL-REVSPACE)) {
 			newmsg("Do you wish to Add another Nation? [ny]");
 			if (getch()!='y') more = FALSE;
 			else more = TRUE;
@@ -882,6 +909,9 @@ newlogin()
 			more = FALSE;
 			newerror("No More Available Nations");
 		}
+#else
+		more = FALSE;
+#endif
 	}
 	newreset();
 	att_base();	/* calculate base nation attributes */

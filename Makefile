@@ -77,20 +77,20 @@ LIBRARIES = -lcurses -ltermcap
 
 #	CURRENT is this directory.  The directory where the source
 #	and Makefile are located
-CURRENT = /usr4/acm/stud/adb/src/conquer
+CURRENT = /usr/home/guest/adb/src/conquer
 
 #	DEFAULT is the directory where default nations & help files will be 
 #	stored.	 It is also the default directory = where players will play 
 #	if they do not use the -d option.
-DEFAULT = /usr4/acm/stud/adb/games/conqlib
+DEFAULT = /usr/home/guest/adb/games/conqlib
 
 #	This directory is where the executables will be stored
-EXEDIR = /usr4/acm/stud/adb/games
+EXEDIR = /usr/home/guest/adb/games
 
 #	Definitions used for compiling conquer
 CDEFS  = -DDEFAULTDIR=\"$(DEFAULT)\" -DEXEDIR=\"$(EXEDIR)\"
 
-#	Options flag used for non-debugging purposes
+#	Options flag used for normal compilation
 OPTFLG  = -O 
 
 #	Options flag used for debugging purposes
@@ -214,7 +214,7 @@ in$(PSPROG):	$(PSPROG)
 	touch $(PSPROG)
 	touch in$(PSPROG)
 
-install:	in$(GAME) in$(ADMIN) in$(SORT) in$(PSPROG) insthelp
+install:	in$(GAME) in$(ADMIN) in$(SORT) in$(PSPROG) insthelp instman
 	@echo ""
 	@echo "Installation complete"
 
@@ -252,6 +252,10 @@ insthelp:	helpfile
 	-$(RM) $(DEFAULT)/$(HELPOUT)5
 	-$(LN) $(CURRENT)/$(HELPOUT)5 $(DEFAULT)/$(HELPOUT)5
 	touch insthelp
+
+instman:
+	@echo Installing man pages
+	$(CP) man.pag $(EXEDIR)
 
 helpfile:	$(HELPOUT)0 $(HELPOUT)1 $(HELPOUT)2 $(HELPOUT)3 $(HELPOUT)4 $(HELPOUT)5
 	@echo Helpfiles built

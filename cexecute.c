@@ -90,7 +90,7 @@ int	isupdate;	/* 0 if not update, 1 if update */
 			ntn[y].tgold += longvar;
 #ifdef DEBUG
 	fprintf(stderr,"DEBUG: BRIBE BY %s of %s\n",ntn[country].name,ntn[y].name);
-#endif DEBUG
+#endif /* DEBUG */
 			/* x represents chance of successful bribe */
 			if(npctype(curntn->active)==npctype(ntn[y].active))
 				x = 50;
@@ -101,7 +101,7 @@ int	isupdate;	/* 0 if not update, 1 if update */
 			if( rand()%100 < x){
 #ifdef DEBUG
 	fprintf(stderr,"DEBUG: BRIBE IS SUCCESS\n");
-#endif DEBUG
+#endif /* DEBUG */
 				ntn[y].dstatus[country]--;
 			}
 			break;
@@ -155,7 +155,7 @@ int	isupdate;	/* 0 if not update, 1 if update */
 		case NPOP:	/* set various nation attributes */
 #ifdef CONQUER
 			terror_adj++;
-#endif CONQUER
+#endif /* CONQUER */
 			curntn->popularity = armynum;
 			curntn->terror = x;
 			curntn->reputation = y;
@@ -320,4 +320,4 @@ hangup()
 	/* exit program */
 	exit(FAIL);
 }
-#endif CONQUER
+#endif /* CONQUER */

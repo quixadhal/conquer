@@ -147,7 +147,7 @@ armyrpt(repnum)
 				errormsg("May not change traded army");
 				continue;
 			}
-#endif TRADE
+#endif /* TRADE */
 			mvaddstr(ypos,0,"OPTIONS: 1) COMMAND 2) DISBAND 3) CHANGE GROUP");
 			if(P_ATYPE<MINLEADER)
 			mvaddstr(ypos,47,"4) MERGE 5) SPLIT ARMY");
@@ -156,7 +156,7 @@ armyrpt(repnum)
 #ifdef OGOD
 			if(isgod==TRUE) mvaddstr(ypos++,0,"GOD OPTIONS: 6) LOCATION 7) SOLDIERS 8) MOVE 9) UNITTYPE 0) STATUS ");
 			clrtoeol();
-#endif OGOD
+#endif /* OGOD */
 			ypos++;
 			refresh();
 			switch(getch()){
@@ -323,7 +323,7 @@ armyrpt(repnum)
 					P_ASTAT = men;
 				}
 				break;
-#endif OGOD
+#endif /* OGOD */
 			default:
 				errormsg("Invalid Input");
 			}
@@ -636,7 +636,7 @@ fleetrpt()
 				errormsg("Sorry - That Navy is up for trade");
 				continue;
 			}
-#endif TRADE
+#endif /* TRADE */
 			if((nvynum<0)||(nvynum>=MAXNAVY)) {
 				errormsg("Invalid Naval unit");
 				continue;
@@ -647,7 +647,7 @@ fleetrpt()
 			if(isgod==TRUE) mvaddstr(ypos++,0,"GOD OPTIONS:  4) ADJUST SHIPS, 5) LOCATION, 6) CREW 7) MOVE");
 			ypos++;
 			clrtoeol();
-#endif OGOD
+#endif /* OGOD */
 			refresh();
 			switch(getch()){
 			case '1':
@@ -666,7 +666,7 @@ fleetrpt()
 				if (curntn->nvy[newnavy].commodity==TRADED) {
 					errormsg("Sorry - That Navy is up for trade");
 				} else
-#endif TRADE
+#endif /* TRADE */
 				if(nvynum==newnavy) {
 					errormsg("Sorry -- That is the same Navy");
 				}
@@ -949,7 +949,7 @@ fleetrpt()
 					}
 				}
 				break;
-#endif OGOD
+#endif /* OGOD */
 			default:
 				errormsg("Invalid Input");
 			}

@@ -375,6 +375,9 @@ struct	s_nation		/* player nation stats	*/
 	char	race;		/* national race (integer--see header.h)*/
 	char	location;	/* location variable (gfr)	*/
 	char	mark;		/* unique mark for nation	*/
+#ifdef CHECKUSER
+	short int uid;		/* for uid checking (CHECKUSER) */
+#endif /* CHECKUSER */
 	unsigned char	capx;	/* Capitol x coordinate		*/
 	unsigned char	capy;	/* Capitol y coordinate		*/
 	unsigned char	active;	/* nation type and strategy	*/

@@ -187,7 +187,7 @@ char	*file;
 	fprintf(stderr,"file %s line %d\n",file,line);
 	verifydata(file,line);
 }
-#endif DEBUG
+#endif /* DEBUG */
 
 #include <fcntl.h>
 #ifdef FILELOCK
@@ -199,7 +199,7 @@ char	*file;
 #    include <sys/file.h>
 #    define do_lock(fd) flock(fd,LOCK_EX|LOCK_NB)
 #endif
-#endif FILELOCK
+#endif /* FILELOCK */
 
 /*
  * check_lock() -- routine to check if a file is locked.
@@ -249,6 +249,6 @@ check_lock(filename,keeplock)
 			exit(FAIL);
 		}
 	}
-#endif FILELOCK
+#endif /* FILELOCK */
 	return(hold);
 }

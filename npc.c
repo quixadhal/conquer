@@ -86,7 +86,7 @@ prtattr()
 		}
 		printf("\n");
 	}
-#endif DEBUG
+#endif /* DEBUG */
 }
 
 /*newdip() diplomacy if unmet - ntn 1 is nation you are updating*/
@@ -170,7 +170,7 @@ monster()
 	
 #ifdef DEBUG
 	printf("monsters: need %d have %d\n",neededtroops,actualtroops);
-#endif DEBUG
+#endif /* DEBUG */
 
 	neededtroops= neededtroops-actualtroops;
 
@@ -178,7 +178,7 @@ monster()
 	    {
 #ifdef DEBUG
 	    printf("\t need %d monster troops\n",neededtroops);
-#endif 
+#endif /*  */
 	    if ( (rand()%8)<5 && nomad_space)
 		{
 		while(!is_habitable((x=(rand()%(MAPX-8))+4),
@@ -272,7 +272,7 @@ do_nomad()
 				P_ASOLD=0;
 				break;
 			}
-			/* nomads cant stay in the same spot */
+			/* nomads cannot stay in the same spot */
 			if(( x==P_AXLOC && y==P_AYLOC )
 			||(!ONMAP(x,y)
 			||(!is_habitable(x,y))) 
@@ -384,7 +384,7 @@ do_pirate()
 #endif /* MORE_MONST */
 	}
 }
-#endif MONSTER
+#endif /* MONSTER */
 
 #ifdef NPC
 void
@@ -507,7 +507,7 @@ redomil()
 			||(sct[P_AXLOC][P_AYLOC].owner!=country)){
 #ifdef DEBUG
 				printf("\teliminating %s army %d as %d %d is des:%c alt:%c own:%d\n",unittype[P_ATYPE],armynum,P_AXLOC,P_AYLOC,sct[P_AXLOC][P_AYLOC].designation,sct[P_AXLOC][P_AYLOC].altitude,sct[P_AXLOC][P_AYLOC].owner);
-#endif DEBUG
+#endif /* DEBUG */
 				if(sct[P_AXLOC][P_AYLOC].owner == country)
 					sct[P_AXLOC][P_AYLOC].people+=P_ASOLD;
 				else sct[curntn->capx][curntn->capy].people+=P_ASOLD;
@@ -552,7 +552,7 @@ redomil()
 	else if(peace==12)
 		printf("\t%s IS AT WAR - garrison in cap is %d, ideal is %ld\n",curntn->name,P_ASOLD,ideal);
 	else printf("error - incap is %d ideal is %ld\n",P_ASOLD,ideal);
-#endif DEBUG
+#endif /* DEBUG */
 
 	/*MILRATIO ratio mil:civ for non player countries*/
 	/*MILINCAP ratio (mil in cap):mil for NPCs*/
@@ -572,7 +572,7 @@ redomil()
 
 #ifdef DEBUG
 	printf("\tadding %d men to garrison (too few men on garrison)\n",diff);
-#endif DEBUG
+#endif /* DEBUG */
 
 	sct[curntn->capx][curntn->capy].people-=diff;
 	P_ASOLD+=diff;
@@ -584,7 +584,7 @@ redomil()
 	curntn->metals-=(diff* *(u_enmetal + (P_ATYPE%UTYPE)));
 #ifdef DEBUG
 	if(P_ASOLD < 0L) printf("error 2... P_ASOLD=%d <0\n",P_ASOLD);
-#endif DEBUG
+#endif /* DEBUG */
 	}
 	/*else split garrison army if 1.25* needed number*/
 	else if(P_ASOLD *4L > 5L*ideal){
@@ -592,12 +592,12 @@ redomil()
 		diff=((4L*P_ASOLD)-(5L*ideal))/4L;
 #ifdef DEBUG
 		printf("\tsplit garrison of %d men\n",diff);
-#endif DEBUG
+#endif /* DEBUG */
 		free=FALSE;
 		P_ASOLD-=diff;
 #ifdef DEBUG
 		if(P_ASOLD < 0) printf("error... subtracting %d from %d\n",diff,P_ASOLD);
-#endif DEBUG
+#endif /* DEBUG */
 		curntn->tmil-=diff;
 		curntn->tciv+=diff;
 		sct[curntn->capx][curntn->capy].people+=diff;
@@ -610,7 +610,7 @@ redomil()
 #ifdef DEBUG
 	else printf("\tno action - P_ASOLD (%d) ~= ideal (%d)\n",P_ASOLD,ideal);
 	printf("\tFinal Garrison Army %d (%s) type is %s men is %d\n",armynum,curntn->name,*(unittype+(P_ATYPE)),P_ASOLD);
-#endif DEBUG
+#endif /* DEBUG */
 
 	/*build ships and/or armies*/
 	done=FALSE;
@@ -618,7 +618,7 @@ redomil()
 	if(curntn->tgold<0) { ideal*=4; ideal/=5; }
 #ifdef DEBUG
 	printf("\t%s total military is %d -> ideal is %d\n",curntn->name,curntn->tmil,ideal);
-#endif DEBUG
+#endif /* DEBUG */
 	check();
 
 	/* find leader and place on RULE in capitol */
@@ -642,7 +642,7 @@ redomil()
 	&&( sct[P_AXLOC][P_AYLOC].owner == country )) {
 #ifdef DEBUG
 		printf("\tadding %d men to weakened army %d\n",TAKESECTOR+20-P_ASOLD,armynum);
-#endif DEBUG
+#endif /* DEBUG */
 		if(magic(country,WARRIOR)==TRUE) /* WARRIOR power */
 		curntn->tgold-=((TAKESECTOR+20-P_ASOLD)*
 			*(u_encost + (P_ATYPE%UTYPE))) / 2;
@@ -666,7 +666,7 @@ redomil()
 			if(P_ASOLD>0){
 #ifdef DEBUG
 				printf("\tnot enough soldiers - build new army %d with %d men\n",armynum,P_ASOLD);
-#endif DEBUG
+#endif /* DEBUG */
 				curntn->metals-=(P_ASOLD* *(u_enmetal + (P_ATYPE%UTYPE)));
 				P_AXLOC= curntn->capx;
 				P_AYLOC= curntn->capy;
@@ -701,7 +701,7 @@ redomil()
 			  ||(ISCITY(sct[P_AXLOC][P_AYLOC].designation)))){
 #ifdef DEBUG
 				printf("\ttoo many soldiers eliminate army %d (%d men)\n",armynum,P_ASOLD);
-#endif DEBUG
+#endif /* DEBUG */
 				diff-=P_ASOLD;
 				sct[P_AXLOC][P_AYLOC].people+=P_ASOLD;
 				curntn->tmil -= P_ASOLD;
@@ -714,7 +714,7 @@ redomil()
 	check();
 #ifdef DEBUG
 	printf("\twhew... new tmil is %d\n",curntn->tmil);
-#endif DEBUG
+#endif /* DEBUG */
 
 	/*resize armies */
 	for(armynum=1;armynum<MAXARM;armynum++) if(P_ATYPE < MINLEADER) {
@@ -730,7 +730,7 @@ redomil()
 #ifdef DEBUG
 	printf("\tSplitting %ld troops from army %d forming %s army %d \n"
 		,P_ASOLD,armynum,unittype[P_ATYPE],i);
-#endif DEBUG
+#endif /* DEBUG */
 					curntn->arm[i].sold  = P_ASOLD;
 					curntn->arm[i].unittyp = P_ATYPE;
 					curntn->arm[i].smove = P_AMOVE;
@@ -758,7 +758,7 @@ redomil()
 #ifdef DEBUG
 	printf("\tMerge %ld men from army %d to make %ld troops in %s army %d \n"
 		,P_ASOLD,armynum,curntn->arm[i].sold,unittype[P_ATYPE],i);
-#endif DEBUG
+#endif /* DEBUG */
 					P_ASOLD=0;
 				}
 
@@ -809,7 +809,7 @@ redomil()
 #ifdef DEBUG
 		printf("\tnow in sector %d,%d\n",x,y);
 		printf("\tadding %ld troops to %s army %d (now %ld men - populace %ld)\n",ideal-P_ASOLD,unittype[P_ATYPE%UTYPE],armynum,ideal,sct[x][y].people);
-#endif DEBUG
+#endif /* DEBUG */
 			P_ASOLD=ideal;
 			P_ASTAT=MILITIA;
 		}
@@ -1086,7 +1086,7 @@ nationrun()
 			}
 		}
 	}
-#endif SPEW
+#endif /* SPEW */
 	/*move units */
 	/*are they at war with any normal countries*/
 	peace=0;
@@ -1182,7 +1182,7 @@ nationrun()
 	for(loop=1;loop<5;loop++) {
 #ifdef DEBUG
 		printf("\tnpcredes(): country %s gold=%d metal=%d, city=%d hunger=%f\n",curntn->name,goldthresh,metalthresh,citythresh,hunger);
-#endif DEBUG
+#endif /* DEBUG */
 
 		useful=FALSE;
 		for(x=stx;x<endx;x++) for(y=sty;y<endy;y++)
@@ -1649,7 +1649,7 @@ defattr()
 
 #ifdef DEBUG
 	printf("atkattr()\n");
-#endif DEBUG
+#endif /* DEBUG */
 
 	n_unowned();
 
@@ -1672,7 +1672,7 @@ atkattr()
 	int nation;
 #ifdef DEBUG
 	printf("atkattr()\n");
-#endif DEBUG
+#endif /* DEBUG */
 
 	n_unowned();
 
@@ -1705,7 +1705,7 @@ pceattr()
 {
 #ifdef DEBUG
 	printf("pceattr()\n");
-#endif DEBUG
+#endif /* DEBUG */
 	n_unowned();
 	n_unowned();
 	n_unowned();
@@ -1713,4 +1713,4 @@ pceattr()
 	n_toofar();
 	n_survive();
 }
-#endif NPC
+#endif /* NPC */

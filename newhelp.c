@@ -21,12 +21,12 @@ main()
 {
 	FILE *fp, *fp2, *fopen();
 	if((fp=fopen("sed.1","w"))==NULL) {
-		printf("cant open sed.1 file\n");
+		printf("cannot open sed.1 file\n");
 		exit(FAIL);
 	}
 	/* needed as sed was reaching its limit on number of commands */
 	if((fp2=fopen("sed.2","w"))==NULL) {	
-		printf("cant open sed.2 file\n");
+		printf("cannot open sed.2 file\n");
 		exit(FAIL);
 	}
 
@@ -202,7 +202,7 @@ main()
 	fprintf(fp,"s/XFINDPERCENT/%d/g\n",FINDPERCENT);
 #ifdef ORCTAKE
 	fprintf(fp,"s/XTAKEPRICE/%d/g\n",ORCTAKE);
-#endif ORCTAKE
+#endif /* ORCTAKE */
 
 	fprintf(fp,"s/XTGATTR/%d/g\n",TGATTR);
 	fprintf(fp,"s/XOTHRATTR/%d/g\n",OTHRATTR);

@@ -74,7 +74,7 @@ update()
 
 #ifdef RANEVENT
 	randomevent();	/*run random events after setting movements */
-#endif RANEVENT
+#endif /* RANEVENT */
 
 	updsectors();	/* for whole map, update one sector at a time*/
 	updcomodities();/* commodities & food, metal, jewels */
@@ -94,7 +94,7 @@ update()
 
 #ifdef CHEAT
 	cheat();
-#endif CHEAT
+#endif /* CHEAT */
 
 	score();	/* score all nations */
 
@@ -523,7 +523,7 @@ cheat()
 				}
 			}
 }
-#endif CHEAT
+#endif /* CHEAT */
 
 
 /****************************************************************/
@@ -580,7 +580,7 @@ updexecs()
 		disarray=FALSE;
 #ifdef TRADE
 		if(isntn(curntn->active)) checktrade();
-#endif TRADE
+#endif /* TRADE */
 
 		/*if execute is 0 and PC nation then they did not move*/
 		if((execute(TRUE)==0)&&(ispc(curntn->active))){
@@ -616,7 +616,7 @@ updexecs()
 				if((x=takeover(1,0))==1)
 				printf("SUCCESSFUL TAKEOVER OF %d by %s",x,curntn->name);
 			}
-#endif ORCTAKE
+#endif /* ORCTAKE */
 #endif /*NPC*/
 		}
 
@@ -630,7 +630,7 @@ updexecs()
 		}
 #ifdef DEBUG
 printf("checking for leader in nation %s: armynum=%d\n",curntn->name,armynum);
-#endif DEBUG
+#endif /* DEBUG */
 
 		if(disarray == TRUE) {
 			if(rand()%100 < 30) {	/* new leader takes over */
@@ -782,7 +782,7 @@ do_lizard()
 		if((P_ASOLD>0)&&(sct[P_AXLOC][P_AYLOC].altitude==WATER))
 			printf("ERROR line %d... %s army %d in water (army %d: x: %d y: %d)\n",__LINE__,ntn[country].name,armynum,armynum-1, ntn[country].arm[armynum-1].xloc, ntn[country].arm[armynum-1].yloc);
 	}
-#endif DEBUG
+#endif /* DEBUG */
 }
 
 /****************************************************************/
@@ -836,7 +836,7 @@ updcapture()
 						fprintf(fnews,"3.\tarea captured by %s from %s\n",curntn->name,ntn[sptr->owner].name);
 #else
 						fprintf(fnews,"3.\tarea %d,%d captured by %s from %s\n",P_AXLOC,P_AYLOC,curntn->name,ntn[sptr->owner].name);
-#endif HIDELOC
+#endif /* HIDELOC */
 					}
 					sptr->owner=country;
 					curntn->popularity++;
@@ -1288,7 +1288,7 @@ updmil()
 					fprintf(fnews,"3.\tstorm sinks %s fleet at sea\n",curntn->name);
 #else
 					fprintf(fnews,"3.\tstorm sinks %s fleet in %d,%d\n",curntn->name,P_NXLOC,P_NYLOC);
-#endif HIDELOC
+#endif /* HIDELOC */
 					P_NWSHP=0;
 					P_NMSHP=0;
 					P_NGSHP=0;
@@ -1339,7 +1339,7 @@ updmil()
 #else
 		fprintf(fnews,"2.\tNation %s under siege in sector %d,%d\n",
 			curntn->name,siegex[army2],siegey[army2]);
-#endif HIDELOC
+#endif /* HIDELOC */
 		if(ispc(curntn->active)) {
 			if (mailopen( country )!=(-1)) {
 				fprintf(fm, "Message to %s from Conquer\n\n",ntn[nation].name);
@@ -1404,7 +1404,7 @@ updcomodities()
 				fprintf(fnews,"2.\tfamine hits town in %s.\n",curntn->name);
 #else
 				fprintf(fnews,"2.\tfamine hits town at %d,%d in %s.\n",x,y,curntn->name);
-#endif HIDELOC
+#endif /* HIDELOC */
 				printf("famine hits town at %d,%d in %s.\n",x,y,curntn->name);
 				if(ispc(curntn->active)){
 				if (mailopen( country )!=(-1)) {

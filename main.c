@@ -58,6 +58,14 @@ main(argc,argv)
 int	argc;
 char	**argv;
 {
+#ifdef  USERLOG
+	FILE *userlog;
+#endif
+#ifdef  CHECKUSER
+	int checkuser_mod = FALSE;
+	int checkuser_uid = 0;
+	int checkuser_list = FALSE;
+#endif
 	int geteuid(), getuid(), setuid();
 	register int i,j;
 	char name[NAMELTH+1],filename[FILELTH];
@@ -71,7 +79,7 @@ char	**argv;
 	extern char *optarg, conqmail[];
 #ifdef SYSMAIL
 	extern char sysmail[];
-#endif SYSMAIL
+#endif /* SYSMAIL */
 	int sflag=FALSE,pflag=FALSE,l,in_ch,old_ch=' ';
 
 	char defaultdir[BIGLTH],tmppass[PASSLTH+1];
@@ -174,7 +182,11 @@ char	**argv;
 	}
 
 	/* process the command line arguments */
+#ifdef CHECKUSER
+	while((i=getopt(argc,argv,"Ghpln:u:d:s"))!=EOF) switch(i){
+#else
 	while((i=getopt(argc,argv,"Ghpn:d:s"))!=EOF) switch(i){
+#endif
 	/* process the command line arguments */
 	case 'h': /* execute help program*/
 		initscr();
@@ -203,11 +215,28 @@ char	**argv;
 	case 'n':
 		strcpy(name, optarg);
 		break;
+#ifdef CHECKUSER
+	case 'l':
+		checkuser_list = TRUE;
+		break;
+	case 'u':
+		checkuser_mod = TRUE;	/* check for god later */
+		checkuser_uid = owneruid;
+		if (strlen (optarg) > 0)
+		   if (getpwnam(optarg))
+		      checkuser_uid = getpwnam(optarg)->pw_uid;
+#endif
 	case 's': /*print the score*/
 		sflag++;
 		break;
 	case '?': /*  print out command line arguments */
+#ifdef CHECKUSER
+		fprintf(stderr,"Command line format: %s [-Ghpls -d DIR -nNAT -u USER]\n",argv[0]);
+		fprintf(stderr,"\t-u USER  change nation username\n");
+		fprintf(stderr,"\t-l       list nation owners\n");
+#else
 		fprintf(stderr,"Command line format: %s [-Ghps -d DIR -nNAT]\n",argv[0]);
+#endif
 		fprintf(stderr,"\t-n NAT   play as nation NAT\n");
 		fprintf(stderr,"\t-d DIR   to use play different game\n");
 		fprintf(stderr,"\t-G       gaudily highlight nation in news\n");
@@ -240,7 +269,7 @@ char	**argv;
 	*  executable is setuid.
 	*/
 	if (getuid() != geteuid()) { /* we are running suid */
-		(void) umask(077);	/* nobody else can read files */
+		(void) umask(MASK);	/* nobody else can read files */
 		(void) setuid (geteuid ()) ;
 	}
 
@@ -282,7 +311,25 @@ char	**argv;
 	}
 #else
 	if(strcmp(name,"god")==0) strcpy(name,"unowned");
-#endif OGOD
+#endif /* OGOD */
+
+#ifdef CHECKUSER
+	if ((checkuser_mod) || (checkuser_list)) {
+		if ((owneruid == (getpwnam(LOGIN))->pw_uid) ||
+        	    (owneruid == (getpwnam(ntn[0].leader))->pw_uid)) {
+			/* don't change - already set */	
+		}
+		else {
+			checkuser_mod = FALSE;
+			checkuser_list = FALSE;
+			fprintf (stderr, "Sorry -- only god may modify/list a nation's uid\n");
+		      	exit(FAIL);
+		}
+	}
+#else
+		fprintf (stderr,"CHECKUSER not on\n");
+		exit (FAIL);
+#endif
 	country=(-1);
 	for(i=0;i<NTOTAL;i++)
 	if(strcmp(name,ntn[i].name)==0) {
@@ -372,6 +419,42 @@ char	**argv;
 		exit(SUCCESS);
 	}
 
+#ifdef CHECKUSER
+        /* New code by "spide" */
+	if (checkuser_mod)
+	   {
+		fprintf (stderr, "Nation:  %s\n", curntn->name);
+                fprintf (stderr, "   Current player = %s\n", 
+			getpwuid(curntn->uid)->pw_name);;
+		curntn->uid = checkuser_uid;
+                fprintf (stderr, "   New player = %s\n", 
+			getpwuid(curntn->uid)->pw_name);
+		writedata();
+		exit (SUCCESS);
+	   }
+	if (checkuser_list)
+	   {
+	      	for (i=0; i < NTOTAL; i++) 
+			if (ntn[i].active != INACTIVE) 
+				fprintf (stderr, "%3d %15s %d %-15s\n",
+					i, ntn[i].name, 
+					ntn[i].uid,
+					getpwuid(ntn[i].uid)->pw_name);
+		exit (SUCCESS);
+	   }
+        if ((curntn->uid != owneruid) &&
+	    (owneruid != (getpwnam(LOGIN))->pw_uid) && 
+            (owneruid != (getpwnam(ntn[0].leader))->pw_uid) &&
+	    (curntn->uid != (getpwnam(LOGIN))->pw_uid))
+           {
+              fprintf (stderr,"\nSorry -- you are not the owner of %s",curntn->name);
+	      fprintf(stderr,"\nFor information on conquer please contact %s.",OWNER);
+              fprintf(stderr,"\nor send mail to %s", LOGIN);
+	      fprintf(stderr,"\n");
+	      exit(FAIL);
+           }
+#endif
+
 	initscr();		/* SET UP THE SCREEN */
 	/* check terminal size */
 	if (COLS<80 || LINES<24) {
@@ -425,12 +508,18 @@ char	**argv;
 		execute(FALSE);
 #ifdef TRADE
 		checktrade();
-#endif TRADE
+#endif /* TRADE */
 		xcurs = curntn->capx;
 		ycurs = curntn->capy;
 	}
 	xoffset = 0;
 	yoffset = 0;
+#ifdef USERLOG
+	userlog = fopen (".userlog", "a");
+        fprintf (userlog, "%3d %15s %30s %15s\n", 
+   		TURN, getpwuid(owneruid)->pw_name, defaultdir, curntn->name);
+        fclose (userlog);
+#endif
 	centermap();
 	updmove(curntn->race,country);
 
@@ -462,7 +551,7 @@ char	**argv;
 	} else {
 		(void) strcpy(sysmail,getenv("MAIL"));
 	}
-#endif SYSMAIL
+#endif /* SYSMAIL */
 	mvaddstr(LINES-1, COLS-20, "PRESS ANY KEY");
 	refresh();
 	getch();		/* get response from copyscreen */
@@ -529,7 +618,7 @@ makebottom()
 	if (conq_mail_status==NEW_MAIL) {
 		mvaddstr(LINES-3,COLS/2-6,"You have Conquer Mail");
 	}
-#endif SYSMAIL
+#endif /* SYSMAIL */
 }
 
 /************************************************************************/
@@ -765,7 +854,7 @@ parse(ch)
 		curntn->tgold -= MOVECOST;
 		redraw=FULL;
 		break;
-#endif TRADE
+#endif /* TRADE */
 	case '9':
 	case 'u':	/*move north-east*/
 		pager=0;
@@ -1247,7 +1336,7 @@ int	alwayssee;	/* see even if cant really see sector */
 
 	for(i=0;*(veg+i)!='0';i++)
 		if(sptr->vegetation==*(veg+i))
-		mvprintw(LINES-11,COLS-9,"%s",*(vegname+i));
+		mvprintw(LINES-11,COLS-10,"%s",*(vegname+i));
 
 	if(((i=tofood(sptr,country)) != 0)
 	&&((magic(sptr->owner,THE_VOID)!=TRUE)
@@ -1259,7 +1348,7 @@ int	alwayssee;	/* see even if cant really see sector */
 #else
 		if(i<10)	mvprintw(LINES-11,COLS-2,"%d",i);
 		else		mvprintw(LINES-11,COLS-3,"%d",i);
-#endif HPUX
+#endif /* HPUX */
 		standend();
 	}
 
@@ -1271,7 +1360,7 @@ int	alwayssee;	/* see even if cant really see sector */
 
 	for(i=0;(*(ele+i) != '0');i++)
 		if( sptr->altitude == *(ele+i) ){
-			mvprintw(LINES-10,COLS-9,"%s",*(elename+i));
+			mvprintw(LINES-10,COLS-10,"%s",*(elename+i));
 			break;
 		}
 	}

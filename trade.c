@@ -53,7 +53,7 @@ char *tradefail[NUMPRODUCTS] = { "lack of gold", "lack of food",
 	"lack of metal", "lack of jewels", "land not owned",
 	"unavailable or destroyed armies",
 	"unavailable or destoryed navies"};
-#endif ADMIN
+#endif /* ADMIN */
 #ifdef CONQUER
 /* Use this when you wish to bid something */
 char *buylist[NUMPRODUCTS] = { "Bid how much gold? ", "Bid how much food? ",
@@ -474,7 +474,7 @@ trade()
 			if (country!=0 && country!=natn[holdint]) 
 #else 
 			if (country != natn[holdint]) 
-#endif OGOD
+#endif /* OGOD */
 			{
 				tradeerr("That is not your item");
 				return;
@@ -622,7 +622,7 @@ int *count;
 	}
 	return(hold);
 }
-#endif CONQUER
+#endif /* CONQUER */
 
 /* set aside things that are up for bid */
 void
@@ -863,7 +863,7 @@ long lvar1,lvar2,lvar3,lvar4;
 		fclose(fp[count]);
 	}
 }
-#endif ADMIN
+#endif /* ADMIN */
 
 #ifdef CONQUER
 /* routine to determine whether or not an army type is tradable */
@@ -879,7 +879,7 @@ int cntry,armynum;
 	country=oldcntry;
 	return(returnval);
 }
-#endif CONQUER
+#endif /* CONQUER */
 
 /* routine to determine commercial value of army */
 long armyvalue(cntry,unit)
@@ -1108,5 +1108,5 @@ int cntry;
 
 	} /* loop through commodities */
 }
-#endif ADMIN
-#endif TRADE
+#endif /* ADMIN */
+#endif /* TRADE */

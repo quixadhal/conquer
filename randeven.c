@@ -1,5 +1,6 @@
 /* Conquer: Copyright (c) 1988 by Edward M Barlow */
 #include	<stdio.h>
+#include 	<pwd.h>
 #include	<ctype.h>
 #include	"header.h"
 #include	"data.h"
@@ -173,9 +174,12 @@ int ispsnt;		/* true/false */
 	sprintf(eventstr,"new nation %s created",ntn[new].name);
 #else
 	sprintf(eventstr,"new nation %s created at %d,%d",ntn[new].name,realx,realy);
-#endif HIDELOC
+#endif /* HIDELOC */
 	printf("TMP new nation %s created at %d,%d",ntn[new].name,realx,realy);
 	sct[realx][realy].owner=new;
+#ifdef CHECKUSER
+	ntn[new].uid = getpwnam(LOGIN)->pw_uid;
+#endif /* CHECKUSER */
 	ntn[new].capx=realx;
 	ntn[new].capy=realy;
 	sct[realx][realy].designation=DCAPITOL;
@@ -330,7 +334,7 @@ randomevent()
 printf("TEMP: %s chance of peasant revolt is %d (tax=%d pop=%d terror=%d)\n",
 		curntn->name, x, curntn->tax_rate, curntn->popularity,
 		curntn->terror );
-#endif DEBUG
+#endif /* DEBUG */
 
 		if((rand()%100)<x) {
 			if(rand()%100<PREVOLT){
@@ -346,7 +350,7 @@ printf("TEMP: %s chance of peasant revolt is %d (tax=%d pop=%d terror=%d)\n",
 #ifdef DEBUG
 printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 		curntn->name, x, curntn->tax_rate, curntn->prestige );
-#endif DEBUG
+#endif /* DEBUG */
 
 		if(( rand()%100)< x ){
 			if(rand()%100<PREVOLT){
@@ -434,7 +438,7 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 #ifdef HIDELOC
 			/* hide nation of eruption if HIDELOC */
 			done = FALSE;
-#endif HIDELOC
+#endif /* HIDELOC */
 			break;
 		case 14:
 			/*royal wedding (absorb neighbor nation)*/
@@ -599,7 +603,7 @@ printf("TEMP: %s chance of revolt is %d (tax=%d prest=%d)\n",
 			}
 			done=TRUE;
 			break;
-#endif MONSTER
+#endif /* MONSTER */
 		case 26:
 			/*town burns -- reduce fort and redesignate*/
 			holdval=0;
@@ -936,12 +940,12 @@ char *event;
 #ifdef HIDELOC
 		/* make sure that volcano locations are not revealed */
 		if(strcmp(eventstr,"all flee, 30%% die in 1 sector range")!=0)
-#endif HIDELOC
+#endif /* HIDELOC */
 		fprintf(fnews,"1. \tevent in %s -->%s\n",ntn[cntry].name,eventstr);
 #ifndef HIDELOC
 		if(xloc != -1)
 		fprintf(fnews,"1. \tevent in %s -->centered around location %d, %d.\n",ntn[cntry].name,xloc,yloc);
-#endif HIDELOC
+#endif /* HIDELOC */
 		printf("\t\t->%s\n",eventstr);
 		if(ispc(ntn[cntry].active))
 			fprintf(fm,"\t%s\n",eventstr);
@@ -1048,7 +1052,7 @@ erupt()
 		if (volhold == 0) blowup(i,j);
 	}
 }
-#endif VULCANIZE
+#endif /* VULCANIZE */
 
 /* blowup a volcano in sector i,j */
 void
@@ -1125,4 +1129,4 @@ void
 weather()
 {
 }
-#endif RANEVENT
+#endif /* RANEVENT */

@@ -1,7 +1,7 @@
 /* conquer : Copyright (c) 1988, 1989 by Ed Barlow.	
-
    MODIFICATION OF THIS FILE IMPLIES THAT THE MODIFIER WILL ACCEPT
 	A LIMITED USE COPYRIGHT AS FOLLOWS:
+
 
 	1) This software is copyrighted and protected by law. The
 		sole owner of this software, which hereafter is known as
@@ -44,26 +44,27 @@
 */
 
 /* --- MODIFICATION IS REQUIRED OF THE FOLLOWING DEFINE STATEMENTS ---	*/
-#define OWNER	"Ed Barlow"	/* administrators name			*/
-#define LOGIN	"smile"		/* administrators login id. IMPORTANT!	*/
+#define OWNER	"Adam Bryant"	/* administrators name			*/
+#define LOGIN	"adb"		/* administrators login id. IMPORTANT!	*/
                 		/* only this UID may update.		*/
-#define SYSV		/* uncomment this line on a UNIX SYSV machine	*/
-/* #define BSD		/* uncomment this line on a BSD machine		*/
+/* #define SYSV		/* uncomment this line on a UNIX SYSV machine	*/
+#define BSD		/* uncomment this line on a BSD machine		*/
 /* #define HPUX		/* uncomment for HP-UNIX			*/
-/*#define XENIX               /* this plus SYSV for XENIX machines, untested  */
-/* #define SYSMAIL	/* if your system supports mail			*/
+/*#define XENIX		/* this plus SYSV for XENIX machines, untested  */
+#define SYSMAIL		/* if your system supports mail			*/
 			/* conquer will notify you about system mail	*/
 
-/* -------------------MODIFICATION IS OPTIONAL ON THE FOLLOWING-----------*/
+/* ------------------MODIFICATION IS OPTIONAL ON THE FOLLOWING----------*/
 #define SPOOLDIR "/usr/spool/mail"	/* location of mail spool	*/
-/* #define FILELOCK	/* if your system supports BSD flock()		*/
+#define FILELOCK	/* if your system supports BSD flock()		*/
 			/* other file locking is not well implemented	*/
-/*#define LOCKF               /* in addition to FILELOCK if you have lockf    */
-#define TIMELOG	/* if your system has the date command		*/
+/*#define LOCKF		/* in addition to FILELOCK if you have lockf    */
+			/* this is needed on NFS remote file systems    */
+#define TIMELOG		/* if your system has the date command		*/
 
 #define NTOTAL 25	/* max # of nations ( player + npc + monster )	*/
 #define MAXPTS	65	/* points for players to buy stuff with at start*/
-#define MAXARM	40	/* maximum number of armies per nation		*/
+#define MAXARM	50	/* maximum number of armies per nation		*/
 #define MAXNAVY	10	/* maximum number of fleets per nation		*/
 #define PDEPLETE 30	/* % of armies/sectors depleted without Capitol	*/
 #define PFINDSCOUT 50	/* percentage chance for capturing scouts	*/
@@ -79,7 +80,12 @@
 #define REMAKE		/* may make a world even if datafile exists.	*/
 			/* this allows demi-gods the ability to remake  */
 			/* their world.                                 */
-/* #define NOSCORE	/* only show full scores to god while in game	*/
+#define NOSCORE		/* only show full scores to god while in game	*/
+/* #define CHECKUSER */	/* only allow owner of nation to play it        */
+#define REVSPACE 5	/* allow for this many revolts in nation list   */
+#define LASTADD 5	/* last turn players may w/out password         */
+#define USERLOG		/* log users who play a nation                  */
+#define MASK 037	/* data file protection mask (umask)            */
 #define DERVDESG	/* allow DERVISH to redesignate in DESERT/ICE	*/
 #define MONSTER	45	/* defined if pirates/savages/nomads/lzard exist.
 			   represents # of sectors of land that need to be

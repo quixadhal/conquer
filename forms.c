@@ -391,7 +391,7 @@ change()
 	short isgod=FALSE;
 #ifdef OGOD
 	FILE *ftmp;
-#endif OGOD
+#endif /* OGOD */
 	char filename[FILELTH];
 
 	if(country==0) {
@@ -491,7 +491,7 @@ change()
 	if(isgod==TRUE) mvaddstr(LINES-3,COLS/2-33,"HIT 8 TO DESTROY, 9 TO CHANGE COMMODITY OR '0' TO CHANGE DEMI-GOD");
 #else OGOD
 	if(isgod==TRUE) mvaddstr(LINES-3,COLS/2-24,"HIT 8 TO DESTROY NATION, OR '0' TO CHANGE DEMI-GOD");
-#endif OGOD
+#endif /* OGOD */
 	else mvaddstr(LINES-3,COLS/2-14,"HIT ANY OTHER KEY TO CONTINUE");
 	standend();
 	refresh();
@@ -773,7 +773,7 @@ change()
 			fclose(ftmp);
 		}
 		break;
-#endif OGOD
+#endif /* OGOD */
 	case '0':
 		if(isgod==TRUE) {
 			mvaddstr(LINES-2,0,"ENTER CONQUER SUPER-USER PASSWORD:");

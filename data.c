@@ -47,7 +47,7 @@ char *diploname[]= { "UNMET", "TREATY", "ALLIED", "FRIENDLY",
 char *soldname[]= { "?","MARCH","SCOUT","GARRISON","TRADED","MILITIA",
 	"FLYING","DEFEND","MAG_DEF","ATTACK","MAG_ATT","GENERAL","SORTIE",
 	"SIEGE","BESIEGED","ON_BOARD","RULE"};
-#endif CONQUER
+#endif /* CONQUER */
 
 char *directions[]= { "here", "north", "northeast", "east", "southeast",
 	"south", "southwest", "west", "northwest"};
@@ -82,7 +82,7 @@ char *shunittype[]= {
 "Hero", "Cent", "gt", "Shro", "Mumm",
 "Elem", "mino", "daem", "Bal", "Drgn"
 };
-#endif CONQUER
+#endif /* CONQUER */
 int unitminsth[]=		/* min strength of a unit */
 {
 1, 1, 1, 1, 1, 1, 1,
@@ -187,13 +187,13 @@ char	*sortname = "conqsort";
 #ifdef ADMIN
 char	scenario[NAMELTH+1];
 char	*npcsfile = "nations";
-#endif ADMIN
+#endif /* ADMIN */
 char	*helpfile = "help";
 char	*newsfile = "news";
 char	*isonfile = "lock";
 #ifdef TRADE
 char	*tradefile = "commerce";
-#endif TRADE
+#endif /* TRADE */
 
 char	*seasonstr[] = { "Winter", "Spring", "Summer", "Fall" };
 
@@ -253,10 +253,10 @@ int	mailok=DONEMAIL;
 #ifdef SYSMAIL
 char	sysmail[FILELTH];
 int	sys_mail_status;
-#endif SYSMAIL
+#endif /* SYSMAIL */
 char conqmail[FILELTH];
 int	conq_mail_status;
-#endif CONQUER
+#endif /* CONQUER */
 
 /* trade good value - zeroes in this comment line mark increments of ten*/
 /*              0         0         0         0         0         0 */

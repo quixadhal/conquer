@@ -234,7 +234,7 @@ fltspeed(nvynum)
 	if (hold==99) hold=N_NOSPD;
 	return(hold);
 }
-#endif ADMIN
+#endif /* ADMIN */
 
 /* this function returns the amount of storage space in a */
 /*   given fleet.  heavy+=3  medium+=2  light+=1.         */
@@ -268,7 +268,7 @@ fltwhold(nvynum)
 	}
 	return(hold);
 }
-#endif ADMIN
+#endif /* ADMIN */
 
 /* this function returns the amount of storage space in galleys */
 int
@@ -542,4 +542,4 @@ loadfleet()
 		}
 	}
 }
-#endif CONQUER
+#endif /* CONQUER */

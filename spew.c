@@ -498,4 +498,4 @@ badfile(){
 	fprintf(stderr,"Bad file format\n");
 	exit(1);
 }
-#endif SPEW
+#endif /* SPEW */

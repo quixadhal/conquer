@@ -1,227 +1,275 @@
-#	conquer: Copyright (c) 1988 by Edward M Barlow
+#	conquer: Copyright (c) 1989 by Edward M Barlow
 #
 #	BY CHANGING THIS FILE, YOU AGREE TO ABIDE BY THE LIMITATIONS STATED IN
 #	THE LIMITED USE CONTRACT CONTAINED IN THE FILE "header.h"
 #
+#       This makefile has been modified to allow compilation using
+#       a parallelized make program.  It has been used successfully
+#       on an Encore Multimax parallel computer with both 4 and
+#       6 cpus.
+#
+#       It should pose no problems for non parallel makes.
+#
+#       Please report any problems to adb@bucsf.bu.edu
+#
 MAKE	= /bin/make
 CC	= /bin/cc
-RM	= /bin/rm -f
+RM      = /bin/rm -f
 
 #	LN must be "ln -s" if source, data, and default span disks
 LN	= ln
 CP	= cp
 NULL	= 2>/dev/null
 
+#	Flags to lint
+LTFLG   = -h -lcurses
+
+#	Options for shar program, SHARLIM is limit of each shar
+#	file created in kilobytes and SHARNAM is the prefix for
+#	SHARFILE name.
+#	[This is for a public domain shar from USENET, I can send
+#	copies if you wish - adb@bu-cs.bu.edu]
+SHAR	= xshar
+SHARLIM	= 50
+SHARNAM	= shar.
+SHARFLG = -D -c -l$(SHARLIM) -o$(SHARNAM)
+
 #	This should be installed by whomever you want to own the game.
 #	I recommend "games" or "root".
 
-#if the final link does not compile change to the line below
-#LIBRARIES = -lcurses -ltermcap
-LIBRARIES = -lcurses
+#	uncomment the next line if you dont have getopt in your library
+#	(eg you are on a pc, or a non unix system).  getopt.c is a
+#	public domain software, and has not been tested by the authors
+#	of conquer.
+#GETOPT	= getopt.o
 
-#	this is the name of the user executable
-#	the user executable contains commands for the games players
-GAME = conquer
-#	this is the name of the administrative executable
-#	the administrative executable contains commands for the game super user
-ADMIN = conqrun
+#if the final link does not compile change to the line below
+LIBRARIES = -lcurses -ltermcap
+#LIBRARIES = -lcurses
+
+#	DEFAULT is the directory where default nations & help files will be 
+#	stored.	 It is also the default directory = where players will play 
+#	if they do not use the -d option.
+DEFAULT = /usr4/acm/stud/adb/games/conqlib
 
 #	This directory is where the executables will be stored
-#	This would be the equivalent of /usr/games
-EXEDIR = /c28/smile/game/runv
+EXEDIR = /usr4/acm/stud/adb/games
 
-#	GAME IDENTIFICATION
-#	GAMEID is the game identifier
-#	DATA is the directory where an individual Conquer game data will be
-#	stored.  It is the directory you use in the -d option of the game.
-#	"make new_game" will build a world in that directory.  The current
-#	game will be automatically executed upon login (no need for -d)
-#	but if other games are compiled, you need to use -d (ie. the
-#	game automatically looks at the DATA directory it was compiled with.
+#	Definitions used for compiling conquer
+CDEFS  = -DDEFAULTDIR=\"$(DEFAULT)\" -DEXEDIR=\"$(EXEDIR)\"
+
+#	Options flag used for non-debugging purposes
+OPTFLG  = -O
+
+#	Options flag used for debugging purposes
+#	[make sure to comment out 'strip' commands in install section]
+#OPTFLG  = -DDEBUG -g
+
+#	this is the name of the user executable
+#       the user executable contains commands for the games players
+GAME  = conquer
+#	this is the name of the administrative executable
+#       the administrative executable contains commands for the game super user
+ADMIN = conqrun
+#	this is the name of the sorting program which conquer uses
+SORT  = conqsort
+
+#       GAME IDENTIFICATION
+#	this is the game identifier.  See the DATA variable below
 GAMEID = 1
-DATA = $(EXEDIR)/lib$(GAMEID)
+#	This directory is where individual Conquer game data will be stored.
+#	As multiple simultaneous games are supported, each game must have its 
+#	own directory.
+DATA  = $(DEFAULT)/$(GAMEID)
 
-#	The following CFLAGS should be set by a normal user
-CFLAGS  = -DDEFAULTDIR=\"$(DATA)\" -O -s -DEXEDIR=\"$(EXEDIR)\"
-#	The following CFLAGS should be used if you wish to debug the game
-#CFLAGS  = -DDEFAULTDIR=\"$(DATA)\" -DDEBUG -g -DEXEDIR=\"$(EXEDIR)\"
+#	Suffixes for conquer files.
+.SUFFIXES:	A.o G.o
 
 # AFILS are files needed for game updating...
-AFILS = combat.c cexecute.c io.c admin.c makeworl.c  navy.c spew.c \
+AFILS = combat.c cexecute.c io.c admin.c makeworl.c navy.c spew.c \
 newlogin.c update.c magic.c npc.c misc.c randeven.c data.c trade.c check.c
-AOBJS = combat.o cexecuteA.o ioA.o admin.o makeworl.o  navyA.o \
+AOBJS = combat.o cexecuteA.o ioA.o admin.o makeworl.o navyA.o spew.o \
 newlogin.o update.o magicA.o npc.o miscA.o randeven.o dataA.o \
-tradeA.o check.o $(GETOPT) spew.o
+tradeA.o $(GETOPT) check.o
 
 # GFILS are files needed to run a normal interactive game
 GFILS = commands.c cexecute.c forms.c io.c main.c move.c navy.c \
 magic.c misc.c reports.c data.c display.c extcmds.c trade.c check.c
-GOBJS = commands.o cexecute.o forms.o io.o main.o move.o navy.o \
-magic.o misc.o reports.o data.o display.o extcmds.o trade.o check.o $(GETOPT)
+GOBJS = commands.o cexecuteG.o forms.o ioG.o main.o move.o navyG.o \
+magicG.o miscG.o reports.o dataG.o display.o extcmds.o tradeG.o \
+$(GETOPT) check.o
 
-#txt[0-5] are input help files.  help[0-5] are output
-HELP0=txt0
-HELP1=txt1
-HELP2=txt2
-HELP3=txt3
-HELP4=txt4
-HELP5=txt5
+#txt[0-4] are input help files.  help[0-4] are output. HELPSCR is sed script.
+HELP=txt
 HELPOUT=help
+HELPSCR=sed
 
 HEADERS=header.h data.h newlogin.h patchlevel.h
-HELPFILES= $(HELP0) $(HELP1) $(HELP2) $(HELP3) $(HELP4) $(HELP5)
-ALLFILS=$(HEADERS) $(AFILS) commands.c forms.c main.c move.c \
-reports.c display.c extcmds.c $(HELPFILES) nations Makefile README \
-run man.pag notes.v4 rules sort.c newhelp.c
+SUPT1=nations Makefile $(HELP)[0-5] README run man.page rules
+SUPT2=execute messages news commerce
+ALLFILS=$(SUPT1) $(HEADERS) $(AFILS) commands.c forms.c main.c move.c \
+reports.c display.c extcmds.c newhelp.c sort.c getopt.c
 
-all:	$(ADMIN) $(GAME) helpfile conqsort
+all:	$(ADMIN) $(GAME) $(SORT) helpfile
 	@echo YAY! make new_game to set up permissions, zero appropriate
-	@echo initial files, move $(GAME) and $(ADMIN) to
+	@echo initial files, move $(GAME) and $(ADMIN) to 
 	@echo $(EXEDIR), and set up the world.
-	@echo If a game is in progress, make install will just move $(GAME)
+	@echo If a game is in progress, make install will just move $(GAME) 
 	@echo and $(ADMIN) to $(EXEDIR).
 	@echo
 
 $(ADMIN):	$(AOBJS)
 	@echo phew...
-	@echo if the next command does not compile, you might also need -ltermcap
+	@echo if the next command does not work you might also need -ltermcap
 	@echo === compiling administrative functions
-	$(CC) -p -o $(ADMIN) $(AOBJS) $(LIBRARIES)
+	$(CC) $(OPTFLG) -o $(ADMIN) $(AOBJS) $(LIBRARIES)
+#	comment out the next line during debugging	
+	strip $(ADMIN)
 
 $(GAME):	$(GOBJS)
-	@echo phew...
-	@echo if the next command does not compile, you might also need -ltermcap
+	@echo phew... 
+	@echo if the next command does not work you might also need -ltermcap
 	@echo === compiling user interface
-	$(CC) -O -o $(GAME) $(GOBJS) $(LIBRARIES)
+	$(CC) $(OPTFLG) -o $(GAME) $(GOBJS) $(LIBRARIES)
+#	comment out the next line during debugging
+	strip $(GAME)
 
-conqsort:
-	$(CC) -O -oconqsort sort.c
+$(SORT):	sort.c
+	$(CC) $(OPTFLG) -o $(SORT) sort.c
+#	comment out the next line if debugging
+	strip $(SORT)
 
 clobber:
-	$(RM) *.o core newhelp sed.1 sed.2 lint* \
-		conquer.doc $(GAME) $(ADMIN) $(HELPOUT)[0-5] 2>/dev/null
+	$(RM) *.o $(HELPOUT)[0-5] $(SORT) newhelp in$(GAME) in$(SORT) in$(ADMIN) $(HELPSCR).[12] lint[aghs] conquer.doc $(GAME) $(ADMIN) $(NULL)
 
 clean:
-	$(RM) *.o core conquer.doc sed.1 sed.2 newhelp $(HELPOUT)[0-5] 2>/dev/null
+	$(RM) *.o lint[aghs] conquer.doc $(NULL)
 
-install:  all
-	-$(LN) $(GAME) $(EXEDIR)/$(GAME) $(NULL)
-	-$(LN) $(ADMIN) $(EXEDIR)/$(ADMIN) $(NULL)
-	-$(LN) conqsort $(EXEDIR)/conqsort $(NULL)
-	chmod 4755 $(EXEDIR)/$(GAME)
-	chmod 4750 $(EXEDIR)/$(ADMIN)
-	$(CP) conqsort nations rules $(HELPOUT)? $(DATA) $(NULL)
+in$(GAME):	$(GAME)
+	-$(RM) $(EXEDIR)/$(GAME)
+	$(CP) $(GAME) $(EXEDIR)
+	chmod 4751 $(EXEDIR)/$(GAME)
+	touch in$(GAME)
 
-new_game:  all
-	@echo Installing new game in $(EXEDIR)
-	-mkdir $(EXEDIR) 2>/dev/null
+in$(ADMIN):	$(ADMIN)
+	-$(RM) $(EXEDIR)/$(ADMIN)
+	$(CP) $(ADMIN) $(EXEDIR)
+	chmod 4751 $(EXEDIR)/$(ADMIN)
+	touch in$(ADMIN)
+
+in$(SORT):	$(SORT)
+	-$(RM) $(EXEDIR)/$(SORT)
+	$(CP) $(SORT) $(EXEDIR)
+	chmod 751 $(EXEDIR)/$(SORT)
+	touch in$(SORT)
+
+install:	in$(GAME) in$(ADMIN) in$(SORT) helpfile
+	@echo ""
+	@echo "Installation complete"
+
+new_game:	all
+	@echo Installing new game
+	-mkdir $(EXEDIR) $(NULL)
+	-mkdir $(DATA) $(NULL)
+	-mkdir $(DEFAULT)  $(NULL)
 	chmod 755 $(EXEDIR)
-	-$(LN) $(GAME) $(EXEDIR)/$(GAME) $(NULL)
-	-$(LN) $(ADMIN) $(EXEDIR)/$(ADMIN) $(NULL)
-	chmod 4755 $(EXEDIR)/$(GAME)
-	chmod 4750 $(EXEDIR)/$(ADMIN)
-	chmod 0700 run
-	@echo Copying data to library $(DATA)
-	-mkdir $(DATA) 2>/dev/null
-	chmod 751 $(DATA)
+	chmod 750 $(DATA) $(DEFAULT)
+	$(CP) $(GAME) $(ADMIN) $(SORT) $(EXEDIR)
+	chmod 4755 $(EXEDIR)/$(GAME) $(EXEDIR)/$(ADMIN)
+	chmod 0755 $(EXEDIR)/$(SORT)
 	chmod 0600 nations
-	$(CP) nations rules $(HELPOUT)? $(DATA) $(NULL)
+	chmod 0700 run
+	$(CP) nations rules $(DATA)
+	$(CP) nations rules $(DEFAULT)
 	@echo now making the world
 	$(EXEDIR)/$(ADMIN) -d$(DATA) -m
 	$(EXEDIR)/$(ADMIN) -d$(DATA) -a
 
-helpfile:	$(HELPOUT)0
+helpfile:	$(HELPOUT)0 $(HELPOUT)1 $(HELPOUT)2 $(HELPOUT)3 $(HELPOUT)4 $(HELPOUT)5
 	@echo Helpfiles built
+	touch helpfile
 
-$(HELPOUT)0:	newhelp $(HELPFILES)
-	@echo Building the help files
+$(HELPOUT)0:	$(HELP)0 $(HELPSCR).1 $(HELPSCR).2
+	@echo building $(HELPOUT)0
+	cat $(HELP)0 | sed -f $(HELPSCR).1 | sed -f $(HELPSCR).2 > $(HELPOUT)0
+	-$(RM) $(DEFAULT)/$(HELPOUT)0
+	-$(LN) $(HELPOUT)0 $(DEFAULT)/$(HELPOUT)0
+
+$(HELPOUT)1:	$(HELP)1 $(HELPSCR).1 $(HELPSCR).2
+	@echo building $(HELPOUT)1
+	cat $(HELP)1 | sed -f $(HELPSCR).1 | sed -f $(HELPSCR).2 > $(HELPOUT)1
+	-$(RM) $(DEFAULT)/$(HELPOUT)1
+	-$(LN) $(HELPOUT)1 $(DEFAULT)/$(HELPOUT)1
+
+$(HELPOUT)2:	$(HELP)2 $(HELPSCR).1 $(HELPSCR).2
+	@echo building $(HELPOUT)2
+	cat $(HELP)2 | sed -f $(HELPSCR).1 | sed -f $(HELPSCR).2 > $(HELPOUT)2
+	-$(RM) $(DEFAULT)/$(HELPOUT)2
+	-$(LN) $(HELPOUT)2 $(DEFAULT)/$(HELPOUT)2
+
+$(HELPOUT)3:	$(HELP)3 $(HELPSCR).1 $(HELPSCR).2
+	@echo building $(HELPOUT)3
+	cat $(HELP)3 | sed -f $(HELPSCR).1 | sed -f $(HELPSCR).2 > $(HELPOUT)3
+	-$(RM) $(DEFAULT)/$(HELPOUT)3
+	-$(LN) $(HELPOUT)3 $(DEFAULT)/$(HELPOUT)3
+
+$(HELPOUT)4:	$(HELP)4 $(HELPSCR).1 $(HELPSCR).2
+	@echo building $(HELPOUT)4
+	cat $(HELP)4 | sed -f $(HELPSCR).1 | sed -f $(HELPSCR).2 > $(HELPOUT)4
+	-$(RM) $(DEFAULT)/$(HELPOUT)4
+	-$(LN) $(HELPOUT)4 $(DEFAULT)/$(HELPOUT)4
+
+$(HELPOUT)5:	$(HELP)5 $(HELPSCR).1 $(HELPSCR).2
+	@echo building $(HELPOUT)5
+	cat $(HELP)5 | sed -f $(HELPSCR).1 | sed -f $(HELPSCR).2 > $(HELPOUT)5
+	-$(RM) $(DEFAULT)/$(HELPOUT)5
+	-$(LN) $(HELPOUT)5 $(DEFAULT)/$(HELPOUT)5
+
+$(HELPSCR).1:	newhelp
 	newhelp
-	cat $(HELP0) | sed -f sed.1 > $(HELPOUT)0
-	cat $(HELP1) | sed -f sed.1 | sed -f sed.2 > $(HELPOUT)1
-	cat $(HELP2) | sed -f sed.1 > $(HELPOUT)2
-	cat $(HELP3) | sed -f sed.1 | sed -f sed.2 > $(HELPOUT)3
-	cat $(HELP4) | sed -f sed.1 > $(HELPOUT)4
-	cat $(HELP5) | sed -f sed.1 > $(HELPOUT)5
-	chmod 0644 $(HELPOUT)[0-5]
-	-$(RM) sed.1 sed.2
+
+$(HELPSCR).2:	newhelp
+	newhelp
+
+newhelp:	dataG.o	newhelp.o
+	$(CC) dataG.o newhelp.o -o newhelp
 
 lint:
-	lint -DDEFAULTDIR=\"$(DATA)\" -DEXEDIR=\"$(EXEDIR)\" -DCONQUER $(GFILS) $(LIBRARIES)> lintg
-	lint -DDEFAULTDIR=\"$(DATA)\" -DEXEDIR=\"$(EXEDIR)\" -DADMIN $(AFILS) $(LIBRARIES) > linta
+	lint $(LTFLG) $(CDEFS) -DCONQUER $(GFILS) > lintg
+	lint $(LTFLG) $(CDEFS) -DADMIN $(AFILS) > linta
 
-docs:	helpfile conquer.doc
+docs:	conquer.doc
 
 conquer.doc:	$(HELPOUT)0 $(HELPOUT)1 $(HELPOUT)2 $(HELPOUT)3 $(HELPOUT)4 $(HELPOUT)5
-	cat $(HELPOUT)?|sed -e "s/^DONE//g"|sed -e "s/^END//g" > conquer.doc
+	cat $(HELPOUT)? |sed -e "s/^DONE//g"|sed -e "s/^END//g" >conquer.doc
 
-shar:
+cpio:
+	-$(RM) core
+	find . -name '*[CrpsEech]' -print | cpio -ocBv > cpiosv
+
+shar:	
 	echo " lines   words chars   FILENAME" > MANIFEST
 	wc $(ALLFILS) >> MANIFEST
-	$(HOME)/src/xshar/xshar -D -c -l64 -oshar -v $(ALLFILS)
+	$(SHAR) $(SHARFLG) $(ALLFILS)
 
-combat.o:	data.h header.h combat.c
-	$(CC) $(CFLAGS) -DADMIN -c combat.c
-cexecute.o:	data.h header.h cexecute.c
-	$(CC) $(CFLAGS) -DCONQUER -c cexecute.c
-io.o:	data.h header.h  io.c
-	$(CC) $(CFLAGS) -DCONQUER -c io.c
-cexecuteA.o:	data.h header.h cexecute.c
-	$(CC) $(CFLAGS) -DADMIN -c cexecute.c
-	mv cexecute.o cexecuteA.o
-ioA.o:	data.h header.h  io.c
-	$(CC) $(CFLAGS) -DADMIN -c io.c
-	mv io.o ioA.o
-admin.o:	data.h header.h admin.c
-	$(CC) $(CFLAGS) -DADMIN -c admin.c
-makeworl.o:	data.h header.h makeworl.c
-	$(CC) $(CFLAGS) -DADMIN -c makeworl.c
-newlogin.o:	data.h header.h newlogin.h newlogin.c
-	$(CC) $(CFLAGS) -DADMIN -c newlogin.c
-update.o:	data.h header.h update.c
-	$(CC) $(CFLAGS) -DADMIN -c update.c
-magic.o:	data.h header.h magic.c
-	$(CC) $(CFLAGS) -DCONQUER -c magic.c
-magicA.o:	data.h header.h magic.c
-	$(CC) $(CFLAGS) -DADMIN -c magic.c
-	mv magic.o magicA.o
-npc.o:	data.h header.h npc.c
-	$(CC) $(CFLAGS) -DADMIN -c npc.c
-misc.o:	data.h header.h misc.c
-	$(CC) $(CFLAGS) -DCONQUER -c misc.c
-miscA.o:	data.h header.h misc.c
-	$(CC) $(CFLAGS) -DADMIN -c misc.c
-	mv misc.o miscA.o
-randeven.o:	data.h header.h randeven.c
-	$(CC) $(CFLAGS) -DADMIN -c randeven.c
-data.o:	data.h header.h data.c
-	$(CC) $(CFLAGS) -DCONQUER -c data.c
-dataA.o:	data.h header.h data.c
-	$(CC) $(CFLAGS) -DADMIN -c data.c
-	mv data.o dataA.o
-display.o:	data.h header.h display.c
-	$(CC) $(CFLAGS) -DCONQUER -c display.c
-reports.o:	data.h header.h reports.c
-	$(CC) $(CFLAGS) -DCONQUER -c reports.c
-move.o:	data.h header.h move.c
-	$(CC) $(CFLAGS) -DCONQUER -c move.c
-main.o:	data.h header.h main.c
-	$(CC) $(CFLAGS) -DCONQUER -c main.c
-forms.o:	data.h header.h forms.c
-	$(CC) $(CFLAGS) -DCONQUER -c forms.c
-commands.o:	data.h header.h commands.c
-	$(CC) $(CFLAGS) -DCONQUER -c commands.c
-check.o:	data.h header.h check.c
-	$(CC) $(CFLAGS) -c check.c
-trade.o:	data.h header.h trade.c
-	$(CC) $(CFLAGS) -DCONQUER -c trade.c
-tradeA.o:	data.h header.h trade.c
-	$(CC) $(CFLAGS) -DADMIN -c trade.c
-	mv trade.o tradeA.o
-navyA.o:	data.h header.h navy.c
-	$(CC) $(CFLAGS) -DADMIN -c navy.c
-	mv navy.o navyA.o
-navy.o:	data.h header.h trade.c
-	$(CC) $(CFLAGS) -DCONQUER -c navy.c
-newhelp:	data.o header.h data.h newhelp.c
-	@echo Compiling the help program
-	$(CC) $(CFLAGS) newhelp.c data.o -o newhelp
+.cA.o:	$<
+	( trap "" 0 1 2 3 4 ; $(LN) $*.c $*A.c ;\
+	$(CC) $(OPTFLG) $(CDEFS) -DADMIN -c $*A.c ;\
+	$(RM) $*A.c )
+
+.cG.o:	$<
+	( trap "" 0 1 2 3 4 ; $(LN) $*.c $*G.c ;\
+	$(CC) $(OPTFLG) $(CDEFS) -DCONQUER -c $*G.c ;\
+	$(RM) $*G.c )
+
+.c.o:	$<
+#	compiles using both defines since they
+#	are needed for the data.h definitions for
+#	each file... but should not be needed for
+#	the actual C source file being compiled
+	$(CC) $(OPTFLG) $(CDEFS) -DADMIN -DCONQUER -c $*.c
+
+$(GOBJS):	data.h header.h
+
+$(AOBJS):	data.h header.h
+

@@ -469,12 +469,12 @@ fight()
 			else if(retreatside==DFND) PDloss+=15;
 #ifdef DEBUG
 			printf("side %d (%d %d) can't retreat...+15%% loss\n",retreatside,retreatx,retreaty);
-#endif DEBUG
+#endif /* DEBUG */
 			retreatside = 0;
 		}
 #ifdef DEBUG
 		else printf("retreat side %d to %d %d\n",retreatside,retreatx,retreaty);
-#endif DEBUG
+#endif /* DEBUG */
 	}
 
 	if(PAloss>100) PAloss = 100;
@@ -795,7 +795,7 @@ fdxyretreat()	/* finds retreat location */
 			retreaty=y;
 #ifdef DEBUG
 			printf("armies in %d %d retreat to %d %d\n",xsctr,ysctr,x,y);
-#endif DEBUG
+#endif /* DEBUG */
 			return;
 		}
 	}
@@ -996,7 +996,7 @@ navalcbt()
 	}
 #ifdef DEBUG
 	printf("capture percentage: attack = %d  defend = %d\n",acptpct,dcptpct);
-#endif DEBUG
+#endif /* DEBUG */
 
 	/*figure combat on a one-to-one basis */
 	/* use a bell curve roll */
@@ -1009,7 +1009,7 @@ navalcbt()
 	PAloss = MAXLOSS * (100 - roll) / 100;
 #ifdef DEBUG
 	printf("Pdloss = %d  PAloss = %d\n",PDloss,PAloss);
-#endif DEBUG
+#endif /* DEBUG */
 
 	/* adjust based on the odds */
 	if( odds == 1 ) {
@@ -1319,7 +1319,7 @@ capture(type,to,shipsize,holdcount)
 #ifdef DEBUG
 	printf("capture: hdcnt==%d typ==%d spsz==%d to==%d\n",holdcount,
 		  type,shipsize,to);
-#endif DEBUG
+#endif /* DEBUG */
 	for (i=0;holdcount && i<count;i++) {
 		if (owner[i]!=(-1) && side[i]==to) {
 			curntn= &ntn[owner[i]];
@@ -1332,15 +1332,15 @@ capture(type,to,shipsize,holdcount)
 	}
 #ifdef DEBUG
 	printf("capture 2: holdcount==%d i==%d\n",holdcount,i);
-#endif DEBUG
+#endif /* DEBUG */
 	if (i==count) {
 		curntn = saventn;
 		return;
 	}
 	nvynum = unit[i];
 #ifdef DEBUG
-	printf("Should have succesful capture of %d\n",type);
-#endif DEBUG
+	printf("Should have successful capture of %d\n",type);
+#endif /* DEBUG */
 	switch(type) {
 	case QWAR:
 		(void) NADD_WAR(1);

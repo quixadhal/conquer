@@ -12,6 +12,7 @@
 
 #include "header.h"
 #include "data.h"
+#include <pwd.h>
 #include <ctype.h>
 
 #include <signal.h>
@@ -66,6 +67,7 @@ char **argv;
 	char defaultdir[BIGLTH],cq_opts[BIGLTH];
 	struct passwd *getpwnam(), *pwent;
 
+	umask (MASK);
 	mflag = aflag = xflag = rflag = 0;
 	srand((unsigned) time((long *) 0));
 	strcpy(datadir,"");
@@ -139,7 +141,7 @@ char **argv;
 	case 'a': /* anyone with password can add player*/
 		aflag++;
 		break;
-	case 'x': /* execute program*/
+	case 'x': /* execute (update) program*/
 		xflag++;
 		break;
 	case 'r': /* read map file */
@@ -157,7 +159,7 @@ char **argv;
 		printf("Command line format: %s [-max -dDIR -rSCENARIO]\n",argv[0]);
 		printf("\t-m          make a world\n");
 		printf("\t-a          add new player\n");
-		printf("\t-x          execute program\n");
+		printf("\t-x          execute (update) program\n");
 		printf("\t-d DIR      to use play different game\n");
 		/* printf("\t-r SCENARIO read map while making a new world\n\t\t\tuses SCENARIO.ele, SCENARIO.veg, &  SCENARIO.nat\n"); */
 		exit(SUCCESS);
@@ -270,8 +272,8 @@ char **argv;
 		printf("\n********************************************");
 		printf("\n*      PREPARING TO ADD NEW PLAYERS        *");
 		printf("\n********************************************\n");
-		if( TURN > 5 ){
-			printf("more than 5 turns have passed since game start!\n");
+		if( TURN > LASTADD ){
+			printf("more than %d turns have passed since game start!\n", LASTADD);
 			printf("permission of game administrator required\n");
 			if(strncmp(crypt(getpass("\nwhat is conquer super user password:"),SALT),ntn[0].passwd,PASSLTH)!=0)
 			{
@@ -290,13 +292,13 @@ char **argv;
 		/* disable interrupts */
 		signal(SIGINT,SIG_IGN);
 		signal(SIGQUIT,SIG_IGN);
-		newlogin();
+		newlogin(realuser);
 		unlink(string);
 		exit(SUCCESS);
 	}
 
 #ifdef OGOD
-	if ((realuser != (getpwnam(LOGIN))->pw_uid ) &&
+	if ((realuser != (getpwnam(LOGIN)->pw_uid) ) &&
 	  ((pwent=getpwnam(ntn[0].leader)) == NULL ||
 	  realuser != pwent->pw_uid )) {
 		printf("Sorry -- you can not administrate conquer\n");
@@ -307,7 +309,7 @@ char **argv;
 		printf("\n");
 		exit(FAIL);
 	}
-#endif OGOD
+#endif /* OGOD */
 
 	if (xflag) {	/* update the game */
 #ifndef OGOD
@@ -322,7 +324,7 @@ char **argv;
 			printf("\n");
 			exit(FAIL);
 		}
-#endif OGOD
+#endif /* OGOD */
 #ifdef RUNSTOP
 		/* check if any players are on */
 		for (i=0;i<NTOTAL;i++) {
@@ -333,7 +335,7 @@ char **argv;
 				exit(FAIL);
 			}
 		}
-#endif RUNSTOP
+#endif /* RUNSTOP */
 		sprintf(string,"%sup",isonfile);
 		if(check_lock(string,TRUE)==TRUE) {
 			printf("Another update is still executing.\n");
@@ -356,7 +358,7 @@ char **argv;
 	printf("\t-a       add new player\n");
 	printf("\t-d DIR   to use play different game\n");
 	printf("\t-m       make a world\n");
-	printf("\t-x       execute program\n");
+	printf("\t-x       execute (update) program\n");
 	exit(SUCCESS);
 }
 
@@ -643,7 +645,7 @@ att_bonus()
 				curntn->farm_ability += (*(tg_value+good)-'0');
 			else curntn->farm_ability = MAXTGVAL;
 		} else if( good <= END_SPELL ) {
-			curntn->spellpts++;
+			curntn->spellpts += sptr->people/1000 +1;
 		} else if( good <= END_TERROR ) {
 			if(curntn->terror + (*(tg_value+good)-'0')< MAXTGVAL)
 				curntn->terror += (*(tg_value+good)-'0');

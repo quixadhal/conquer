@@ -141,7 +141,7 @@ int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 	}
 #else
 	(void) strcpy(ntn[0].leader,"god");
-#endif REMAKE
+#endif /* REMAKE */
 	while(TRUE) {
 		mvprintw(9,0,"What demi-god shall co-rule this world? [%s]: ",ntn[0].leader);
 		clrtoeol();
@@ -193,6 +193,9 @@ int	rflag;		/* TRUE if you wish to read in a map from mapfiles */
 			newerror("That Name is Too long.");
 		}
 	}
+#ifdef CHECKUSER
+	ntn[0].uid = getuid();
+#endif
 	mvaddstr(8,0,"Please Enter the Size of the World.  [Divisible by 8 and > 23]");
 	clrtoeol();
 	while(TRUE) {
@@ -1134,13 +1137,13 @@ populate()
 
 	newmsg("... All random population and monsters placed");
 	sleep(1);
-#endif MONSTER
+#endif /* MONSTER */
 
 	for (i=0;i<MAXHELP;i++) {
 		sprintf(fname,"%s/%s%d",DEFAULTDIR,helpfile,i);
 		if ((fp=fopen(fname,"r"))==NULL) {
 			char tempc[BIGLTH];
-			sprintf(tempc,"cannot find helpfile <%s/%s>.",DEFAULTDIR,fname);
+			sprintf(tempc,"cannot find helpfile <%s>.",fname);
 			newerror(tempc);
 		}
 	}
@@ -1271,5 +1274,5 @@ populate()
 	att_base();	/* get nation attributes */
 	newmsg("All NPC nations placed");
 	sleep(1);
-#endif NPC
+#endif /* NPC */
 }
