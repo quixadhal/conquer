@@ -115,10 +115,10 @@ printele()
 	register int X, Y;
 	fprintf(stderr,"doing print of altitude\n");
 	if (country == 0) {
-		printf("Conquer %s.%d: Altitude Map of the World on Turn %d\n",
+		printf("Conquer %s.%s: Altitude Map of the World on Turn %d\n",
 			VERSION, PATCHLEVEL, TURN);
 	} else {
-		printf("Conquer %s.%d: Altitude Map for Nation %s on Turn %d\n",
+		printf("Conquer %s.%s: Altitude Map for Nation %s on Turn %d\n",
 			VERSION, PATCHLEVEL, curntn->name, TURN);
 	}
 	for(Y=0;Y<MAPY;Y++) {
@@ -139,10 +139,10 @@ pr_ntns()
 	register int X, Y;
 	fprintf(stderr,"doing print of nations\n");
 	if (country == 0) {
-		printf("Conquer %s.%d: Nation Map of the World on Turn %d\n",
+		printf("Conquer %s.%s: Nation Map of the World on Turn %d\n",
 			VERSION, PATCHLEVEL, TURN);
 	} else {
-		printf("Conquer %s.%d: Nation Map for Nation %s on Turn %d\n",
+		printf("Conquer %s.%s: Nation Map for Nation %s on Turn %d\n",
 			VERSION, PATCHLEVEL, curntn->name, TURN);
 	}
 	for(Y=0;Y<MAPY;Y++) {
@@ -166,10 +166,10 @@ pr_desg()
 	register int X, Y;
 	fprintf(stderr,"doing print of designations\n");
 	if (country == 0) {
-		printf("Conquer %s.%d: Designation Map of the World on Turn %d\n",
+		printf("Conquer %s.%s: Designation Map of the World on Turn %d\n",
 			VERSION, PATCHLEVEL, TURN);
 	} else {
-		printf("Conquer %s.%d: Designation Map for Nation %s on Turn %d\n",
+		printf("Conquer %s.%s: Designation Map for Nation %s on Turn %d\n",
 			VERSION, PATCHLEVEL, curntn->name, TURN);
 	}
 	for(Y=0;Y<MAPY;Y++) {
@@ -198,10 +198,10 @@ printveg()
 	register int X, Y;
 	fprintf(stderr,"doing print of vegetation\n");
 	if (country == 0) {
-		printf("Conquer %s.%d: Vegetation Map of the World on Turn %d\n",
+		printf("Conquer %s.%s: Vegetation Map of the World on Turn %d\n",
 			VERSION, PATCHLEVEL, TURN);
 	} else {
-		printf("Conquer %s.%d: Vegetation Map for Nation %s on Turn %d\n",
+		printf("Conquer %s.%s: Vegetation Map for Nation %s on Turn %d\n",
 			VERSION, PATCHLEVEL, curntn->name, TURN);
 	}
 	for(Y=0;Y<MAPY;Y++) {
@@ -498,7 +498,7 @@ printscore()
 	char timestr[LINELTH+1];
 #endif /* TIMELOG */
 
-	printf("Conquer %s.%d: %s of Year %d, Turn %d\n",VERSION,PATCHLEVEL,
+	printf("Conquer %s.%s: %s of Year %d, Turn %d\n",VERSION,PATCHLEVEL,
 		PSEASON(TURN),YEAR(TURN), TURN);
 #ifdef TIMELOG
 	if ((timefp=fopen(timefile,"r"))!=NULL) {

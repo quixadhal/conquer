@@ -235,7 +235,7 @@ errorbar(str1,str2)
 	for(i=0;i<COLS-1;i++)
 		addch(' ');
 	standend();
-	mvprintw(LINES-3,0," Conquer %s.%d: %s",VERSION,PATCHLEVEL,str1);
+	mvprintw(LINES-3,0," Conquer %s.%s: %s",VERSION,PATCHLEVEL,str1);
 	mvaddstr(LINES-3,COLS-strlen(str2)-2,str2);
 	move(LINES-2,0);
 	for(i=0;i<COLS-1;i++)

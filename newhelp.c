@@ -33,7 +33,7 @@ main()
 	/* create sed script */
 	fprintf(fp,"s/XOWNER/%s/g\n",OWNER);
 	fprintf(fp,"s/XLOGIN/%s/g\n",LOGIN);
-	fprintf(fp,"s/XVERSION/%s.%d/g\n",VERSION,PATCHLEVEL);
+	fprintf(fp,"s/XVERSION/%s.%s/g\n",VERSION,PATCHLEVEL);
 	fprintf(fp,"s/XPVULCAN/%d/g\n",PVULCAN);
 	fprintf(fp,"s/XPMOUNT/%d/g\n",PMOUNT);
 	fprintf(fp,"s/XDEPLETE/%d/g\n",PDEPLETE);

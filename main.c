@@ -277,7 +277,7 @@ char	**argv;
 		(void) setuid (geteuid ()) ;
 	}
 
-	fprintf(stderr,"conquer %s.%d: Copyright (c) 1988 by Edward M Barlow\n",VERSION,PATCHLEVEL);
+	fprintf(stderr,"conquer %s.%s: Copyright (c) 1988 by Edward M Barlow\n",VERSION,PATCHLEVEL);
 
 	/* check for update in progress */
 	sprintf(filename,"%sup",isonfile);
@@ -593,7 +593,7 @@ makebottom()
 	standend();
 	move(LINES-4,0);
 	clrtoeol();
-	mvprintw(LINES-3,0,"Conquer: %s.%d Turn %d",VERSION,PATCHLEVEL,TURN);
+	mvprintw(LINES-3,0,"Conquer: %s.%s Turn %d",VERSION,PATCHLEVEL,TURN);
 	clrtoeol();
 	mvaddstr(LINES-1,0,"  type ? for help");
 	clrtoeol();
@@ -1401,7 +1401,7 @@ copyscreen()
 
 	clear();
 	standout();
-	mvprintw(8,COLS/2-12,"Conquer %s.%d",VERSION,PATCHLEVEL);
+	mvprintw(8,COLS/2-12,"Conquer %s.%s",VERSION,PATCHLEVEL);
 	standend();
 	mvaddstr(10,COLS/2-21, "Copyright (c) 1988 by Edward M Barlow");
 	mvaddstr(11,COLS/2-22,"Written Edward M Barlow and Adam Bryant");
@@ -1445,7 +1445,7 @@ void
 credits()
 {
 	clear();
-	mvprintw(4,0,"Conquer %s.%d",VERSION,PATCHLEVEL);
+	mvprintw(4,0,"Conquer %s.%s",VERSION,PATCHLEVEL);
 	mvaddstr(5,0,"Copyright (c) 1988 by Edward M Barlow");
 	mvaddstr(6,0,"written Edward M Barlow and Adam Bryant");
 	mvaddstr(12,0,"I would like to thank the following for comments,");
