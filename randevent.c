@@ -5,6 +5,10 @@
 #include "data.h"
 #ifdef RANEVENT
 #ifdef ADMIN
+char	*names[] = {		/* must end in single character name */
+	"groo","brok","vul","poin","srop","hoga","nobi","bonz","gail",
+	"lynn","zorb","theed","urda","X"
+};
 
 extern FILE *fnews;
 extern short country;
@@ -77,6 +81,26 @@ findnew()
 	return(newntn);
 }
 
+char
+getnewmark()
+{
+	char tmpchr;
+	int  done=TRUE,i;
+	tmpchr='A'-1;
+	while (done) {
+		tmpchr++;
+		done=FALSE;
+		for (i=0;i<MAXNTN;i++)
+			if (ntn[i].mark==tmpchr && ntn[i].active>0)
+				done=TRUE;
+		if (!done && !isupper(tmpchr))
+			done=TRUE;
+		if (tmpchr=='Z')
+			done=FALSE;
+	}
+	return(tmpchr);
+}
+
 /* disolve a certain percent of a nation */
 /*returns value of new nation */
 int
@@ -88,8 +112,6 @@ int percent;
 	int split;	/* number of sectors split */
 	int defaultx=(-1), defaulty=(-1), realx=(-1), realy=(-1), dist;
 	int i,j,armynum,narmynum,posi,posj;
-	int notdone=1;
-	char tmpchr;
 
 	split =  ntn[target].tsctrs * percent / 100;
 	if (split==0) {
@@ -127,13 +149,8 @@ int percent;
 		return(0);
 	}
 
-	strcpy(ntn[new].name,"r-");
-	strncat(ntn[new].name,ntn[target].name,min(NAMELTH-2,strlen(ntn[target].name)));
-	for (armynum=0;armynum<MAXNAVY;armynum++)
-		if(strcmp(ntn[armynum].name, ntn[new].name)==0) {
-			strcpy(eventstr,"no nations available");
-			return(0);
-		}
+	if(getnewname(new) == 0) return(0);
+
 #ifdef HIDELOC
 	sprintf(eventstr,"new nation created");
 #else
@@ -163,20 +180,12 @@ int percent;
 	ntn[new].dplus= ntn[target].dplus;
 	ntn[new].location= ntn[target].location;
 	ntn[new].powers= ntn[target].powers;
+	ntn[new].tships= 0;
+	ntn[new].tsctrs = split;
+
 	/* make the rebellion's mark some unused uppercase letter */
-	tmpchr='A'-1;
-	while (notdone) {
-		tmpchr++;
-		notdone=0;
-		for (i=0;i<MAXNTN;i++)
-			if (ntn[i].mark==tmpchr && ntn[i].active>0)
-				notdone=1;
-		if (!notdone && !isalpha(tmpchr))
-			notdone=1;
-		if (tmpchr=='Z')
-			notdone=0;
-	}
-	ntn[new].mark= tmpchr;
+	ntn[new].mark = getnewmark();
+
 	for ( dist=2 ; dist < 10; dist++) if (split > 0)
 	for (i=defaultx-dist; i<defaultx+dist; i++)
 		for (j=defaulty-dist; j<defaulty+dist; j++){
@@ -244,6 +253,26 @@ int percent;
 	ntn[new].dstatus[target]=WAR;
 	ntn[target].dstatus[new]=WAR;
 	return(new);
+}
+
+getnewname(new)
+int	new;
+{
+	int done,count,i=0;
+
+	while( strlen(*(names+i)) > 1 ){
+		done = TRUE;
+		for (count=0;count<NTOTAL;count++)
+			if(strcmp(ntn[count].name, *(names+i))==0) 
+				done = FALSE;
+		if(done==TRUE) break;
+		i++;
+	}
+
+	strcpy(ntn[new].name,*(names+i));
+	if(done ==TRUE) return(1);
+	strcpy(eventstr,"no nations available");
+	return(0);
 }
 
 int
@@ -319,6 +348,8 @@ randomevent()
 					if(ASOLD == 0) {
 						ASOLD = sct[i][j].people/4;
 						ASTAT = A_MILITIA;
+						AXLOC = i;
+						AYLOC = j;
 						sct[i][j].people -= ASOLD;
 						break;
 					}
@@ -388,8 +419,9 @@ randomevent()
 			break;
 		case 14:
 			/*royal wedding (absorb neighbor nation)*/
-			/*	takeover ( 100, 0 ); */  done=FALSE;
+			/*	takeover ( 100, 0 ); */  
 			/* something not right.... */
+			done=FALSE;
 			break;
 		case 15:
 			/*new alloy +10% combat (WARRIOR...)*/
@@ -404,6 +436,9 @@ randomevent()
 			else if(magic(country,WARLORD)!=1){
 				ntn[country].powers|=WARLORD;
 				exenewmgk(WARLORD);
+			}
+			else {	/* have all three powers... oh well */
+				done=FALSE;
 			}
 			break;
 		case 16:
@@ -501,7 +536,7 @@ randomevent()
 				ntn[NNOMAD].arm[armynum].sold =400+20*(rand()%50);
 				else	/* 200-600 */
 				ntn[NNOMAD].arm[armynum].sold =200+20*(rand()%20);
-				ntn[NNOMAD].arm[armynum].unittyp = A_CAVALRY;
+				ntn[NNOMAD].arm[armynum].unittyp = A_LT_CAV;
 				ntn[NNOMAD].arm[armynum].stat =ATTACK;
 				done++;
 			}
@@ -543,8 +578,10 @@ randomevent()
 		case 30: /*new magician + RANDOM POWER*/
 			/*buy new powers and/or new weapons*/
 			if((newpower=getmagic(M_CIV))!=0L){
-				printf("\tnation %s gets magic power number %ld\n",ntn[country].name,newpower);
-				fprintf(fnews,"1. \tevent in %s->gets magic power number %ld\n", ntn[country].name,newpower);
+				for(i=S_CIV;i<=E_CIV;i++) if(powers[i]==newpower){
+				printf("\tnation %s gets power %s\n",ntn[country].name,pwrname[newpower]);
+				fprintf(fnews,"1. \tevent in %s->gets power %s\n", ntn[country].name,pwrname[newpower]);
+				}
 				exenewmgk(newpower);
 			}
 			else done=FALSE;
@@ -552,8 +589,10 @@ randomevent()
 		case 31: /*new magic item + RANDOM POWER*/
 			/*buy new powers and/or new weapons*/
 			if((newpower=getmagic(M_MIL))!=0){
-				printf("\tnation %s gets magic power number %ld\n",ntn[country].name,newpower);
-				fprintf(fnews,"1. \tevent in %s->gets magic power number %ld\n", ntn[country].name,newpower);
+				for(i=S_MIL;i<=E_MIL;i++) if(powers[i]==newpower){
+				printf("\tnation %s gets power %s\n",ntn[country].name,pwrname[newpower]);
+				fprintf(fnews,"1. \tevent in %s->gets power %s\n", ntn[country].name,pwrname[newpower]);
+				}
 				exenewmgk(newpower);
 			}
 			else done=FALSE;

@@ -203,21 +203,20 @@ printscore()
 	int i;
 	int nationid; 	/*current nation id */
 
-	printf("id	race	class	score	gold	military people	sectors	name\n");
+	printf("id      name   race    class  score      gold  military  civilians sectors\n");
 	for (nationid=1; nationid<MAXNTN; nationid++) {
-
 		if(ntn[nationid].active==0) continue;
-		printf("%d",nationid);
+		printf("%2d ",nationid);
+		printf("%9s ",ntn[nationid].name);
 		for(i=1;i<8;i++)
 			if(ntn[nationid].race==*(races+i)[0])
-				printf("	%s",*(races+i));
-		if(ntn[nationid].active>=2) printf("	NPC");
-		else printf("	%s",*(Class+ntn[nationid].class));
-		printf("	%ld	%ld	%ld	%ld	%d",
+				printf("%6s ",*(races+i));
+		if(ntn[nationid].active>=2) printf("     NPC ");
+		else printf("%8s ",*(Class+ntn[nationid].class));
+  		printf("%6ld  %8ld  %8ld   %8ld   %5d\n",
 			ntn[nationid].score ,ntn[nationid].tgold
 			,ntn[nationid].tmil ,ntn[nationid].tciv
 			,ntn[nationid].tsctrs );
-		printf("	%s\n",ntn[nationid].name);
 	}
 }
 #endif CONQUER

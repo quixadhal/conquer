@@ -206,6 +206,9 @@ domagic()
 			price = getmgkcost(M_CIV,country);
 		if(price > getmgkcost(M_MGK,country))
 			price = getmgkcost(M_MGK,country);
+#ifdef OGOD
+		if (isgod==TRUE) price=0;
+#endif OGOD
 
 		standend();
 		count=3;
@@ -433,6 +436,7 @@ long newpower;
 		return(0L);
 	}
 	if(newpower==DEMOCRACY){
+		ntn[country].maxmove+=1;
 		ntn[country].repro+=1;
 		ntn[country].dplus+=10;
 		ntn[country].aplus+=10;
@@ -545,6 +549,7 @@ int *count;
 			newtype=DRAGON;
 			break;
 		default:
+			newtype=MAXMONSTER+1;
 			break;
 		}
 
@@ -553,6 +558,10 @@ int *count;
 			mvprintw((*count)++,0,"%d INVALID TYPE",newtype);
 			refresh();
 			sleep(2);
+			return(done);
+		}
+		if (newtype==MAXMONSTER+1) {
+			/* quick exit */
 			return(done);
 		}
 
@@ -784,6 +793,7 @@ long oldpower;
 		return(0L);
 	}
 	if(oldpower==DEMOCRACY){
+		ntn[country].maxmove-=1;
 		ntn[country].repro-=1;
 		ntn[country].dplus-=10;
 		ntn[country].aplus-=10;

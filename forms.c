@@ -257,6 +257,10 @@ change()
 	short armynum;
 	char passwd[8];
 	short isgod=FALSE;
+#ifdef OGOD
+	FILE *ftmp;
+	char filename[80];
+#endif OGOD
 
 	if(country==0) {
 		isgod=TRUE;
@@ -305,7 +309,7 @@ change()
 	else	mvaddstr(21,(COLS/2)-17,"( VAMPIRES MAY NOT ADD TO COMBAT BONUS )");
 
 #ifdef OGOD
- 	if(isgod==TRUE) mvaddstr(22,(COLS/2)-21,"HIT 4 TO DESTROY NATION OR 5 TO CHANGE TREASURY");
+ 	if(isgod==TRUE) mvaddstr(22,(COLS/2)-23,"HIT 4 TO DESTROY NATION OR 5 TO CHANGE COMMODITY");
 #else OGOD
   	if(isgod==TRUE) mvaddstr(22,(COLS/2)-9,"HIT 4 TO DESTROY NATION");
 #endif OGOD
@@ -456,12 +460,45 @@ change()
 #ifdef OGOD
 	case '5':
 		if (isgod==TRUE) {
-			/* adjust treasury */
-			mvaddstr(0,0,"WHAT IS NEW TOTAL OF TREASURY?");
+			/* open the target country's files */
+			sprintf(filename,"%s%d",exefile,country);
+			if ((ftmp=fopen(filename,"a"))==NULL) {
+				beep();
+				errormsg("error opening country's file");
+				return;
+			}
+			/* adjust commodities */
+			mvaddstr(0,0,"CHANGE: 1) Gold 2) Jewels 3) Iron 4) Food ?");
+			clrtoeol();
 			refresh();
-			i = get_number();
-			/* as god it will be saved nothing else needed */
-			ntn[country].tgold = (long) i;
+			switch(getch()) {
+			case '1':
+				mvaddstr(1,0,"WHAT IS NEW VALUE FOR TREASURY? ");
+				refresh();
+				ntn[country].tgold = (long) get_number();
+				fprintf(ftmp,"L_NGOLD\t%d \t%d \t%ld \t0 \t0 \t%s\n", XNAGOLD ,country,ntn[country].tgold,"null");
+				break;
+			case '2':
+				mvaddstr(1,0,"WHAT IS NEW AMOUNT OF JEWELS? ");
+				refresh();
+				ntn[country].jewels = (long) get_number();
+				fprintf(ftmp,"L_NJWLS\t%d \t%d \t%ld \t0 \t0 \t%s\n", XNARGOLD ,country,ntn[country].jewels,"null");
+				break;
+			case '3':
+				mvaddstr(1,0,"WHAT IS NEW AMOUNT OF IRON? ");
+				refresh();
+				ntn[country].tiron = (long) get_number();
+				fprintf(ftmp,"L_NIRON\t%d \t%d \t%ld \t0 \t0 \t%s\n", XNAIRON ,country,ntn[country].tiron,"null");
+				break;
+			case '4':
+				mvaddstr(1,0,"WHAT IS NEW AMOUNT OF FOOD? ");
+				refresh();
+				ntn[country].tfood = (long) get_number();
+				break;
+			default:
+				break;
+			}
+			fclose(ftmp);
 		}
 		break;
 #endif OGOD

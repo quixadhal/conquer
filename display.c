@@ -47,7 +47,7 @@ makemap()
 	/*can you see all?*/
 	if((magic(country,KNOWALL)==1)||(country==0)) {
 		for(x=0;x<SCREEN_X_SIZE;x++) {
-			for(y=0;y<(LINES-4);y++) {
+			for(y=0;y<SCREEN_Y_SIZE;y++) {
 				highlight(x,y);
 				see(x,y);
 			}
@@ -62,7 +62,8 @@ makemap()
 	}
 	/*see as appropriate?*/
 	else {
-		for(x=0;x<SCREEN_X_SIZE;x++) for(y=0;y<(LINES-4);y++) {
+		for(x=(-LANDSEE);(x<SCREEN_X_SIZE+LANDSEE)&&(x+xoffset<MAPX);x++)
+		for(y=(-LANDSEE);(y<SCREEN_Y_SIZE+LANDSEE)&&(y+yoffset<MAPY);y++) {
 			if(sct[x+xoffset][y+yoffset].owner==country){
 				for(i=x-LANDSEE;i<=x+LANDSEE;i++){
 					for(j=y-LANDSEE;j<=y+LANDSEE;j++) {
@@ -181,7 +182,7 @@ void
 see(x,y)
 {
 	int armbonus;
-	if((x<0)||(y<0)||(x>COLS-21)||(y>=LINES-4)) return;
+	if((x<0)||(y<0)||(x>=SCREEN_X_SIZE)||(y>=SCREEN_Y_SIZE)) return;
 	if(((y+yoffset)<MAPY)&&((x+xoffset)<MAPX)) {
 
 		if((magic(sct[x+xoffset][y+yoffset].owner,THE_VOID)==TRUE)
@@ -189,9 +190,7 @@ see(x,y)
 			||(dismode==DI_PEOP)||(dismode==DI_FOOD))
 		&&(country!=sct[x+xoffset][y+yoffset].owner)
 		&&(country!=0)) {
-			standout();
-			mvaddch(y,2*x,' ');
-			standend();
+			mvaddch(y,2*x,'?');
 		} else {
 			switch(dismode){
 			case DI_FOOD:	/*food */
@@ -265,14 +264,12 @@ see(x,y)
 			case DI_PEOP:   /*People*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
 					mvaddch(y,2*x,WATER);
-				else if (sct[x+xoffset][y+yoffset].people>=1000)
+				else if (sct[x+xoffset][y+yoffset].people>=4950)
 					mvaddch(y,2*x,'+');
-				else if (sct[x+xoffset][y+yoffset].people>=450)
+				else if (sct[x+xoffset][y+yoffset].people>=950)
 					mvaddch(y,2*x,'>');
-				else if (sct[x+xoffset][y+yoffset].people==0)
-					mvaddch(y,2*x,'0');
 				else
-					mvprintw(y,2*x,"%d",1+sct[x+xoffset][y+yoffset].people/50);
+				mvprintw(y,2*x,"%d",(50+sct[x+xoffset][y+yoffset].people)/100);
 				break;
 			case DI_GOLD:  /*Gold*/
 				if (sct[x+xoffset][y+yoffset].altitude==WATER)
@@ -339,7 +336,7 @@ highlight(x,y)
 void
 coffmap()
 {
-	if((xcurs<1)||(ycurs<1)||(xcurs>=SCREEN_X_SIZE)
+	if((xcurs<0)||(ycurs<0)||(xcurs>=SCREEN_X_SIZE)
 	||((ycurs>=SCREEN_Y_SIZE))||((XREAL)>=MAPX)
 	||((YREAL)>=MAPY)) offmap();
 

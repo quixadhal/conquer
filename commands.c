@@ -205,6 +205,10 @@ construct()
 		if(isgod==TRUE) country=0;
 		return;
 	}
+	if((isgod==FALSE)&&(sct[XREAL][YREAL].people<=500)) {
+		errormsg("You need over 500 people to construct");
+		return;
+	}
 
 	if((isgod==FALSE) && (ntn[country].tgold < 0 )) {
 		errormsg("You are broke");
@@ -271,7 +275,8 @@ construct()
 			clrtoeol();
 			refresh();
 			mnumber = get_number();
-			cost = (long) mnumber*WARSHPCOST*NWAR + (long) mnumber*MERSHPCOST*NMER;
+			cost = (long) WARSHPCOST*NWAR + (long) MERSHPCOST*NMER;
+			cost *= mnumber / SHIPCREW;
 			if( ntn[country].tgold < cost ) {
 				errormsg("NOT ENOUGH GOLD");
 				if(isgod==TRUE) country=0;
@@ -308,6 +313,7 @@ construct()
 					x=nvynum;
 					NWAR=0;
 					NMER=0;
+					NCREW=0;
 					NADJSHP;
 				}
 				nvynum++;
@@ -321,7 +327,8 @@ construct()
 		}
 		else	mvprintw(LINES-2,30,"raising new fleet %d",nvynum);
 
-
+		move(LINES-3,0);
+		clrtoeol();
 		mvprintw(LINES-3,0,"how many merchants:");
 		refresh();
 		mnumber = get_number();
@@ -355,8 +362,6 @@ construct()
 		if((nvynum>=0)&&(nvynum<MAXNAVY)) {
 			clear_bottom(0);
 			NCREW += (wnumber+mnumber) * SHIPCREW;
-			mvprintw(LINES-4,0,"constructing %hd warships and %hd merchants (crew now %d)",wnumber,mnumber,NCREW);
-
 			sct[XREAL][YREAL].people -= (wnumber+mnumber)*SHIPCREW;
 
 			ntn[country].tgold -= cost;
@@ -366,6 +371,8 @@ construct()
 			NWAR+=wnumber;
 			NMER+=mnumber;
 			NMOVE=0;
+			mvprintw(LINES-4,0,"fleet %d: warships=%hd (total %hd) merchants=%hd (total %hd) (crew=%d)",nvynum,wnumber,NWAR,mnumber,NMER,NCREW);
+
 			SADJCIV;
 			NADJCRW;
 			NADJSHP;
@@ -381,7 +388,6 @@ construct()
 	}
 	/* construct fortification points*/
 	else if(type=='f'){
-		if(sct[XREAL][YREAL].people>=500)
 		/* can only go into debt as much as the nation has jewels */
 		if ((ntn[country].tgold - cost) > ((-1)*10*ntn[country].jewels)) {
 			mvprintw(LINES-3,25,"you build +%d%% fort points for %ld gold",armbonus,cost);
@@ -389,8 +395,7 @@ construct()
 			sct[XREAL][YREAL].fortress++;
 			INCFORT;
 			errormsg("");
-		}
-		else errormsg("need 500 people or you are broke");
+		} else errormsg("you are broke");
 	}
 	else errormsg("invalid input error");
 

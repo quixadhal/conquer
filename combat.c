@@ -348,14 +348,14 @@ fight()
 	retreatside = 0;
 
 	if((PDloss > 2* PAloss)
-	&&(PDloss>=50)
 	&&(odds>150)
-	&&(rand()%4==0))	retreatside=DFND;
+	&&(((PDloss>=50)&&(rand()%4==0))
+	  ||(rand()%8)))	retreatside=DFND;
 
 	if((PAloss > 2* PDloss)
-	&&(PAloss>=50)
 	&&(odds<150)
-	&&(rand()%2==0))	retreatside=ATKR;
+	&&(((PAloss>=50)&&(rand()%2==0))
+	  ||(rand()%6)))	retreatside=ATKR;
 
 	if(retreatside!=0) {
 		fdxyretreat();
@@ -697,8 +697,8 @@ navalcbt()
 	/*no bonus currently included in this combat*/
 
 	/*calculate ability of crew*/
-	acrew = 100*acrew/aship*SHIPCREW;
-	dcrew = 100*dcrew/dship*SHIPCREW;
+	acrew = 100*acrew/(aship*SHIPCREW);
+	dcrew = 100*dcrew/(dship*SHIPCREW);
 
 	/*each warship can do damage 40%; once all warships sunk then all*/
 	/*sunk are captured merchant*/

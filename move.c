@@ -108,7 +108,7 @@ mymove()
 					armornvy=AORN;
 					return;
 				}
-				else if(AMOVE==0){
+				else if((AMOVE==0)&&(ATYPE!=A_MARINES)){
 					errormsg("SORRY: ARMY HAS NO MOVEMENT POINTS");
 					armornvy=AORN;
 					return;
@@ -290,6 +290,8 @@ mymove()
 						valid=FALSE;
 						xcurs=oldxcurs;
 						ycurs=oldycurs;
+						move(ycurs,xcurs*2);
+						refresh();
 					}
 				} else {
 					move(3,0);

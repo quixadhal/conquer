@@ -746,7 +746,7 @@ populate()
 				ntn[NNOMAD].arm[army2num].yloc=y;
 				ntn[NNOMAD].arm[army2num].stat=ATTACK;
 				ntn[NNOMAD].arm[army2num].sold=100+100*(rand()%15);
-				ntn[NNOMAD].arm[army2num].unittyp=A_CAVALRY;
+				ntn[NNOMAD].arm[army2num].unittyp=A_LT_CAV;
 				if(army2num<MAXARM-1) army2num++;
 			}
 		}

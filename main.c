@@ -208,7 +208,7 @@ char **argv;
 		}
 		execute();
 #ifdef TRADE
-		uptrade();
+		checktrade();
 #endif TRADE
 		if(ntn[country].capx>15) {
 			xcurs=15;
@@ -661,14 +661,8 @@ makeside()
 				/*print that army to nfound%5*/
 				mvaddch((nfound%5)*2,COLS-21,'>');
 				if(selector==(nfound%5)*2) standout();
-				/*the mv,for gets the highlighting pretty*/
-				move((nfound%5)*2,COLS-10);
-				for(i=0;i<9;i++) addch(' ');
 
 				mvprintw((nfound%5)*2,COLS-20,"army %d: %d (%s)",armynum,ASOLD,*(shunittype+(ATYPE%100)));
-				/*the mv,for gets the highlighting pretty*/
-				move((nfound%5)*2+1,COLS-10);
-				for(i=0;i<9;i++) addch(' ');
 
 				mvprintw((nfound%5)*2+1,COLS-20," mv:%d st:%s",AMOVE,*(soldname+ASTAT));
 				standend();
@@ -688,8 +682,8 @@ makeside()
 				/*print a navy*/
 				mvaddch((nfound%5)*2,COLS-21,'>');
 				if(selector==(nfound%5)*2) standout();
-				mvprintw((nfound%5)*2,COLS-20,"nvy %d: war:%d mv:%d",nvynum,NWAR,NMOVE);
-				mvprintw((nfound%5)*2+1,COLS-20," mer %d crew %d",NMER,NCREW);
+				mvprintw((nfound%5)*2,COLS-20,"nvy %d: war:%d mer:%d",nvynum,NWAR,NMER);
+				mvprintw((nfound%5)*2+1,COLS-20," mv:%d crew:%d",NMOVE,NCREW/(NWAR+NMER));
 				standend();
 			}
 			nfound++;

@@ -360,9 +360,15 @@ updexecs()
 #ifdef CMOVE
 			printf("\tthe computer will move for %s\n",ntn[country].name);
 			fprintf(fnews,"1.\tthe computer will move for %s\n",ntn[country].name);
+#ifdef TRADE
+			checktrade();
+#endif TRADE
 			nationrun();
 #endif
 		}
+#ifdef TRADE
+		else checktrade();
+#endif TRADE
 #ifdef NPC
 		/* run npc nations */
 		if(ntn[country].active>=2) {
@@ -672,6 +678,7 @@ updmil()
 		for(nvynum=0;nvynum<MAXNAVY;nvynum++) {
 			/*update sea sectors*/
 			if( NMER + NWAR > 0 ) {
+				int holdval;
 				if(sct[NXLOC][NYLOC].altitude==WATER) {
 #ifdef STORMS
 /*
@@ -694,8 +701,9 @@ updmil()
 				}
 #endif
 				}
-				NMOVE = 3 * ntn[country].maxmove * NCREW;
-				NMOVE /= ((NWAR+NMER)*SHIPCREW);
+				holdval = 3 * ntn[country].maxmove * NCREW;
+				holdval /= ((NWAR+NMER)*SHIPCREW);
+				NMOVE = (short)holdval;
 				ntn[country].tships += NWAR + NMER;
 				ntn[country].tgold -= (NWAR + NMER) * SHIPMAINT;
 			} else {
@@ -722,6 +730,9 @@ updcomodities()
 		ntn[country].tfood-=ntn[country].tmil*2;
 		/*civilians eat 1*/
 		ntn[country].tfood-=ntn[country].tciv;
+		if(magic(country,DEMOCRACY)==TRUE) {  /* eat 2x as much */
+			ntn[country].tfood-=ntn[country].tciv;
+		}
 
 		/*starve people*/
 		if(ntn[country].tfood<0) for(x=0;x<MAPX;x++) for(y=0;y<MAPY;y++) {

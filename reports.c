@@ -281,7 +281,7 @@ budget()
 void
 produce()
 {
-	short armynum;
+	short armynum,multiplier=1;
 	int military=0;
 	int isgod=FALSE;
 
@@ -308,15 +308,16 @@ produce()
 	mvaddstr(8,0,  "FOOD PRODUCTION");
 	mvprintw(9,0,  "granary now holds.........%8ld tons",ntn[country].tfood);
 	mvprintw(10,0, "%8d people in farms..%8ld tons",spread.infarm,spread.food-ntn[country].tfood);
-	mvprintw(12,0, "%8d civilians eat....%8d tons",spread.civilians,spread.civilians);
+	if(magic(country,DEMOCRACY)==1)   multiplier=2;
+	mvprintw(12,0, "%8d civilians eat....%8d tons",spread.civilians,multiplier*spread.civilians);
 	mvprintw(13,0, "%8d soldiers  eat....%8d tons",military,military*2);
-	mvprintw(15,0, "TOTAL NET FOOD............%8d tons",spread.food-ntn[country].tfood-spread.civilians-military*2);
-	if(spread.food-spread.civilians-military*2<FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100){
-	mvprintw(16,0, "TOTAL NEXT YEARS FOOD.....%8ld tons",spread.food-spread.civilians-military*2);
+	mvprintw(15,0, "TOTAL NET FOOD............%8d tons",spread.food-ntn[country].tfood-multiplier*spread.civilians-military*2);
+	if(spread.food-multiplier*spread.civilians-military*2<FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100){
+	mvprintw(16,0, "TOTAL NEXT YEARS FOOD.....%8ld tons",spread.food-multiplier*spread.civilians-military*2);
 	}
 	else{
 	mvprintw(16,0, "TOTAL NEXT YEARS FOOD.....%8ld tons",FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100);
-	mvprintw(17,0, "REVENUE FROM EXCESS.......%8ld gold",spread.food-spread.civilians-military*2-FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100);
+	mvprintw(17,0, "REVENUE FROM EXCESS.......%8ld gold",spread.food-multiplier*spread.civilians-military*2-FOODTHRESH*(100+ntn[country].repro)*spread.civilians/100);
 	}
 
 	mvaddstr(8,41,  "OTHER PRODUCTION");
@@ -346,7 +347,8 @@ fleetrpt()
 	short navy;
 	short oldx,oldy,oldnavy;
 	short done=FALSE;
-	int position;
+	int i,j;
+	int position,crew;
 	int count;       /*screen number */
 	short nvynum=0;    /*current ship id */
 	short wships,mships;
@@ -472,14 +474,18 @@ fleetrpt()
 				else if((oldx==NXLOC)&&(oldy==NYLOC)) {
 					NWAR+=ntn[country].nvy[oldnavy].warships;
 					NMER+=ntn[country].nvy[oldnavy].merchant;
+					NCREW += ntn[country].nvy[oldnavy].crew;
 					NADJSHP;
+					NADJCRW;
 					if(NMOVE>ntn[country].nvy[oldnavy].smove)
 						NMOVE=ntn[country].nvy[oldnavy].smove;
 					NADJMOV;
 					nvynum=oldnavy;
 					NWAR=0;
 					NMER=0;
+					NCREW=0;
 					NADJSHP;
+					NADJCRW;
 				}
 				else {
 					mvaddstr(23,0,"Navies not together (hit any key) ");
@@ -501,6 +507,9 @@ fleetrpt()
 				if((wships<=NWAR)&&(mships<=NMER)){
 					NWAR-=wships;
 					NMER-=mships;
+					crew = NCREW * (wships+mships) / (NWAR+NMER);
+					NCREW -= crew;
+					NADJCRW;
 					NADJSHP;
 					oldnavy=nvynum;
 					oldx=NXLOC;
@@ -517,6 +526,8 @@ fleetrpt()
 						NWAR+=wships;
 						NMER+=mships;
 						NADJSHP;
+						NCREW+=crew;
+						NADJCRW;
 					}
 					else {
 						NMOVE=ntn[country].nvy[oldnavy].smove;
@@ -524,6 +535,8 @@ fleetrpt()
 						NYLOC=oldy;
 						NWAR=wships;
 						NMER=mships;
+						NCREW=crew;
+						NADJCRW;
 						NADJSHP;
 						NADJLOC;
 						NADJMOV;
@@ -536,8 +549,19 @@ fleetrpt()
 				}
 				break;
 			case '3':
+				/* DISBAND NAVY */
+				i=NXLOC;
+				j=NYLOC;
+				if(sct[i][j].altitude == WATER) {
+					errormsg("Ships need to be on land or in harbor");
+					break;
+				}
 				NWAR=0;
 				NMER=0;
+				sct[i][j].people+=NCREW;
+				NCREW=0;
+				SADJCIV2;
+				NADJCRW;
 				NADJSHP;
 				break;
 			case '4':

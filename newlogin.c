@@ -225,7 +225,7 @@ newlogin()
 
 		ntn[country].mark= (*ntn[country].name);
 		if (islower(ntn[country].mark)!=FALSE)
-		  ntn[country].mark= toupper(ntn[country].mark);
+			ntn[country].mark= toupper(ntn[country].mark);
 		printf("\ntesting first letter of name (%c) for nation mark...",ntn[country].mark);
 		valid=TRUE;
 		while(valid==TRUE) {
