@@ -223,7 +223,9 @@ newlogin()
 			}
 		}
 
-		ntn[country].mark = toupper(*ntn[country].name);
+		ntn[country].mark= (*ntn[country].name);
+		if (islower(ntn[country].mark)!=FALSE)
+		  ntn[country].mark= toupper(ntn[country].mark);
 		printf("\ntesting first letter of name (%c) for nation mark...",ntn[country].mark);
 		valid=TRUE;
 		while(valid==TRUE) {
@@ -250,6 +252,10 @@ newlogin()
 			}
 			if(valid==FALSE) if(ntn[country].mark=='*') {
 				printf("\n'*' is invalid character");
+				valid=TRUE;
+			}
+			if(valid==FALSE) if(!isupper(ntn[country].mark)) {
+				printf("\nNot an uppercase character");
 				valid=TRUE;
 			}
 			if(valid==TRUE){
@@ -977,6 +983,9 @@ getclass(race)
 		return(2);
 	case 9:
 		printf("\ndragons have the magical MAJOR MONSTER power automatically");
+		ntn[country].powers|=MI_MONST;
+		x=MI_MONST;
+		CHGMGK;
 		ntn[country].powers|=AV_MONST;
 		x=AV_MONST;
 		CHGMGK;

@@ -730,12 +730,12 @@ nationrun()
 		if(ntn[country].jewels > getmgkcost(M_MIL,country)) {
 			ntn[country].jewels-=getmgkcost(M_MIL,country);
 			if((zz=getmagic(M_MIL))!=0){
-				fprintf(fnews,"1.\tnation %s gets combat power number %d\n",ntn[country].name,zz);
-				printf("\tnation %s gets combat power number %d\n",ntn[country].name,zz);
+				fprintf(fnews,"1.\tnation %s gets combat power number %ld\n",ntn[country].name,zz);
+				printf("\tnation %s gets combat power number %ld\n",ntn[country].name,zz);
 				exenewmgk(zz);
 			} else if((zz=getmagic(M_MIL))!=0){
-				fprintf(fnews,"1.\tnation %s gets combat power number %d\n",ntn[country].name,zz);
-				printf("\tnation %s gets combat power number %d\n",ntn[country].name,zz);
+				fprintf(fnews,"1.\tnation %s gets combat power number %ld\n",ntn[country].name,zz);
+				printf("\tnation %s gets combat power number %ld\n",ntn[country].name,zz);
 				exenewmgk(zz);
 			}
 			else	ntn[country].jewels+=getmgkcost(M_MIL,country);
@@ -744,13 +744,13 @@ nationrun()
 		if(ntn[country].jewels > getmgkcost(M_CIV,country)) {
 			ntn[country].jewels-=getmgkcost(M_CIV,country);
 			if((zz=getmagic(M_CIV))!=0){
-				fprintf(fnews,"1.\tnation %s gets civilian power number %d\n",ntn[country].name,zz);
-				printf("\tnation %s gets civilian power number %d\n",ntn[country].name,zz);
+				fprintf(fnews,"1.\tnation %s gets civilian power number %ld\n",ntn[country].name,zz);
+				printf("\tnation %s gets civilian power number %ld\n",ntn[country].name,zz);
 				exenewmgk(zz);
 			}
 			else if((zz=getmagic(M_CIV))!=0){
-				fprintf(fnews,"1.\tnation %s gets civilian power number %d\n",ntn[country].name,zz);
-				printf("\tnation %s gets civilian power number %d\n",ntn[country].name,zz);
+				fprintf(fnews,"1.\tnation %s gets civilian power number %ld\n",ntn[country].name,zz);
+				printf("\tnation %s gets civilian power number %ld\n",ntn[country].name,zz);
 				exenewmgk(zz);
 			}
 			else	ntn[country].jewels+=getmgkcost(M_CIV,country);
@@ -796,13 +796,13 @@ n_toofar()
 		for(y=0;y<MAPY;y++) if(ONMAP)
 			attr[x][y]=1;
 	for(y=ntn[country].capy+NPCTOOFAR;y<MAPY;y++)
-		for(x=0;x<MAPY;x++) if(ONMAP)
+		for(x=0;x<MAPX;x++) if(ONMAP)
 			attr[x][y]=1;
 	for(x=0;x<ntn[country].capx-NPCTOOFAR;x++)
 		for(y=0;y<MAPY;y++) if(ONMAP)
 			attr[x][y]=1;
 	for(y=0;y<ntn[country].capy-NPCTOOFAR;y++)
-		for(x=0;x<MAPY;x++) if(ONMAP)
+		for(x=0;x<MAPX;x++) if(ONMAP)
 			attr[x][y]=1;
 }
 
@@ -1042,19 +1042,28 @@ check(line)
 int line;
 {
 	int armynum;
-	for(armynum=0;armynum<MAXARM;armynum++)
+	for(armynum=0;armynum<MAXARM;armynum++){
 		if(ASOLD<0) {
 		printf("ERROR: line %d army %d nation %s soldier %d\n",line,armynum,ntn[country].name,ASOLD);
 		ASOLD=0;
 		}
 		if((AXLOC>MAPX)||(AYLOC>MAPY)){
 		printf("CHECK ERROR: line %d army %d nation %s loc %d %d\n",line,armynum,ntn[country].name,AXLOC,AYLOC);
+		AXLOC = ntn[country].capx;
+		AYLOC = ntn[country].capy;
 		}
-	if(ntn[country].tiron < 0L)
+	}
+	if(ntn[country].tiron < 0L){
 		printf("ERROR: line %d nation %s iron is %ld\n",line,ntn[country].name,ntn[country].tiron);
-	if(ntn[country].tfood < 0L)
+		ntn[country].tiron = 0;
+	}
+	if(ntn[country].tfood < 0L){
 		printf("ERROR: line %d nation %s food is %ld\n",line,ntn[country].name,ntn[country].tfood);
-	if(ntn[country].jewels < 0L)
+		ntn[country].tfood = 0;
+	}
+	if(ntn[country].jewels < 0L){
 		printf("ERROR: line %d nation %s jewels is %ld\n",line,ntn[country].name,ntn[country].jewels);
+		ntn[country].jewels = 0;
+	}
 }
 #endif DEBUG

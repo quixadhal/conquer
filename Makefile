@@ -24,16 +24,16 @@ LIBRARIES = -lcurses
 #	if they do not use the -d option.
 DEFAULT = /c28/smile/game/default
 
-CFLAGS  = -DDEFAULTDIR=\"$(DEFAULT)\" -O
+#CFLAGS  = -DDEFAULTDIR=\"$(DEFAULT)\" -O
 #	The following CFLAGS should be used if you wish to debug the game
-#CFLAGS  = -DDEFAULTDIR=\"$(DEFAULT)\" -DDEBUG -g
+CFLAGS  = -DDEFAULTDIR=\"$(DEFAULT)\" -DDEBUG -g
 
 #	this is the name of the user executable
 #	the user executable contains commands for the games players
 GAME = conquer
 #	this is the name of the administrative executable
 #	the administrative executable contains commands for the game super user
-ADMIN = admin
+ADMIN = cadmin
 
 #	This directory is where the executables will be stored
 EXEDIR = /c28/smile/game/runv
@@ -48,15 +48,16 @@ DATA = $(EXEDIR)/lib$(GAMEID)
 
 # AFILS are files needed for game updating...
 AFILS = combat.c cexecute.c io.c admin.c makeworld.c  \
-newlogin.c update.c magic.c npc.c misc.c randevent.c data.c
+newlogin.c update.c magic.c npc.c misc.c randevent.c data.c trade.c
 AOBJS = combat.o cexecuteA.o ioA.o admin.o makeworld.o  \
-newlogin.o update.o magicA.o npc.o miscA.o randevent.o dataA.o $(GETOPT)
+newlogin.o update.o magicA.o npc.o miscA.o randevent.o dataA.o \
+tradeA.o $(GETOPT)
 
 # GFILS are files needed to run a normal interactive game
 GFILS = commands.c cexecute.c forms.c io.c main.c move.c \
-magic.c misc.c reports.c data.c display.c extcmds.c
+magic.c misc.c reports.c data.c display.c extcmds.c trade.c
 GOBJS = commands.o cexecute.o forms.o io.o main.o move.o \
-magic.o misc.o reports.o data.o display.o extcmds.o $(GETOPT)
+magic.o misc.o reports.o data.o display.o extcmds.o trade.o $(GETOPT)
 
 HEADERS=header.h data.h newlogin.h
 HELPFILE=help.txt
@@ -125,6 +126,7 @@ $(HELPOUT):	newhelp.c data.o header.h data.h
 	newhelp
 	cat $(HELPFILE) | sed -f helpscript > $(HELPOUT)
 	$(RM) helpscript
+	-mkdir $(DEFAULT)  2>/dev/null
 	cp $(HELPOUT) $(DEFAULT)
 
 lint:
@@ -209,3 +211,8 @@ forms.o:	data.h header.h forms.c
 	$(CC) $(CFLAGS) -DCONQUER -c forms.c
 commands.o:	data.h header.h commands.c
 	$(CC) $(CFLAGS) -DCONQUER -c commands.c
+trade.o:	data.h header.h trade.h trade.c
+	$(CC) $(CFLAGS) -DCONQUER -c trade.c
+tradeA.o:	data.h header.h trade.h trade.c
+	$(CC) $(CFLAGS) -DADMIN -c trade.c
+	mv trade.o tradeA.o

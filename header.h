@@ -49,6 +49,7 @@
 #define MAXNAVY		16	/*maximum number of fleets per nation*/
 
 /*THE FOLLOWING SHOULD BE COMMENTED OUT IF YOU DO NOT WANT THE FUNCTION*/
+#define TRADE		/*defined to allow commerce between nations*/
 /*#define HIDELOC		/*defined if news is not to report sectors*/
 #define OGOD		/*defined if you wish to enhance god mode*/
 			/* this gives features like god passwords... */
@@ -59,7 +60,7 @@
 #define STORMS		/* have storms strike fleets */
 #define VULCANIZE	/* add in volcano eruptions.... */
 #define PVULCAN 20      /* % chance of eruption each round (see above)*/
-/* #define ORCTAKE      /* define if want orcs to takeover orc NPCS */
+#define ORCTAKE      /* define if want orcs to takeover orc NPCS */
 #define TAKEPRICE 500000L /* price for orc takeover (see above) in jewels */
 #define PMOUNT 20       /* % of land that is mountains */
 #define PSTORM 3        /* % chance that a storm will strike a fleet */
@@ -84,7 +85,7 @@
 #define TAXFOOD		40L
 #define TAXIRON		60L
 #define TAXGOLD		70L
-/*City and Capitol tax rates based on people only (no multipleier)*/
+/*Town and Capitol tax rates based on people only (no multiplyer)*/
 #define TAXCAP		1000L
 #define TAXCITY		750L
 

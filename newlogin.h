@@ -63,5 +63,5 @@
 #define	NLREPRO		1
 #define	NLREPCOST	2
 #define	NLMOVE		3
-#define	NLDBLCOST	2
+#define	NLDBLCOST	1
 #define	NLMAGIC		2

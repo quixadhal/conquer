@@ -11,7 +11,7 @@
 'b': move south west     'S': diplomacy status       'N': read newspaper
 'J': scroll south        'Q': quit (saves changes)   'W': write message
 'K': scroll north        'M': magic                  'R': read messages
-'L': scroll east         'C': construct
+'L': scroll east         'C': construct              'T': trade
 'H': scroll west         'D': draft              'ESC [1-5]': chg status
 	                 'G': go to next army    'ESC +': combine 2 armies
 	                 'F': go to next fleet   'ESC -': split army
@@ -19,25 +19,24 @@
 END
                     Welcome to Conquer XVERSION
 
-CONQUER is a multi player computer game designed to run under the UNIX
-operating system.  In CONQUER,  each player is the leader of a nation,
-composed of people (humans, orcs, elves, dwarves), resources, and land.
-Rulers customize their nation at creation by chosing their race and by giving
-their nation special powers (magic, combat factor, location, speed...)
-and resources (civilians, troops, iron, gold...).  Play involves building,
-moving, and controlling armies and navies, diplomacy with other players,
-and adjusting economic activity, which is primarily geared to the production
-of gold for your treasury.  Iron is needed, however to build ships & armies,
-and food is needed to prevent revolts and keep people alive.
+CONQUER is a multi player computer game designed to run under the UNIX OS.
+In CONQUER,  each player is the leader of a nation, composed of people 
+(humans, orcs, elves, dwarves), resources, and land.  Rulers customize their 
+nation at creation by chosing their race and by giving their nation special 
+powers (magic, combat factor, location, speed...) and resources (civilians, 
+troops, iron, gold...).  Play involves building, moving, and controlling 
+armies and navies, diplomacy with other players, and economics, which is 
+geared to raising of gold for your treasury,  iron for ships & armies, jewels,
+and food to prevent revolts and keep people alive.
 
-Command line format: conquer [-maxhps -nNAT -dDIR]
-	-h       print this help text 		-n NTN   run as nation NTN
-	-d DIR   run on data in directory DIR	-s       print out scores
-Command line format: admin [-maxdp]
-	-a       add new player		-m       make a world
-	-p       print a map		-x       execute program
-	-d DIR   run on data in directory DIR
-It is suggested that each player set up a shell alias for their game & nation
+Command line format: conquer [-hs -nNAT -dDIR]
+		-h       print this help text
+		-s       print out scores
+		-n NTN   run as nation NTN
+		-d DIR   run on data in directory DIR
+
+Each player should set up a shell alias to run their nation.  The Game 
+Administrator should read other documentation on using the admin command.
 END
 	                         THE WORLD
 
@@ -136,6 +135,7 @@ END
 'N': newspaper:    Briefs you on world happenings.  Note: News has 4 pages.
 'P': production:   ESTIMATE your nations production statistics
 'S': diplomacy:    Allow you to see and alter your diplomatic status.
+'T': commerce:     Allow you to trade with other nations.
 'Q': quit:         Save your move and quit the game.  Note there is no
 	            means supported to quit without saving your moves.
 'R': read mail:    Read mail messages
@@ -315,8 +315,8 @@ END
 			SHIPS AND SHIP COSTS
 
 		crew	build cost	maintain cost	capacity
-Warship		50	XWARSHPCOST		XSHIPMAINT		0
-Merchant	50	XMERSHPCOST		XSHIPMAINT		XSHIPCP
+Warship		XSHIPCREW	XWARSHPCOST		XSHIPMAINT		0
+Merchant	XSHIPCREW	XMERSHPCOST		XSHIPMAINT		XSHIPCP
 
 Ships will now have crews - which, in addition to being drafted upon
 construction, represent the ships current level of damage and are replaced,
@@ -331,6 +331,24 @@ movement is 3x your nations maximum movement, and they only pay 1 move point
 per sector (coast lands), 4 in deep water, 4 in your harbor, and the min of
 10 and all their remaining points points for non harbor coastlands.  Naval 
 combat has not been adequately play tested, and Sailor units dont work.
+END
+			COMMERCE AND TRADING
+
+Trading makes it be possible to exchange items between nations.
+
+There are seven types of items available for trade:  gold, food, iron,
+jewels, land, soldiers, and ships.  To place an item up for trade,
+the player need only select the sell option on the commerce board.  The
+player will then enter the type and amount of his product followed by the
+type and minimum amount of what he wants in return.  The product will
+remain on the commerce board until it is purchased or removed by the
+owner of the product.  To purchase an item, a player can just select the
+item number to purchase and then enter a bid amount.  You may only trade
+mercenary, seige engine, catapult, (summoned) monster, or elephant units.
+
+During every update, bids will be resolved and the highest bid for a
+product will receive the product.  There is a 20% administration fee
+for a trade (i.e. 20% of the traded goods on each side disappear)
 END
 	                         MAGIC POWERS
 Magic powers differentiate your nation from all the other nations in the
@@ -454,6 +472,10 @@ The only method to take an occupied Town or Capitol is to be the the only
 
 THE NEXT PAGE IS THE COMBAT RESULTS TABLE
 	 basically the attacker wants a high roll and the defender wants low.
+         The table is based on a roll between 0 and 200 (it does NOT use true
+         percentages).  The number given is the percent loss, which is modified
+         by the armies attack or defensive bonus.  Retreats are based on the
+         relative losses taken by a given side.
 END
 	        6-1 5-1 4-1 3-1 2-1 3-2 5-4 1-1 4-5 2-3 1-2 1-3 1-4 1-5 1-6
     <--010     20% 40% 50% 60% 70% 80% 90% 100%100%100%110%120%120%130%130%
@@ -526,7 +548,8 @@ END
 	Storms		XSTORMS	  Volcanos	XVULCANIZE
 	Npc Nations 	XNPC	  PC Automove	XCMOVE
 	Random Events	XRANEVENT	  Orc Takeovers	XORCTAKE
-	Super God	XOGOD
+	Super God	XOGOD	  Hidden News	XHIDELOC
+	Trading		XTRADE
 END
 	                ADDITIONAL OPTIONS
 

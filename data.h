@@ -93,7 +93,8 @@
 #define	SCOUT		2	/*Scouting--will not engage enemy if possible*/
 #define	ATTACK		3	/*Attack anybody (Hostile+) within 2 sectors*/
 #define	DEFEND		4	/*Defend */
-#define	GARRISON	5	/*Garrison--for a city or Capitol */
+#define	GARRISON	5	/*Garrison--for a town or Capitol */
+#define TRADED		6	/*Indicates an army that has been traded*/
 
 struct s_sector
 {
@@ -400,6 +401,9 @@ extern	char	*msgfile;
 extern	char	*helpfile;
 extern	char	*newsfile;
 extern	char	*isonfile;
+#ifdef TRADE
+extern	char	*tradefile;
+#endif TRADE
 
 #define	abrt() { \
 fprintf(stderr,"\nSerious Error (File %s, Line %d) - Aborting\n",__FILE__,__LINE__); \
@@ -421,6 +425,9 @@ extern	void printele(),printnat(),printscore(),printveg(),pr_ntns(),produce();
 extern	void readdata(),redesignate(),redomil(),reduce(),rmessage(),score();
 extern	void see(),showscore(),update(),updmove(),verifydata(),verify_ntn();
 extern	void verify_sct(),wmessage(),writedata(),getdstatus(),exit();
+#ifdef TRADE
+extern	void trade(),uptrade();
+#endif TRADE
 
 extern	char	*crypt(),*strcpy(),*strncpy(),*strcat(),*strncat();
 

@@ -207,6 +207,9 @@ char **argv;
 			exit(FAIL);
 		}
 		execute();
+#ifdef TRADE
+		uptrade();
+#endif TRADE
 		if(ntn[country].capx>15) {
 			xcurs=15;
 			xoffset= (ntn[country].capx-15);
@@ -469,6 +472,12 @@ parse()
 		diploscrn();
 		redraw=TRUE;
 		break;
+#ifdef TRADE
+	case 'T':	/*go to commerce section*/
+		trade();
+		redraw=TRUE;
+		break;
+#endif TRADE
 	case '9':
 	case 'u':	/*move north-east*/
 		pager=0;
@@ -673,7 +682,7 @@ makeside()
 			found=1;
 	}
 
-	if(nfound<4+(pager*5)) for(nvynum=0;nvynum<MAXNAVY;nvynum++){
+	if(nfound<=4+(pager*5)) for(nvynum=0;nvynum<MAXNAVY;nvynum++){
 		if(((NWAR+NMER)!=0)&&(NXLOC==XREAL)&&(NYLOC==YREAL)) {
 			if((nfound>=pager*5)&&(nfound<=4+(pager*5))) {
 				/*print a navy*/

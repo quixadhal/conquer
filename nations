@@ -41,12 +41,12 @@
 #########################################################################
 anorian  elfwizard  E A F 30 40  8  70000 1500 8500 8  2
 bobland  dragon     O B F 20 0   6  12000  1500 8000 10 9
-cordoba  wizard     H C R 10 10  2  30000 1500 8000 8  4
 darboth  balrog     O D R 0  0   7  70000 1500 9500 8  9
 edland   dragon     O E R 20 0   8  12000  1500 8500 10 9
 fung     elfking    E F F 10 40  8  50000 1000 9500 8  2
 gotho    warking    H G R 10 10  9  50000 1000 6150 8  4
 hargo    king       H H R 10 10  9  30000 1500 11000 7 4
+jordoba  wizard     H J R 10 10  2  30000 1500 8000 8  4
 lint     elfwizard  E L F 20 30  8  50000 1500 7900 10 2
 medal    elfpriest  E M R 20 0   6  16000  2000 6500 10 9
 noria    dwarfduke  D N R 10 30  6  50000 1000 10000 8 4
